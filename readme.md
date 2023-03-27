@@ -1,3 +1,5 @@
+### Creating API Server
+
 To create a C# ASP.NET Core Web API that exposes an API controller for any table in a database, you'll first need to set up a new project and install the required packages. Then, you can create a generic repository and service layer that interfaces with the database, and finally, a generic API controller that exposes CRUD operations for any table.
 
 Here's a step-by-step guide to help you create the project:
@@ -320,6 +322,8 @@ After generating the models, follow the previous instructions to create a generi
 
 Keep in mind that using the "Database First" approach requires regenerating the models whenever the database schema changes. This may not provide the flexibility of a fully dynamic model generation at runtime, but it offers better maintainability, type safety, and readability.
 
+### Dynamic tables with Dapper
+
 However, if you still want to work with fully dynamic models at runtime, you can consider using a library like [Dapper](https://github.com/DapperLib/Dapper) to execute SQL queries and map the results to dynamically created objects. Note that this approach will not provide you with the compile-time type safety and features of Entity Framework Core, and it may be more complex to implement and maintain.
 
 Here's an example of using Dapper to query a table and return dynamic objects:
@@ -572,3 +576,68 @@ Dapper: This is a more flexible but less type-safe approach that allows you to w
 Custom Abstraction Layer: This approach involves creating a custom abstraction layer for your database schema and working with tables and columns dynamically while still using Entity Framework Core. This option requires significant customization and may introduce performance overhead and potential security risks if not implemented correctly.
 
 Each approach has its trade-offs in terms of flexibility, complexity, and maintainability. Choose the one that best fits your requirements and constraints. Keep in mind that properly sanitizing and validating user inputs is crucial when working with dynamic table and column names to avoid potential security vulnerabilities such as SQL injection attacks.
+
+### Reading SQL Schema
+
+You can read the table schema to discover column names and column types by querying the database's schema information. This process varies depending on the database system you're using. Below are examples for SQL Server and MySQL:
+
+SQL Server:
+
+To read the table schema in SQL Server, you can query the INFORMATION_SCHEMA.COLUMNS view:
+
+```csharp
+public async Task<List<(string ColumnName, string DataType)>> GetTableSchemaAsync(string tableName)
+{
+    var query = @"SELECT COLUMN_NAME, DATA_TYPE
+                  FROM INFORMATION_SCHEMA.COLUMNS
+                  WHERE TABLE_NAME = @TableName";
+
+    using (var connection = new SqlConnection(_connectionString))
+    {
+        await connection.OpenAsync();
+        var result = await connection.QueryAsync<(string ColumnName, string DataType)>(query, new { TableName = tableName });
+        return result.ToList();
+    }
+}
+```
+
+MySQL:
+
+For MySQL, you can query the INFORMATION_SCHEMA.COLUMNS table as well:
+
+```csharp
+public async Task<List<(string ColumnName, string DataType)>> GetTableSchemaAsync(string tableName)
+{
+    var query = @"SELECT COLUMN_NAME, DATA_TYPE
+                  FROM INFORMATION_SCHEMA.COLUMNS
+                  WHERE TABLE_NAME = @TableName AND TABLE_SCHEMA = DATABASE()";
+
+    using (var connection = new MySqlConnection(_connectionString))
+    {
+        await connection.OpenAsync();
+        var result = await connection.QueryAsync<(string ColumnName, string DataType)>(query, new { TableName = tableName });
+        return result.ToList();
+    }
+}
+```
+
+These examples use the Dapper library, which simplifies querying the database and mapping the results to objects.
+
+Make sure to install the Dapper NuGet package and replace the SqlConnection with the appropriate connection type for your database system (e.g., NpgsqlConnection for PostgreSQL).
+
+To use the GetTableSchemaAsync method in your controller, you can add an endpoint to retrieve the table schema:
+
+```csharp
+[HttpGet("schema/{tableName}")]
+public async Task<ActionResult<List<(string ColumnName, string DataType)>>> GetTableSchema(string tableName)
+{
+    var schema = await _repository.GetTableSchemaAsync(tableName);
+    return Ok(schema);
+}
+```
+
+This endpoint will return the column names and data types for the specified table.
+
+Keep in mind that when working with table and column names that can be provided by users, you should validate and sanitize the input to avoid potential security vulnerabilities such as SQL injection attacks.
+
+Additionally, remember to replace the connection type and connection string in the examples above with the appropriate ones for your specific database system.
