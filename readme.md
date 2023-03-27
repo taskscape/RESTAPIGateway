@@ -4,26 +4,31 @@ Here's a step-by-step guide to help you create the project:
 
 Create a new ASP.NET Core Web API project:
 
-Copy code
+``
 dotnet new webapi -n GenericTableAPI
 cd GenericTableAPI
+``
+
 Install the required NuGet packages:
 
-Copy code
+``
 dotnet add package Microsoft.EntityFrameworkCore
 dotnet add package Microsoft.EntityFrameworkCore.Design
 dotnet add package Microsoft.EntityFrameworkCore.SqlServer
+``
+
 Define a connection string in the appsettings.json file:
 
-swift
-Copy code
-"ConnectionStrings": {
+``
+"ConnectionStrings":
+{
     "DefaultConnection": "Server=(localdb)\\MSSQLLocalDB;Database=YourDatabaseName;Trusted_Connection=True;MultipleActiveResultSets=true"
 }
+``
+
 Create a DbContext class:
 
-csharp
-Copy code
+``
 // In a new folder named 'Data', create a new file named 'AppDbContext.cs'
 using Microsoft.EntityFrameworkCore;
 using YourNamespace.Models;
@@ -38,20 +43,21 @@ namespace YourNamespace.Data
         public DbSet<YourModel> YourModels { get; set; }
     }
 }
+``
 
 Update Startup.cs to add the DbContext:
 
-csharp
-Copy code
+``
 using YourNamespace.Data;
 
 // Inside the ConfigureServices method
 services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+``
+
 Create a generic repository:
 
-csharp
-Copy code
+``
 // In a new folder named 'Repositories', create a new file named 'GenericRepository.cs'
 using System;
 using System.Collections.Generic;
@@ -108,11 +114,11 @@ namespace YourNamespace.Repositories
         }
     }
  }
+``
 
 Create a generic service:
 
-csharp
-Copy code
+``
 // In a new folder named 'Services', create a new file named 'GenericService.cs'
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -155,11 +161,11 @@ namespace YourNamespace.Services
         }
     }
 }
+``
 
 Create a generic API controller:
 
-csharp
-Copy code
+``
 // In the 'Controllers' folder, create a new file named 'GenericController.cs'
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -234,13 +240,13 @@ namespace YourNamespace.Controllers
         }
     }
 }
+``
 
 Now you have a generic API controller that exposes CRUD operations for any table in your database. To use the generic controller for a specific table, you'll need to create a specific controller that inherits from the generic controller and register the corresponding repository and service in the Startup.cs. Here's an example using a Product model:
 
 Create a model for the table:
 
-csharp
-Copy code
+``
 // In a new folder named 'Models', create a new file named 'Product.cs'
 namespace YourNamespace.Models
 {
@@ -251,15 +257,17 @@ namespace YourNamespace.Models
         public decimal Price { get; set; }
     }
 }
+``
+
 Add the DbSet for the Product model in the AppDbContext:
 
-csharp
-Copy code
+``
 public DbSet<Product> Products { get; set; }
+``
+
 Create a specific controller for the Product model:
 
-csharp
-Copy code
+``
 // In the 'Controllers' folder, create a new file named 'ProductController.cs'
 using Microsoft.AspNetCore.Mvc;
 using YourNamespace.Models;
@@ -274,6 +282,7 @@ namespace YourNamespace.Controllers
     public ProductController(GenericService<Product> service) : base(service) { }
     }
 }
+``
 
 4. Register the specific repository and service for the `Product` model in `Startup.cs`:
 
