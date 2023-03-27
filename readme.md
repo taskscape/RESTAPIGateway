@@ -294,5 +294,6 @@ using YourNamespace.Services;
 // Inside the ConfigureServices method
 services.AddScoped<GenericRepository<Product>>();
 services.AddScoped<GenericService<Product>>();
+```
 
 Now your API should be able to handle CRUD operations for the Product model at the /api/product endpoint. You can repeat these steps for any other table in your database. Just create a new model, add the DbSet, create a specific controller, and register the repository and service.
