@@ -641,3 +641,189 @@ This endpoint will return the column names and data types for the specified tabl
 Keep in mind that when working with table and column names that can be provided by users, you should validate and sanitize the input to avoid potential security vulnerabilities such as SQL injection attacks.
 
 Additionally, remember to replace the connection type and connection string in the examples above with the appropriate ones for your specific database system.
+
+
+### Authentication
+
+To implement OAuth 2.0 in an ASP.NET API project, you'll need to follow these steps:
+
+Install necessary NuGet packages:
+Install the required NuGet packages for OAuth 2.0 support in your project. You'll need the following packages:
+Microsoft.Owin.Security.OAuth
+Microsoft.Owin.Cors
+Microsoft.Owin.Host.SystemWeb
+Microsoft.AspNet.Identity.Owin
+You can install them via the Package Manager Console with the following commands:
+
+```bash
+Install-Package Microsoft.Owin.Security.OAuth
+Install-Package Microsoft.Owin.Cors
+Install-Package Microsoft.Owin.Host.SystemWeb
+Install-Package Microsoft.AspNet.Identity.Owin
+```
+
+Create an OAuth authorization server provider:
+Create a new class, OAuthProvider, which inherits from OAuthAuthorizationServerProvider. In this class, you'll implement the necessary methods for handling user validation and creating access tokens. Here's a simple example:
+
+```csharp
+using Microsoft.Owin.Security.OAuth;
+using System.Security.Claims;
+using System.Threading.Tasks;
+
+public class OAuthProvider : OAuthAuthorizationServerProvider
+{
+    public override async Task ValidateClientAuthentication(OAuthValidateClientAuthenticationContext context)
+    {
+        context.Validated();
+    }
+
+    public override async Task GrantResourceOwnerCredentials(OAuthGrantResourceOwnerCredentialsContext context)
+    {
+        // Implement your user validation logic here (e.g., check the database)
+        bool isValidUser = true;
+
+        if (isValidUser)
+        {
+            var identity = new ClaimsIdentity(context.Options.AuthenticationType);
+            identity.AddClaim(new Claim(ClaimTypes.Name, context.UserName));
+            context.Validated(identity);
+        }
+        else
+        {
+            context.SetError("invalid_grant", "The user name or password is incorrect.");
+        }
+    }
+}
+```
+
+Configure OAuth in the OWIN Startup class:
+Create a new class called Startup and add the following code:
+
+```csharp
+using System;
+using Microsoft.Owin;
+using Microsoft.Owin.Cors;
+using Microsoft.Owin.Security.OAuth;
+using Owin;
+
+[assembly: OwinStartup(typeof(YourNamespace.Startup))]
+namespace YourNamespace
+{
+    public class Startup
+    {
+        public void Configuration(IAppBuilder app)
+        {
+            app.UseCors(CorsOptions.AllowAll);
+
+            var oauthOptions = new OAuthAuthorizationServerOptions
+            {
+                TokenEndpointPath = new PathString("/token"),
+                AccessTokenExpireTimeSpan = TimeSpan.FromDays(14),
+                AllowInsecureHttp = true,
+                Provider = new OAuthProvider()
+            };
+
+            app.UseOAuthAuthorizationServer(oauthOptions);
+            app.UseOAuthBearerAuthentication(new OAuthBearerAuthenticationOptions());
+        }
+    }
+}
+```
+
+Replace YourNamespace with your project's namespace.
+
+Enable the OWIN pipeline:
+In your Global.asax.cs file, add the following line at the beginning of the Application_Start method:
+
+```csharp
+app.Map("/api", ConfigureApi);
+```
+
+Test your implementation:
+You can now test your implementation by sending a POST request to the "/token" endpoint with the following parameters:
+
+grant_type: "password"
+username: [your username]
+password: [your password]
+If everything is set up correctly, you'll receive an access token in the response, which can then be used to authenticate requests to protected API endpoints.
+
+Keep in mind that this is a basic implementation. In a real-world application, you would want to add more robust user validation, error handling, and potentially support for refresh tokens.
+### Testing
+
+Creating automated REST API tests in C# typically involves using a testing framework like MSTest or NUnit, and a library like RestSharp or HttpClient to send HTTP requests and process responses. Here's a step-by-step guide to creating automated REST API tests in C# using MSTest and RestSharp:
+
+Install necessary NuGet packages:
+First, create a new C# project (e.g., a .NET Core Console Application or a Class Library project). Then, install the necessary NuGet packages:
+
+```
+Microsoft.NET.Test.Sdk
+MSTest.TestAdapter
+MSTest.TestFramework
+RestSharp
+```
+
+You can install them using the NuGet Package Manager in Visual Studio or by running the following commands in the terminal:
+
+```bash
+dotnet add package Microsoft.NET.Test.Sdk
+dotnet add package MSTest.TestAdapter
+dotnet add package MSTest.TestFramework
+dotnet add package RestSharp
+```
+
+Create a test class:
+Create a new C# class (e.g., ApiTests.cs) and add the necessary using statements:
+
+```csharp
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using RestSharp;
+using System.Net;
+```
+
+Add a test method for each API endpoint you want to test:
+Within the ApiTests class, create a test method for each endpoint you want to test. For example, if you want to test a GET request to the /api/users endpoint, you can create a test method like this:
+
+```csharp
+[TestClass]
+public class ApiTests
+{
+    private RestClient _client;
+    private const string BaseUrl = "https://yourapiurl.com";
+
+    [TestInitialize]
+    public void Setup()
+    {
+        _client = new RestClient(BaseUrl);
+    }
+
+    [TestMethod]
+    public void Test_GetUsers_ReturnsSuccess()
+    {
+        // Arrange
+        var request = new RestRequest("/api/users", Method.GET);
+
+        // Act
+        var response = _client.Execute(request);
+
+        // Assert
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+    }
+}
+```
+
+In the example above, we create a RestClient object with the base URL of the API we want to test. We initialize the client in the Setup method, which is marked with the `[TestInitialize]` attribute. This method will be executed before each test method is run.
+
+The `Test_GetUsers_ReturnsSuccess` method tests a GET request to the `/api/users` endpoint. We create a RestRequest object for the endpoint and method we want to test, execute the request using the `_client` object, and then assert that the response status code is equal to `HttpStatusCode.OK` (HTTP 200).
+
+You can create more test methods for other API endpoints and methods following the same pattern.
+
+Run the tests:
+To run the tests, you can use the Test Explorer in Visual Studio or execute the following command in the terminal:
+
+```bash
+dotnet test
+```
+
+The test runner will execute all the test methods in your project and report the results.
+
+Note that this example assumes a simple API test where you only check the status code. In real-world scenarios, you might also want to validate the response content, headers, and other attributes.
