@@ -645,7 +645,75 @@ Additionally, remember to replace the connection type and connection string in t
 
 ### Authentication
 
-To implement OAuth 2.0 in an ASP.NET API project, you'll need to follow these steps:
+#### To implement Basic Authentication in an ASP.NET API project, follow these steps:
+
+Create a custom authentication attribute:
+Create a new class called BasicAuthenticationAttribute that inherits from System.Web.Http.Filters.AuthorizationFilterAttribute. Implement the authentication logic in the OnAuthorization method.
+
+```csharp
+using System;
+using System.Net;
+using System.Net.Http;
+using System.Security.Principal;
+using System.Text;
+using System.Threading;
+using System.Web.Http.Controllers;
+using System.Web.Http.Filters;
+
+public class BasicAuthenticationAttribute : AuthorizationFilterAttribute
+{
+    public override void OnAuthorization(HttpActionContext actionContext)
+    {
+        if (actionContext.Request.Headers.Authorization == null || string.IsNullOrEmpty(actionContext.Request.Headers.Authorization.Parameter))
+        {
+            actionContext.Response = actionContext.Request.CreateResponse(HttpStatusCode.Unauthorized);
+            actionContext.Response.Headers.Add("WWW-Authenticate", "Basic Scheme='yourRealm' location='yourUrl'");
+        }
+        else
+        {
+            string authenticationToken = actionContext.Request.Headers.Authorization.Parameter;
+            string decodedAuthenticationToken = Encoding.UTF8.GetString(Convert.FromBase64String(authenticationToken));
+            string[] usernamePasswordArray = decodedAuthenticationToken.Split(':');
+            string username = usernamePasswordArray[0];
+            string password = usernamePasswordArray[1];
+
+            // Implement your user validation logic here (e.g., check the database)
+            bool isValidUser = true;
+
+            if (isValidUser)
+            {
+                Thread.CurrentPrincipal = new GenericPrincipal(new GenericIdentity(username), null);
+                if (HttpContext.Current != null)
+                {
+                    HttpContext.Current.User = Thread.CurrentPrincipal;
+                }
+            }
+            else
+            {
+                actionContext.Response = actionContext.Request.CreateResponse(HttpStatusCode.Unauthorized);
+                actionContext.Response.Headers.Add("WWW-Authenticate", "Basic Scheme='yourRealm' location='yourUrl'");
+            }
+        }
+    }
+}
+```
+
+Apply the BasicAuthenticationAttribute to your controllers or actions:
+To protect a specific controller or action, simply apply the BasicAuthenticationAttribute to it. For example:
+
+```csharp
+[BasicAuthentication]
+public class ValuesController : ApiController
+{
+    // Your actions here
+}
+```
+
+With this implementation, any request to the protected controller or action will require the client to include a valid Basic Authentication header. The header should have the format Authorization: Basic base64EncodedUsernameAndPassword, where base64EncodedUsernameAndPassword is the Base64-encoded string of the username and password separated by a colon (e.g., "username:password").
+
+Keep in mind that Basic Authentication sends the username and password as plaintext (albeit Base64-encoded) with each request, so it is essential to use HTTPS to secure the communication between the client and the server.
+
+#### To implement OAuth 2.0 in an ASP.NET API project, you'll need to follow these steps:
 
 Install necessary NuGet packages:
 Install the required NuGet packages for OAuth 2.0 support in your project. You'll need the following packages:
