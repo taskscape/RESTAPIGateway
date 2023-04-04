@@ -48,3 +48,18 @@ Thumbs.db
 *.mov
 *.wmv
 
+# Visual Studio files
+*.suo
+*.user
+*.sln.docstates
+*.vsp
+*.vspx
+
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+bin/
+obj/
+
+GenericTableAPI/.vs

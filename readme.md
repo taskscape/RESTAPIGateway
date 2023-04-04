@@ -721,6 +721,7 @@ Microsoft.Owin.Security.OAuth
 Microsoft.Owin.Cors
 Microsoft.Owin.Host.SystemWeb
 Microsoft.AspNet.Identity.Owin
+
 You can install them via the Package Manager Console with the following commands:
 
 ```bash
@@ -737,14 +738,12 @@ Create a new class, OAuthProvider, which inherits from OAuthAuthorizationServerP
 using Microsoft.Owin.Security.OAuth;
 using System.Security.Claims;
 using System.Threading.Tasks;
-
 public class OAuthProvider : OAuthAuthorizationServerProvider
 {
     public override async Task ValidateClientAuthentication(OAuthValidateClientAuthenticationContext context)
     {
         context.Validated();
     }
-
     public override async Task GrantResourceOwnerCredentials(OAuthGrantResourceOwnerCredentialsContext context)
     {
         // Implement your user validation logic here (e.g., check the database)
@@ -799,14 +798,12 @@ namespace YourNamespace
 ```
 
 Replace YourNamespace with your project's namespace.
-
 Enable the OWIN pipeline:
 In your Global.asax.cs file, add the following line at the beginning of the Application_Start method:
 
 ```csharp
 app.Map("/api", ConfigureApi);
 ```
-
 Test your implementation:
 You can now test your implementation by sending a POST request to the "/token" endpoint with the following parameters:
 
@@ -816,6 +813,7 @@ password: [your password]
 If everything is set up correctly, you'll receive an access token in the response, which can then be used to authenticate requests to protected API endpoints.
 
 Keep in mind that this is a basic implementation. In a real-world application, you would want to add more robust user validation, error handling, and potentially support for refresh tokens.
+
 ### Testing
 
 Creating automated REST API tests in C# typically involves using a testing framework like MSTest or NUnit, and a library like RestSharp or HttpClient to send HTTP requests and process responses. Here's a step-by-step guide to creating automated REST API tests in C# using MSTest and RestSharp:
