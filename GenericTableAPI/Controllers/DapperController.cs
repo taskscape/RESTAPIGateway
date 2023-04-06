@@ -25,6 +25,7 @@ namespace GenericTableAPI.Controllers
             var timestamp = DateTimeOffset.UtcNow;
             var requestInfo = $"GET request to {HttpContext.Request.Path}{HttpContext.Request.QueryString} from {HttpContext.Connection.RemoteIpAddress} by user {User.Identity.Name ?? "unknown"}. Timestamp: {timestamp}";
             _logger.LogInformation(requestInfo);
+            
             try
             {
                 _logger.LogInformation("Getting all entities from {tableName}. Timestamp: {timestamp}", tableName, timestamp);
@@ -59,10 +60,9 @@ namespace GenericTableAPI.Controllers
             _logger.LogInformation(requestInfo);
             _logger.LogInformation("Getting entity with id \"{id}\" from \"{tableName}\". Timestamp: {timestamp}", id, tableName, timestamp);
 
-            dynamic? entity = null;
             try
             {
-                entity = await _service.GetByIdAsync(tableName, id);
+                var entity = await _service.GetByIdAsync(tableName, id);
 
                 if (entity == null)
                 {
@@ -86,7 +86,7 @@ namespace GenericTableAPI.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> Add(string tableName, [FromBody] IDictionary<string, object> values)
+        public async Task<ActionResult> Add(string tableName, [FromBody] IDictionary<string, object?> values)
         {
             var timestamp = DateTimeOffset.UtcNow;
             var valuesDict = values.ToDictionary(pair => pair.Key, pair => pair.Value?.ToString());
@@ -123,7 +123,7 @@ namespace GenericTableAPI.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult> Update(string tableName, [FromRoute] string id, [FromBody] IDictionary<string, object> values)
+        public async Task<ActionResult> Update(string tableName, [FromRoute] string id, [FromBody] IDictionary<string, object?> values)
         {
             var timestamp = DateTimeOffset.UtcNow;
             var valuesDict = values.ToDictionary(pair => pair.Key, pair => pair.Value?.ToString());

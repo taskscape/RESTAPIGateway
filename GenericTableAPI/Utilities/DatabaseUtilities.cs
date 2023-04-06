@@ -20,14 +20,13 @@ namespace GenericTableAPI.Utilities
             {
                 return DatabaseType.Oracle;
             }
-            else if (connectionString.Contains("Server=") && connectionString.Contains("Database="))
+
+            if (connectionString.Contains("Server=") && connectionString.Contains("Database="))
             {
                 return DatabaseType.SqlServer;
             }
-            else
-            {
-                return DatabaseType.Unknown;
-            }
+
+            return DatabaseType.Unknown;
         }
 
         public static string GetPrimaryKeyColumnName(string connectionString, string tableName, DatabaseType databaseType)
@@ -81,10 +80,10 @@ namespace GenericTableAPI.Utilities
             }
         }
 
-        public static IEnumerable<dynamic> ToDynamic(DbDataReader reader)
+        public static IEnumerable<dynamic>? ToDynamic(DbDataReader reader)
         {
             if (!reader.Read()) return null;
-            dynamic obj = new ExpandoObject();
+            dynamic? obj = new ExpandoObject();
             IDictionary<string, object> objAsDictionary = obj;
 
             for (int i = 0; i < reader.FieldCount; i++)

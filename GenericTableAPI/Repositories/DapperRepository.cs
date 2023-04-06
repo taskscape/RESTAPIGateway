@@ -10,10 +10,10 @@ namespace GenericTableAPI.Repositories
     {
         private readonly string _connectionString;
 
-        private static object SanitizeValue(object value)
+        private static object? SanitizeValue(object? value)
         {
             // Sanitize the value by replacing any single quotes with two single quotes
-            string sanitizedValue = value.ToString().Replace("'", "''");
+            string? sanitizedValue = value.ToString()?.Replace("'", "''");
 
             return sanitizedValue;
         }
@@ -44,7 +44,7 @@ namespace GenericTableAPI.Repositories
             connectionHandler.Open();
             string sql = $"SELECT * FROM {tableName}";
             var result = new List<dynamic>();
-            await foreach (dynamic item in DatabaseUtilities.ToDynamicList(await connectionHandler.ExecuteReaderAsync(sql)))
+            await foreach (dynamic item in ToDynamicList(await connectionHandler.ExecuteReaderAsync(sql)))
             {
                 result.Add(item);
             }
@@ -54,7 +54,7 @@ namespace GenericTableAPI.Repositories
 
         public async Task<dynamic?> GetByIdAsync(string tableName, string id)
         {
-            string primaryKeyColumn = DatabaseUtilities.GetPrimaryKeyColumnName(_connectionString, tableName, GetDatabaseType(_connectionString));
+            string primaryKeyColumn = GetPrimaryKeyColumnName(_connectionString, tableName, GetDatabaseType(_connectionString));
             using DatabaseHandler connectionHandler = new(_connectionString);
             connectionHandler.Open();
             await using DbDataReader reader = await connectionHandler.ExecuteReaderAsync($"SELECT * FROM {tableName} WHERE {primaryKeyColumn} = {id};");
@@ -74,7 +74,7 @@ namespace GenericTableAPI.Repositories
             return null;
         }
 
-        public async Task<object?> AddAsync(string tableName, IDictionary<string, object> values)
+        public async Task<object?> AddAsync(string tableName, IDictionary<string, object?> values)
         {
             // Validate and sanitize each column value
             foreach ((string? columnName, object? columnValue) in values)
@@ -85,7 +85,7 @@ namespace GenericTableAPI.Repositories
                 }
 
                 // Sanitize the column value to prevent SQL injection
-                object sanitizedValue = SanitizeValue(columnValue);
+                object? sanitizedValue = SanitizeValue(columnValue);
 
                 // Add the sanitized value to the SQL insert statement
                 values[columnName] = sanitizedValue;
@@ -93,7 +93,7 @@ namespace GenericTableAPI.Repositories
 
             string columns = string.Join(", ", values.Keys);
             string strValues = string.Join(", ", values.Values.Select(k => $"'{k}'"));
-            string primaryKeyColumn = DatabaseUtilities.GetPrimaryKeyColumnName(_connectionString, tableName, GetDatabaseType(_connectionString));
+            string primaryKeyColumn = GetPrimaryKeyColumnName(_connectionString, tableName, GetDatabaseType(_connectionString));
 
             using DatabaseHandler connectionHandler = new(_connectionString);
             connectionHandler.Open();
@@ -103,7 +103,7 @@ namespace GenericTableAPI.Repositories
             return id;
         }
 
-        public async Task UpdateAsync(string tableName, string id, IDictionary<string, object> values)
+        public async Task UpdateAsync(string tableName, string id, IDictionary<string, object?> values)
         {
             var sanitizedValues = new Dictionary<string, object>();
             if (sanitizedValues == null) throw new ArgumentNullException(nameof(sanitizedValues));
@@ -114,13 +114,13 @@ namespace GenericTableAPI.Repositories
                     throw new ArgumentException("Invalid column name");
                 }
 
-                object sanitizedValue = SanitizeValue(kvp.Value);
+                object? sanitizedValue = SanitizeValue(kvp.Value);
                 sanitizedValues.Add(kvp.Key, sanitizedValue);
             }
 
             string setClauses = string.Join(", ", values.Select(k => $"{k.Key} = '{k.Value}'"));
 
-            string primaryKeyColumn = DatabaseUtilities.GetPrimaryKeyColumnName(_connectionString, tableName, GetDatabaseType(_connectionString));
+            string primaryKeyColumn = GetPrimaryKeyColumnName(_connectionString, tableName, GetDatabaseType(_connectionString));
             using DatabaseHandler connectionHandler = new(_connectionString);
             connectionHandler.Open();
             await connectionHandler.ExecuteScalarAsync($"UPDATE {tableName} SET {setClauses} WHERE {primaryKeyColumn} = {id};");
@@ -129,7 +129,7 @@ namespace GenericTableAPI.Repositories
 
         public async Task DeleteAsync(string tableName, string id)
         {
-            string primaryKeyColumn = DatabaseUtilities.GetPrimaryKeyColumnName(_connectionString, tableName, GetDatabaseType(_connectionString));
+            string primaryKeyColumn = GetPrimaryKeyColumnName(_connectionString, tableName, GetDatabaseType(_connectionString));
             using DatabaseHandler connectionHandler = new(_connectionString);
             connectionHandler.Open();
             await connectionHandler.ExecuteScalarAsync($"DELETE FROM {tableName} WHERE {primaryKeyColumn} = {id};");

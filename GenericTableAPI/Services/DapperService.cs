@@ -1,5 +1,4 @@
 ﻿using GenericTableAPI.Repositories;
-using static Dapper.SqlMapper;
 
 namespace GenericTableAPI.Services
 {
@@ -22,12 +21,12 @@ namespace GenericTableAPI.Services
             return _repository.GetByIdAsync(tableName, id);
         }
 
-        public Task<object?> AddAsync(string tableName, IDictionary<string, object> values)
+        public Task<object?> AddAsync(string tableName, IDictionary<string, object?> values)
         {
             return _repository.AddAsync(tableName, values);
         }
 
-        public Task UpdateAsync(string tableName, string id, IDictionary<string, object> values)
+        public Task UpdateAsync(string tableName, string id, IDictionary<string, object?> values)
         {
             return _repository.UpdateAsync(tableName, id, values);
         }
