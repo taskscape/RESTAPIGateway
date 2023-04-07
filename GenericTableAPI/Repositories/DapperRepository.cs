@@ -8,7 +8,7 @@ namespace GenericTableAPI.Repositories
 {
     public class DapperRepository
     {
-        private readonly string _connectionString;
+        private readonly string? _connectionString;
 
         private static object? SanitizeValue(object? value)
         {
@@ -18,7 +18,7 @@ namespace GenericTableAPI.Repositories
             return sanitizedValue;
         }
 
-        public DapperRepository(string connectionString)
+        public DapperRepository(string? connectionString)
         {
             _connectionString = connectionString;
         }

@@ -9,7 +9,7 @@ namespace GenericTableAPI.Utilities
     {
         private readonly DbConnection _connection;
 
-        public DatabaseHandler(string connectionString)
+        public DatabaseHandler(string? connectionString)
         {
             DatabaseType databaseType = GetDatabaseType(connectionString);
             _connection = databaseType switch

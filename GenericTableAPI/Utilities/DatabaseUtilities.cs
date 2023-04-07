@@ -14,7 +14,7 @@ namespace GenericTableAPI.Utilities
             Unknown
         }
 
-        public static DatabaseType GetDatabaseType(string connectionString)
+        public static DatabaseType GetDatabaseType(string? connectionString)
         {
             if (connectionString.Contains("Data Source=") && connectionString.Contains("User Id="))
             {
@@ -29,7 +29,7 @@ namespace GenericTableAPI.Utilities
             return DatabaseType.Unknown;
         }
 
-        public static string GetPrimaryKeyColumnName(string connectionString, string tableName, DatabaseType databaseType)
+        public static string GetPrimaryKeyColumnName(string? connectionString, string tableName, DatabaseType databaseType)
         {
             string query = databaseType switch
             {

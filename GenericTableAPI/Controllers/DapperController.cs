@@ -1,15 +1,17 @@
 ﻿using GenericTableAPI.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using System.Web;
 
 namespace GenericTableAPI.Controllers
 {
+    [Authorize]
     [Route("api/dapper/{tableName}")]
     [ApiController]
     public class DapperController : ControllerBase
     {
-        //private readonly DapperRepository _repository;
         private readonly DapperService _service;
         private readonly ILogger<DapperController> _logger;
 
@@ -84,6 +86,7 @@ namespace GenericTableAPI.Controllers
                 _logger.LogInformation(responseInfo);
             }
         }
+
 
         [HttpPost]
         public async Task<ActionResult> Add(string tableName, [FromBody] IDictionary<string, object?> values)
