@@ -1,10 +1,8 @@
 ﻿using GenericTableAPI.Models;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Text;
 
 namespace GenericTableAPI.Controllers
 {
@@ -34,7 +32,7 @@ namespace GenericTableAPI.Controllers
 
         }
 
-        private static User GetUser(string userName, string password)
+        private static User? GetUser(string userName, string password)
         {
             return !string.IsNullOrEmpty(userName) ? new User() { UserName = "test", Password = "123" } : null;
         }
@@ -46,8 +44,7 @@ namespace GenericTableAPI.Controllers
                 new Claim(ClaimTypes.Role, "Admin")
             };
 
-            SymmetricSecurityKey key = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(
-                _configuration.GetSection("Jwt:Key").Value));
+            SymmetricSecurityKey key = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(_configuration.GetSection("Jwt:Key").Value));
 
             SigningCredentials signingCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
 

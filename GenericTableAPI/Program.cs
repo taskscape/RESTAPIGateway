@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
-using Swashbuckle.AspNetCore.Filters;
+using Serilog;
 
 namespace GenericTableAPI
 {
@@ -28,84 +28,89 @@ namespace GenericTableAPI
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSingleton(new DapperRepository(builder.Configuration.GetConnectionString("DefaultConnection")));
+            builder.Services.AddSingleton(
+                new DapperRepository(builder.Configuration.GetConnectionString("DefaultConnection")));
             builder.Services.AddScoped<DapperService>();
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddSwaggerGen(options =>
-            {
-                options.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
                 {
-                    Description = "Standard Authorization header using the Bearer scheme (\"bearer {token}\")",
-                    In = ParameterLocation.Header,
-                    Name = "Authorization",
-                    Type = SecuritySchemeType.ApiKey
-                });
+                    options.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
+                    {
+                        Description = "Standard Authorization header using the Bearer scheme (\"bearer {token}\")",
+                        In = ParameterLocation.Header,
+                        Name = "Authorization",
+                        Type = SecuritySchemeType.ApiKey
+                    });
 
-                //options.OperationFilter<SecurityRequirmentsOperationFilter>();
-            }
+                    //options.OperationFilter<SecurityRequirmentsOperationFilter>();
+                }
             );
 
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSingleton(new DapperRepository(builder.Configuration.GetConnectionString("DefaultConnection")));
+            builder.Services.AddSingleton(
+                new DapperRepository(builder.Configuration.GetConnectionString("DefaultConnection")));
             builder.Services.AddScoped<DapperService>();
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddSwaggerGen(options =>
-            {
-                options.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
                 {
-                    Description = "Standard Authorization header using the Bearer scheme (\"bearer {token}\")",
-                    In = ParameterLocation.Header,
-                    Name = "Authorization",
-                    Type = SecuritySchemeType.ApiKey
-                });
+                    options.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
+                    {
+                        Description = "Standard Authorization header using the Bearer scheme (\"bearer {token}\")",
+                        In = ParameterLocation.Header,
+                        Name = "Authorization",
+                        Type = SecuritySchemeType.ApiKey
+                    });
 
-            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-            .AddJwtBearer(options =>
-            {
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8
-                        .GetBytes(builder.Configuration.GetSection("AppSettings:Token").Value)),
-                    ValidateIssuer = false,
-                    ValidateAudience = false
-                };
-            });
-            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddJwtBearer(options =>
-                {
-                    var token = builder.Configuration.GetSection("Jwt:Key").Value;
-                    if (token != null)
-                        options.TokenValidationParameters = new TokenValidationParameters
+                    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                        .AddJwtBearer(options =>
                         {
-                            ValidateIssuerSigningKey = true,
-                            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8
-                                .GetBytes(token)),
-                            ValidateIssuer = false,
-                            ValidateAudience = false
-                        };
-                });
+                            options.TokenValidationParameters = new TokenValidationParameters
+                            {
+                                ValidateIssuerSigningKey = true,
+                                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8
+                                    .GetBytes(builder.Configuration.GetSection("AppSettings:Token").Value)),
+                                ValidateIssuer = false,
+                                ValidateAudience = false
+                            };
+                        });
 
-            var app = builder.Build();
+                    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                        .AddJwtBearer(options =>
+                        {
+                            var token = builder.Configuration.GetSection("Jwt:Key").Value;
+                            if (token != null)
+                                options.TokenValidationParameters = new TokenValidationParameters
+                                {
+                                    ValidateIssuerSigningKey = true,
+                                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8
+                                        .GetBytes(token)),
+                                    ValidateIssuer = false,
+                                    ValidateAudience = false
+                                };
+                        });
 
-            // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
-            {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
-            
-            app.UseHttpsRedirection();
+                    var app = builder.Build();
 
-            app.UseAuthentication();
+                    // Configure the HTTP request pipeline.
+                    if (app.Environment.IsDevelopment())
+                    {
+                        app.UseSwagger();
+                        app.UseSwaggerUI();
+                    }
 
-            app.UseAuthorization();
+                    app.UseHttpsRedirection();
 
-            app.UseAuthorization();
+                    app.UseAuthentication();
 
-            app.MapControllers();
+                    app.UseAuthorization();
 
-            app.Run();
+                    app.UseAuthorization();
+
+                    app.MapControllers();
+
+                    app.Run();
+                }
+            );
         }
     }
 }

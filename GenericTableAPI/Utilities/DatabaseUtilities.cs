@@ -3,87 +3,72 @@ using Oracle.ManagedDataAccess.Client;
 using System.Data.Common;
 using System.Dynamic;
 
-namespace GenericTableAPI.Utilities
+namespace GenericTableAPI.Utilities;
+
+public static class DatabaseUtilities
 {
-    public static class DatabaseUtilities
+    public enum DatabaseType
     {
-        public enum DatabaseType
+        SqlServer,
+        Oracle,
+        Unknown
+    }
+
+    public static DatabaseType GetDatabaseType(string? connectionString)
+    {
+        if (connectionString.Contains("Data Source=") && connectionString.Contains("User Id="))
         {
-            SqlServer,
-            Oracle,
-            Unknown
+            return DatabaseType.Oracle;
         }
 
-        public static DatabaseType GetDatabaseType(string? connectionString)
+        if (connectionString.Contains("Server=") && connectionString.Contains("Database="))
         {
-            if (connectionString.Contains("Data Source=") && connectionString.Contains("User Id="))
-            {
-                return DatabaseType.Oracle;
-            }
-
-            if (connectionString.Contains("Server=") && connectionString.Contains("Database="))
-            {
-                return DatabaseType.SqlServer;
-            }
-
-            return DatabaseType.Unknown;
+            return DatabaseType.SqlServer;
         }
 
-        public static string GetPrimaryKeyColumnName(string? connectionString, string tableName, DatabaseType databaseType)
+        return DatabaseType.Unknown;
+    }
+
+    public static string GetPrimaryKeyColumnName(string? connectionString, string tableName, DatabaseType databaseType)
+    {
+        string query = databaseType switch
         {
-            string query = databaseType switch
-            {
-                DatabaseType.SqlServer => $@"
+            DatabaseType.SqlServer => $@"
                 SELECT COLUMN_NAME
                 FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
                 WHERE OBJECTPROPERTY(OBJECT_ID(CONSTRAINT_SCHEMA + '.' + CONSTRAINT_NAME), 'IsPrimaryKey') = 1
                 AND TABLE_NAME = '{tableName}'",
-                DatabaseType.Oracle => $@"
+            DatabaseType.Oracle => $@"
                 SELECT cols.column_name
                 FROM all_constraints cons, all_cons_columns cols
                 WHERE cons.constraint_type = 'P'
                 AND cons.constraint_name = cols.constraint_name
                 AND cons.owner = cols.owner
                 AND cols.table_name = '{tableName.ToUpper()}'",
-                _ => throw new NotSupportedException("Unsupported database type.")
-            };
+            _ => throw new NotSupportedException("Unsupported database type.")
+        };
 
-            using DbConnection connection = databaseType switch
-            {
-                DatabaseType.SqlServer => new SqlConnection(connectionString),
-                DatabaseType.Oracle => new OracleConnection(connectionString),
-                _ => throw new NotSupportedException("Unsupported database type.")
-            };
-
-            connection.Open();
-
-            using DbCommand command = connection.CreateCommand();
-            command.CommandText = query;
-
-            using DbDataReader reader = command.ExecuteReader();
-            return reader.Read() ? reader["COLUMN_NAME"].ToString() : null;
-        }
-
-        public static async IAsyncEnumerable<dynamic> ToDynamicList(DbDataReader reader)
+        using DbConnection connection = databaseType switch
         {
-            while (await reader.ReadAsync())
-            {
-                dynamic obj = new ExpandoObject();
-                IDictionary<string, object> objAsDictionary = obj;
+            DatabaseType.SqlServer => new SqlConnection(connectionString),
+            DatabaseType.Oracle => new OracleConnection(connectionString),
+            _ => throw new NotSupportedException("Unsupported database type.")
+        };
 
-                for (int i = 0; i < reader.FieldCount; i++)
-                {
-                    objAsDictionary[reader.GetName(i)] = reader.GetValue(i);
-                }
+        connection.Open();
 
-                yield return obj;
-            }
-        }
+        using DbCommand command = connection.CreateCommand();
+        command.CommandText = query;
 
-        public static IEnumerable<dynamic>? ToDynamic(DbDataReader reader)
+        using DbDataReader reader = command.ExecuteReader();
+        return reader.Read() ? reader["COLUMN_NAME"].ToString() : null;
+    }
+
+    public static async IAsyncEnumerable<dynamic> ToDynamicList(DbDataReader reader)
+    {
+        while (await reader.ReadAsync())
         {
-            if (!reader.Read()) return null;
-            dynamic? obj = new ExpandoObject();
+            dynamic obj = new ExpandoObject();
             IDictionary<string, object> objAsDictionary = obj;
 
             for (int i = 0; i < reader.FieldCount; i++)
@@ -91,10 +76,24 @@ namespace GenericTableAPI.Utilities
                 objAsDictionary[reader.GetName(i)] = reader.GetValue(i);
             }
 
-            return obj;
+            yield return obj;
+        }
+    }
 
+    public static IEnumerable<dynamic>? ToDynamic(DbDataReader reader)
+    {
+        if (!reader.Read()) return null;
+        dynamic? obj = new ExpandoObject();
+        IDictionary<string, object> objAsDictionary = obj;
+
+        for (int i = 0; i < reader.FieldCount; i++)
+        {
+            objAsDictionary[reader.GetName(i)] = reader.GetValue(i);
         }
 
+        return obj;
 
     }
+
+
 }
