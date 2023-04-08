@@ -12,8 +12,7 @@ public class DapperRepository
 
     private static object? SanitizeValue(object? value)
     {
-        // Sanitize the value by replacing any single quotes with two single quotes
-        string? sanitizedValue = value.ToString()?.Replace("'", "''");
+        string? sanitizedValue = value?.ToString()?.Replace("'", "''");
 
         return sanitizedValue;
     }
