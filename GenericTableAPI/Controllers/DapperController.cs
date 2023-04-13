@@ -22,8 +22,8 @@ namespace GenericTableAPI.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<dynamic>>> GetAll(string tableName)
         {
-            var timestamp = DateTimeOffset.UtcNow;
-            var requestInfo = $"GET request to {HttpContext.Request.Path}{HttpContext.Request.QueryString} from {HttpContext.Connection.RemoteIpAddress} by user {User.Identity.Name ?? "unknown"}. Timestamp: {timestamp}";
+            DateTimeOffset timestamp = DateTimeOffset.UtcNow;
+            string requestInfo = $"GET request to {HttpContext.Request.Path}{HttpContext.Request.QueryString} from {HttpContext.Connection.RemoteIpAddress} by user {User.Identity?.Name ?? "unknown"}. Timestamp: {timestamp}";
             _logger.LogInformation(requestInfo);
             
             try
@@ -47,7 +47,7 @@ namespace GenericTableAPI.Controllers
             }
             finally
             {
-                var responseInfo = $"Response returned from {HttpContext.Request.Path}{HttpContext.Request.QueryString} with status code {Response.StatusCode}. Timestamp: {timestamp}";
+                string responseInfo = $"Response returned from {HttpContext.Request.Path}{HttpContext.Request.QueryString} with status code {Response.StatusCode}. Timestamp: {timestamp}";
                 _logger.LogInformation(responseInfo);
             }
         }
@@ -55,14 +55,14 @@ namespace GenericTableAPI.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<dynamic>> GetById(string tableName, [FromRoute] string id)
         {
-            var timestamp = DateTimeOffset.UtcNow;
-            var requestInfo = $"GET request to {HttpContext.Request.Path}{HttpContext.Request.QueryString} from {HttpContext.Connection.RemoteIpAddress} by user {User.Identity.Name ?? "unknown"}. Timestamp: {timestamp}";
+            DateTimeOffset timestamp = DateTimeOffset.UtcNow;
+            string requestInfo = $"GET request to {HttpContext.Request.Path}{HttpContext.Request.QueryString} from {HttpContext.Connection.RemoteIpAddress} by user {User.Identity?.Name ?? "unknown"}. Timestamp: {timestamp}";
             _logger.LogInformation(requestInfo);
             _logger.LogInformation("Getting entity with id \"{id}\" from \"{tableName}\". Timestamp: {timestamp}", id, tableName, timestamp);
 
             try
             {
-                var entity = await _service.GetByIdAsync(tableName, id);
+                dynamic? entity = await _service.GetByIdAsync(tableName, id);
 
                 if (entity == null)
                 {
@@ -80,7 +80,7 @@ namespace GenericTableAPI.Controllers
             }
             finally
             {
-                var responseInfo = $"Response returned from {HttpContext.Request.Path}{HttpContext.Request.QueryString} with status code {Response.StatusCode}. Timestamp: {timestamp}";
+                string responseInfo = $"Response returned from {HttpContext.Request.Path}{HttpContext.Request.QueryString} with status code {Response.StatusCode}. Timestamp: {timestamp}";
                 _logger.LogInformation(responseInfo);
             }
         }
@@ -89,16 +89,16 @@ namespace GenericTableAPI.Controllers
         [HttpPost]
         public async Task<ActionResult> Add(string tableName, [FromBody] IDictionary<string, object?> values)
         {
-            var timestamp = DateTimeOffset.UtcNow;
+            DateTimeOffset timestamp = DateTimeOffset.UtcNow;
             var valuesDict = values.ToDictionary(pair => pair.Key, pair => pair.Value?.ToString());
 
-            var requestInfo = $"POST request to \"{HttpContext.Request.Path}\" from \"{HttpContext.Connection.RemoteIpAddress}\" by user \"{User.Identity.Name ?? "unknown"}\" with values: {JsonConvert.SerializeObject(valuesDict)}. Timestamp: {timestamp}";
+            string requestInfo = $"POST request to \"{HttpContext.Request.Path}\" from \"{HttpContext.Connection.RemoteIpAddress}\" by user \"{User.Identity?.Name ?? "unknown"}\" with values: {JsonConvert.SerializeObject(valuesDict)}. Timestamp: {timestamp}";
             _logger.LogInformation(requestInfo);
 
             try
             {
                 _logger.LogInformation("Adding a new entity to \"{tableName}\": {values}. Timestamp: {timestamp}", tableName, JsonConvert.SerializeObject(valuesDict), timestamp);
-                var id = await _service.AddAsync(tableName, values);
+                object? id = await _service.AddAsync(tableName, values);
 
                 if (id == null)
                 {
@@ -106,7 +106,7 @@ namespace GenericTableAPI.Controllers
                     return StatusCode(StatusCodes.Status500InternalServerError);
                 }
 
-                var newItem = await _service.GetByIdAsync(tableName, id.ToString());
+                dynamic? newItem = await _service.GetByIdAsync(tableName, id.ToString());
 
                 _logger.LogInformation("Added a new entity with id \"{id}\" to \"{tableName}\". Timestamp: {timestamp}", id, tableName, timestamp);
                 return Ok(newItem);
@@ -118,7 +118,7 @@ namespace GenericTableAPI.Controllers
             }
             finally
             {
-                var responseInfo = $"Response returned from \"{HttpContext.Request.Path}\" with status code {Response.StatusCode}. Timestamp: {timestamp}";
+                string responseInfo = $"Response returned from \"{HttpContext.Request.Path}\" with status code {Response.StatusCode}. Timestamp: {timestamp}";
                 _logger.LogInformation(responseInfo);
             }
         }
@@ -126,10 +126,10 @@ namespace GenericTableAPI.Controllers
         [HttpPut("{id}")]
         public async Task<ActionResult> Update(string tableName, [FromRoute] string id, [FromBody] IDictionary<string, object?> values)
         {
-            var timestamp = DateTimeOffset.UtcNow;
+            DateTimeOffset timestamp = DateTimeOffset.UtcNow;
             var valuesDict = values.ToDictionary(pair => pair.Key, pair => pair.Value?.ToString());
 
-            var requestInfo = $"PUT request to \"{HttpContext.Request.Path}\" from \"{HttpContext.Connection.RemoteIpAddress}\" by user \"{User.Identity.Name ?? "unknown"}\". Timestamp: {timestamp}";
+            string requestInfo = $"PUT request to \"{HttpContext.Request.Path}\" from \"{HttpContext.Connection.RemoteIpAddress}\" by user \"{User.Identity?.Name ?? "unknown"}\". Timestamp: {timestamp}";
             _logger.LogInformation(requestInfo);
 
             try
@@ -137,7 +137,7 @@ namespace GenericTableAPI.Controllers
                 _logger.LogInformation("Updating entity with id \"{id}\" in \"{tableName}\": \"{values}\". Timestamp: {timestamp}", id, tableName, JsonConvert.SerializeObject(valuesDict), timestamp);
                 await _service.UpdateAsync(tableName, id, values);
 
-                var updatedItem = await _service.GetByIdAsync(tableName, id);
+                dynamic? updatedItem = await _service.GetByIdAsync(tableName, id);
 
                 if (updatedItem == null)
                 {
@@ -158,8 +158,8 @@ namespace GenericTableAPI.Controllers
         [HttpDelete("{id}")]
         public async Task<ActionResult> Delete(string tableName, string id)
         {
-            var timestamp = DateTimeOffset.UtcNow;
-            var requestInfo = $"GET request to {HttpContext.Request.Path} from {HttpContext.Connection.RemoteIpAddress} by user {User.Identity.Name ?? "unknown."}. Timestamp: {timestamp}";
+            DateTimeOffset timestamp = DateTimeOffset.UtcNow;
+            string requestInfo = $"GET request to {HttpContext.Request.Path} from {HttpContext.Connection.RemoteIpAddress} by user {User.Identity?.Name ?? "unknown."}. Timestamp: {timestamp}";
             _logger.LogInformation(requestInfo);
 
             _logger.LogInformation("Deleting entity with id {id} from {tableName}. Timestamp: {timestamp}", id, tableName, timestamp);
@@ -174,7 +174,7 @@ namespace GenericTableAPI.Controllers
                 throw;
             }
 
-            var deletedItem = await _service.GetByIdAsync(tableName, id);
+            dynamic? deletedItem = await _service.GetByIdAsync(tableName, id);
 
             if (deletedItem != null)
             {

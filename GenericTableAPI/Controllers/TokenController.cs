@@ -21,7 +21,7 @@ namespace GenericTableAPI.Controllers
         public async Task<IActionResult> Post(User _userData)
         {
             if (_userData?.UserName == null || _userData.Password == null) return BadRequest();
-            var user = GetUser(_userData.UserName, _userData.Password);
+            User? user = GetUser(_userData.UserName, _userData.Password);
 
             if (user != null)
             {
@@ -48,7 +48,7 @@ namespace GenericTableAPI.Controllers
 
             SigningCredentials signingCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
 
-            JwtSecurityToken token = new JwtSecurityToken(
+            JwtSecurityToken token = new(
                 claims: claims,
                 expires: DateTime.Now.AddDays(1),
                 signingCredentials: signingCredentials);
