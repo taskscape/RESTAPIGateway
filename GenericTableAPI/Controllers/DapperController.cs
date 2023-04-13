@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 namespace GenericTableAPI.Controllers
 {
     [Authorize]
+    [BasicAuthentication]
     [Route("api/dapper/{tableName}")]
     [ApiController]
     public class DapperController : ControllerBase
@@ -25,7 +26,7 @@ namespace GenericTableAPI.Controllers
             DateTimeOffset timestamp = DateTimeOffset.UtcNow;
             string requestInfo = $"GET request to {HttpContext.Request.Path}{HttpContext.Request.QueryString} from {HttpContext.Connection.RemoteIpAddress} by user {User.Identity?.Name ?? "unknown"}. Timestamp: {timestamp}";
             _logger.LogInformation(requestInfo);
-            
+
             try
             {
                 _logger.LogInformation("Getting all entities from {tableName}. Timestamp: {timestamp}", tableName, timestamp);
