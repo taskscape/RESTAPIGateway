@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
+using Swashbuckle.AspNetCore.Filters;
 using Serilog;
 
 namespace GenericTableAPI
@@ -26,91 +27,57 @@ namespace GenericTableAPI
             // Add services to the container.
 
             builder.Services.AddControllers();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSingleton(
-                new DapperRepository(builder.Configuration.GetConnectionString("DefaultConnection")));
+            builder.Services.AddSingleton(new DapperRepository(builder.Configuration.GetConnectionString("DefaultConnection")));
             builder.Services.AddScoped<DapperService>();
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddSwaggerGen(options =>
+            {
+                options.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
                 {
-                    options.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
-                    {
-                        Description = "Standard Authorization header using the Bearer scheme (\"bearer {token}\")",
-                        In = ParameterLocation.Header,
-                        Name = "Authorization",
-                        Type = SecuritySchemeType.ApiKey
-                    });
+                    Description = "Standard Authorization header using the Bearer scheme (\"bearer {token}\")",
+                    In = ParameterLocation.Header,
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.ApiKey
+                });
 
-                    //options.OperationFilter<SecurityRequirmentsOperationFilter>();
-                }
-            );
-
-            builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSingleton(
-                new DapperRepository(builder.Configuration.GetConnectionString("DefaultConnection")));
-            builder.Services.AddScoped<DapperService>();
-            builder.Services.AddHttpContextAccessor();
-            builder.Services.AddSwaggerGen(options =>
+                options.OperationFilter<SecurityRequirementsOperationFilter>();
+            });
+            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
                 {
-                    options.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
-                    {
-                        Description = "Standard Authorization header using the Bearer scheme (\"bearer {token}\")",
-                        In = ParameterLocation.Header,
-                        Name = "Authorization",
-                        Type = SecuritySchemeType.ApiKey
-                    });
-
-                    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                        .AddJwtBearer(options =>
+                    var token = builder.Configuration.GetSection("Jwt:Key").Value;
+                    if (token != null)
+                        options.TokenValidationParameters = new TokenValidationParameters
                         {
-                            options.TokenValidationParameters = new TokenValidationParameters
-                            {
-                                ValidateIssuerSigningKey = true,
-                                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8
-                                    .GetBytes(builder.Configuration.GetSection("AppSettings:Token").Value)),
-                                ValidateIssuer = false,
-                                ValidateAudience = false
-                            };
-                        });
+                            ValidateIssuerSigningKey = true,
+                            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8
+                                .GetBytes(token)),
+                            ValidateIssuer = false,
+                            ValidateAudience = false
+                        };
+                });
+            builder.Logging.ClearProviders();
+            builder.Logging.AddSerilog();
+            var app = builder.Build();
 
-                    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                        .AddJwtBearer(options =>
-                        {
-                            var token = builder.Configuration.GetSection("Jwt:Key").Value;
-                            if (token != null)
-                                options.TokenValidationParameters = new TokenValidationParameters
-                                {
-                                    ValidateIssuerSigningKey = true,
-                                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8
-                                        .GetBytes(token)),
-                                    ValidateIssuer = false,
-                                    ValidateAudience = false
-                                };
-                        });
+            // Configure the HTTP request pipeline.
+            if (app.Environment.IsDevelopment())
+            {
+                app.UseSwagger();
+                app.UseSwaggerUI();
+            }
 
-                    var app = builder.Build();
+            app.UseHttpsRedirection();
 
-                    // Configure the HTTP request pipeline.
-                    if (app.Environment.IsDevelopment())
-                    {
-                        app.UseSwagger();
-                        app.UseSwaggerUI();
-                    }
+            app.UseAuthentication();
 
-                    app.UseHttpsRedirection();
+            app.UseAuthorization();
 
-                    app.UseAuthentication();
+            app.MapControllers();
 
-                    app.UseAuthorization();
-
-                    app.UseAuthorization();
-
-                    app.MapControllers();
-
-                    app.Run();
-                }
-            );
+            app.Run();
         }
     }
 }
