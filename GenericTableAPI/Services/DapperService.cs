@@ -26,12 +26,12 @@ public class DapperService
         return _repository.AddAsync(tableName, values);
     }
 
-    public Task UpdateAsync(string tableName, string id, IDictionary<string, object?> values)
+    public Task<bool> UpdateAsync(string tableName, string id, IDictionary<string, object?> values)
     {
         return _repository.UpdateAsync(tableName, id, values);
     }
 
-    public Task DeleteAsync(string tableName, string id)
+    public Task<bool> DeleteAsync(string tableName, string id)
     {
         return _repository.DeleteAsync(tableName, id);
     }

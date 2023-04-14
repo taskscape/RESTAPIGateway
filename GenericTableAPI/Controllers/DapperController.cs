@@ -5,9 +5,8 @@ using Newtonsoft.Json;
 
 namespace GenericTableAPI.Controllers
 {
-    [Authorize]
-    [BasicAuthentication]
-    [Route("api/dapper/{tableName}")]
+    [Authorize(AuthenticationSchemes = "Bearer, BasicAuthentication")]
+    [Route("api/{tableName}")]
     [ApiController]
     public class DapperController : ControllerBase
     {
@@ -30,7 +29,7 @@ namespace GenericTableAPI.Controllers
             try
             {
                 _logger.LogInformation("Getting all entities from {tableName}. Timestamp: {timestamp}", tableName, timestamp);
-                var entities = await _service.GetAllAsync(tableName);
+                IEnumerable<dynamic> entities = await _service.GetAllAsync(tableName);
 
                 if (!entities.Any())
                 {
@@ -86,12 +85,11 @@ namespace GenericTableAPI.Controllers
             }
         }
 
-
         [HttpPost]
         public async Task<ActionResult> Add(string tableName, [FromBody] IDictionary<string, object?> values)
         {
             DateTimeOffset timestamp = DateTimeOffset.UtcNow;
-            var valuesDict = values.ToDictionary(pair => pair.Key, pair => pair.Value?.ToString());
+            Dictionary<string, string?> valuesDict = values.ToDictionary(pair => pair.Key, pair => pair.Value?.ToString());
 
             string requestInfo = $"POST request to \"{HttpContext.Request.Path}\" from \"{HttpContext.Connection.RemoteIpAddress}\" by user \"{User.Identity?.Name ?? "unknown"}\" with values: {JsonConvert.SerializeObject(valuesDict)}. Timestamp: {timestamp}";
             _logger.LogInformation(requestInfo);
@@ -112,9 +110,9 @@ namespace GenericTableAPI.Controllers
                 _logger.LogInformation("Added a new entity with id \"{id}\" to \"{tableName}\". Timestamp: {timestamp}", id, tableName, timestamp);
                 return Ok(newItem);
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                _logger.LogError(ex, $"Error while processing request: {requestInfo}. Timestamp: {timestamp}");
+                _logger.LogError(exception, $"Error while processing request: {requestInfo}. Timestamp: {timestamp}");
                 return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while processing your request");
             }
             finally
@@ -128,7 +126,7 @@ namespace GenericTableAPI.Controllers
         public async Task<ActionResult> Update(string tableName, [FromRoute] string id, [FromBody] IDictionary<string, object?> values)
         {
             DateTimeOffset timestamp = DateTimeOffset.UtcNow;
-            var valuesDict = values.ToDictionary(pair => pair.Key, pair => pair.Value?.ToString());
+            Dictionary<string, string?> valuesDict = values.ToDictionary(pair => pair.Key, pair => pair.Value?.ToString());
 
             string requestInfo = $"PUT request to \"{HttpContext.Request.Path}\" from \"{HttpContext.Connection.RemoteIpAddress}\" by user \"{User.Identity?.Name ?? "unknown"}\". Timestamp: {timestamp}";
             _logger.LogInformation(requestInfo);
@@ -149,9 +147,9 @@ namespace GenericTableAPI.Controllers
                 _logger.LogInformation("Updated entity with id \"{id}\" in \"{tableName}\". Timestamp: {timestamp}", id, tableName, timestamp);
                 return Ok(updatedItem);
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                _logger.LogError(ex, $"Error while processing request: {requestInfo}. Timestamp: {timestamp}");
+                _logger.LogError(exception, $"Error while processing request: {requestInfo}. Timestamp: {timestamp}");
                 return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while processing your request");
             }
         }
@@ -169,9 +167,9 @@ namespace GenericTableAPI.Controllers
             {
                 await _service.DeleteAsync(tableName, id);
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                _logger.LogError($"Error while processing request: {requestInfo} - {ex}. Timestamp: {timestamp}");
+                _logger.LogError($"Error while processing request: {requestInfo} - {exception}. Timestamp: {timestamp}");
                 throw;
             }
 

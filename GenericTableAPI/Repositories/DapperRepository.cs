@@ -9,6 +9,7 @@ namespace GenericTableAPI.Repositories;
 public class DapperRepository
 {
     private readonly string? _connectionString;
+    private readonly string? _schemaName;
 
     private static object? SanitizeValue(object? value)
     {
@@ -17,32 +18,34 @@ public class DapperRepository
         return sanitizedValue;
     }
 
-    public DapperRepository(string? connectionString)
+    /// <summary>
+    /// Returns the table name with schemaName if it is not null
+    /// </summary>
+    /// <param name="tableName"></param>
+    /// <param name="schemaName"></param>
+    /// <returns><see cref="string"/></returns>
+    private static string GetTableName(string tableName, string? schemaName)
+    {
+        return string.IsNullOrEmpty(schemaName) ? tableName : $"{schemaName}.{tableName}";
+    }
+
+    public DapperRepository(string? connectionString, string? schemaName)
     {
         _connectionString = connectionString;
+        _schemaName = schemaName;
     }
 
-    public static DatabaseType DetectDatabaseType(string connectionString)
-    {
-        if (connectionString.Contains("Data Source=") && connectionString.Contains("User Id="))
-        {
-            return DatabaseType.Oracle;
-        }
-
-        if (connectionString.Contains("Server=") && connectionString.Contains("Database="))
-        {
-            return DatabaseType.SqlServer;
-        }
-
-        return DatabaseType.Unknown;
-    }
-
+    /// <summary>
+    /// Returns all rows from a given table
+    /// </summary>
+    /// <param name="tableName"></param>
+    /// <returns>List of objects</returns>
     public async Task<IEnumerable<dynamic>> GetAllAsync(string tableName)
     {
         using DatabaseHandler connectionHandler = new(_connectionString);
         connectionHandler.Open();
-        string sql = $"SELECT * FROM {tableName}";
-        var result = new List<dynamic>();
+        string sql = $"SELECT * FROM {GetTableName(tableName, _schemaName)}";
+        List<dynamic> result = new();
         await foreach (dynamic item in ToDynamicList(await connectionHandler.ExecuteReaderAsync(sql)))
         {
             result.Add(item);
@@ -51,19 +54,25 @@ public class DapperRepository
         return result;
     }
 
-    public async Task<dynamic?> GetByIdAsync(string tableName, string id)
+    /// <summary>
+    /// Returns a single row from a table by its primary key
+    /// </summary>
+    /// <param name="tableName">Table name</param>
+    /// <param name="primaryKey">Primary key</param>
+    /// <returns></returns>
+    public async Task<dynamic?> GetByIdAsync(string tableName, string primaryKey)
     {
-        string primaryKeyColumn = GetPrimaryKeyColumnName(_connectionString, tableName, GetDatabaseType(_connectionString));
+        string primaryKeyColumn = GetPrimaryKeyColumnName(_connectionString, GetTableName(tableName, _schemaName), GetDatabaseType(_connectionString));
         using DatabaseHandler connectionHandler = new(_connectionString);
         connectionHandler.Open();
-        await using DbDataReader reader = await connectionHandler.ExecuteReaderAsync($"SELECT * FROM {tableName} WHERE {primaryKeyColumn} = {id};");
+        await using DbDataReader reader = await connectionHandler.ExecuteReaderAsync($"SELECT * FROM {GetTableName(tableName, _schemaName)} WHERE {primaryKeyColumn} = {primaryKey};");
         if (await reader.ReadAsync())
         {
             dynamic? result = new ExpandoObject();
-            var dict = (IDictionary<string, object>)result;
+            IDictionary<string, object> dictionary = (IDictionary<string, object>)result;
             for (int i = 0; i < reader.FieldCount; i++)
             {
-                dict.Add(reader.GetName(i), reader.GetValue(i));
+                dictionary.Add(reader.GetName(i), reader.GetValue(i));
             }
             connectionHandler.Close();
             return result;
@@ -73,6 +82,13 @@ public class DapperRepository
         return null;
     }
 
+    /// <summary>
+    /// Creates new row in a given table
+    /// </summary>
+    /// <param name="tableName">Table name</param>
+    /// <param name="values">values to insert</param>
+    /// <returns>Identifier of a newly created row</returns>
+    /// <exception cref="ArgumentException"></exception>
     public async Task<object?> AddAsync(string tableName, IDictionary<string, object?> values)
     {
         // Validate and sanitize each column value
@@ -92,46 +108,64 @@ public class DapperRepository
 
         string columns = string.Join(", ", values.Keys);
         string strValues = string.Join(", ", values.Values.Select(k => $"'{k}'"));
-        string primaryKeyColumn = GetPrimaryKeyColumnName(_connectionString, tableName, GetDatabaseType(_connectionString));
+        string primaryKeyColumn = GetPrimaryKeyColumnName(_connectionString, GetTableName(tableName, _schemaName), GetDatabaseType(_connectionString));
 
         using DatabaseHandler connectionHandler = new(_connectionString);
         connectionHandler.Open();
-        object? id = await connectionHandler.ExecuteScalarAsync($"INSERT INTO {tableName} ({columns}) OUTPUT Inserted.{primaryKeyColumn} VALUES ({strValues});");
+        object? id = await connectionHandler.ExecuteScalarAsync($"INSERT INTO {GetTableName(tableName, _schemaName)} ({columns}) OUTPUT Inserted.{primaryKeyColumn} VALUES ({strValues});");
         connectionHandler.Close();
 
         return id;
     }
 
-    public async Task UpdateAsync(string tableName, string id, IDictionary<string, object?> values)
+    /// <summary>
+    /// Updates a row in a given table
+    /// </summary>
+    /// <param name="tableName">Table name</param>
+    /// <param name="primaryKey">Primary key</param>
+    /// <param name="values">values to update</param>
+    /// <returns>True on success</returns>
+    /// <exception cref="ArgumentNullException"></exception>
+    /// <exception cref="ArgumentException"></exception>
+    public async Task<bool> UpdateAsync(string tableName, string primaryKey, IDictionary<string, object?> values)
     {
-        var sanitizedValues = new Dictionary<string, object>();
+        Dictionary<string, object>? sanitizedValues = new();
         if (sanitizedValues == null) throw new ArgumentNullException(nameof(sanitizedValues));
-        foreach (var kvp in values)
+        foreach (KeyValuePair<string, object?> pair in values)
         {
-            if (!Regex.IsMatch(kvp.Key, @"^[\w\d]+$"))
+            if (!Regex.IsMatch(pair.Key, @"^[\w\d]+$"))
             {
                 throw new ArgumentException("Invalid column name");
             }
 
-            object? sanitizedValue = SanitizeValue(kvp.Value);
-            sanitizedValues.Add(kvp.Key, sanitizedValue);
+            object? sanitizedValue = SanitizeValue(pair.Value);
+            sanitizedValues.Add(pair.Key, sanitizedValue);
         }
 
         string setClauses = string.Join(", ", values.Select(k => $"{k.Key} = '{k.Value}'"));
 
-        string primaryKeyColumn = GetPrimaryKeyColumnName(_connectionString, tableName, GetDatabaseType(_connectionString));
+        string primaryKeyColumn = GetPrimaryKeyColumnName(_connectionString, GetTableName(tableName, _schemaName), GetDatabaseType(_connectionString));
         using DatabaseHandler connectionHandler = new(_connectionString);
         connectionHandler.Open();
-        await connectionHandler.ExecuteScalarAsync($"UPDATE {tableName} SET {setClauses} WHERE {primaryKeyColumn} = {id};");
+        await connectionHandler.ExecuteScalarAsync($"UPDATE {GetTableName(tableName, _schemaName)} SET {setClauses} WHERE {primaryKeyColumn} = {primaryKey};");
         connectionHandler.Close();
+
+        return true;
     }
 
-    public async Task DeleteAsync(string tableName, string id)
+    /// <summary>
+    /// Deletes a row from a table
+    /// </summary>
+    /// <param name="tableName">Table name</param>
+    /// <param name="primaryKey">Primary key</param>
+    /// <returns>True on success</returns>
+    public async Task<bool> DeleteAsync(string tableName, string primaryKey)
     {
-        string primaryKeyColumn = GetPrimaryKeyColumnName(_connectionString, tableName, GetDatabaseType(_connectionString));
+        string primaryKeyColumn = GetPrimaryKeyColumnName(_connectionString, GetTableName(tableName, _schemaName), GetDatabaseType(_connectionString));
         using DatabaseHandler connectionHandler = new(_connectionString);
         connectionHandler.Open();
-        await connectionHandler.ExecuteScalarAsync($"DELETE FROM {tableName} WHERE {primaryKeyColumn} = {id};");
+        await connectionHandler.ExecuteScalarAsync($"DELETE FROM {GetTableName(tableName, _schemaName)} WHERE {primaryKeyColumn} = {primaryKey};");
         connectionHandler.Close();
+        return true;
     }
 }

@@ -3,6 +3,7 @@ using GenericTableAPI.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.Filters;
 using Serilog;
@@ -13,10 +14,10 @@ namespace GenericTableAPI
     {
         public static void Main(string[] args)
         {
-            var builder = WebApplication.CreateBuilder(args);
+            WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-            var configuration = new ConfigurationBuilder()
-                .AddJsonFile("appsettings.json")
+            IConfigurationRoot configuration = new ConfigurationBuilder()
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
                 .Build();
 
             Log.Logger = new LoggerConfiguration()
@@ -29,14 +30,14 @@ namespace GenericTableAPI
             builder.Services.AddControllers();
 
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSingleton(new DapperRepository(builder.Configuration.GetConnectionString("DefaultConnection")));
+            builder.Services.AddSingleton(new DapperRepository(builder.Configuration.GetConnectionString("DefaultConnection"), builder.Configuration.GetValue<string>("SchemaName")));
             builder.Services.AddScoped<DapperService>();
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddSwaggerGen(options =>
             {
                 options.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
                 {
-                    Description = "Standard Authorization header using the Bearer scheme (\"bearer {token}\")",
+                    Description = "Standard Authorization header using scheme (\"scheme {token}\")",
                     In = ParameterLocation.Header,
                     Name = "Authorization",
                     Type = SecuritySchemeType.ApiKey
@@ -47,20 +48,23 @@ namespace GenericTableAPI
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
-                    var token = builder.Configuration.GetSection("Jwt:Key").Value;
+                    string? token = builder.Configuration.GetSection("JwtSettings:Key").Value;
                     if (token != null)
                         options.TokenValidationParameters = new TokenValidationParameters
                         {
                             ValidateIssuerSigningKey = true,
-                            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8
-                                .GetBytes(token)),
+                            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(token)),
                             ValidateIssuer = false,
                             ValidateAudience = false
                         };
                 });
+
+            builder.Services.AddAuthentication("BasicAuthentication")
+                .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("BasicAuthentication", null);
+
             builder.Logging.ClearProviders();
             builder.Logging.AddSerilog();
-            var app = builder.Build();
+            WebApplication app = builder.Build();
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
@@ -70,11 +74,35 @@ namespace GenericTableAPI
             }
 
             app.UseHttpsRedirection();
-
+            
+            app.UseRouting();
+            
             app.UseAuthentication();
-
             app.UseAuthorization();
 
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllerRoute(
+                    name: "TokenController",
+                    pattern: "api/token",
+                    defaults: new { controller = "TokenController" },
+                    constraints: new { controllerPriority = new ControllerPriorityConstraint("TokenController") }
+                );
+                
+                endpoints.MapControllerRoute(
+                    name: "TestController",
+                    pattern: "api/test",
+                    defaults: new { controller = "TestController", action = "test" },
+                    constraints: new { controllerPriority = new ControllerPriorityConstraint("TestController") }
+                );
+
+                endpoints.MapControllerRoute(
+                    name: "GenericController",
+                    pattern: "{controller}",
+                    defaults: new { controller = "DapperController" }
+                );
+            });
+            
             app.MapControllers();
 
             app.Run();
