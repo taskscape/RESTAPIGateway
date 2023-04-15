@@ -2,6 +2,7 @@
 using Oracle.ManagedDataAccess.Client;
 using System.Data.Common;
 using System.Dynamic;
+using System.Globalization;
 
 namespace GenericTableAPI.Utilities;
 
@@ -16,12 +17,21 @@ public static class DatabaseUtilities
 
     public static DatabaseType GetDatabaseType(string? connectionString)
     {
-        if (connectionString.Contains("Data Source=") && connectionString.Contains("User Id="))
+        if (connectionString == null) throw new ArgumentNullException(nameof(connectionString));
+
+        connectionString = connectionString.ToUpper(CultureInfo.InvariantCulture);
+
+        if (connectionString.Contains("DATA SOURCE=") && connectionString.Contains("USER ID="))
         {
             return DatabaseType.Oracle;
         }
 
-        if (connectionString.Contains("Server=") && connectionString.Contains("Database="))
+        if (connectionString.Contains("SERVER=(") && connectionString.Contains("(HOST="))
+        {
+            return DatabaseType.Oracle;
+        }
+
+        if (connectionString.Contains("SERVER=") && connectionString.Contains("DATABASE="))
         {
             return DatabaseType.SqlServer;
         }
