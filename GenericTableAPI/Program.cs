@@ -92,7 +92,7 @@ namespace GenericTableAPI
                 endpoints.MapControllerRoute(
                     name: "TestController",
                     pattern: "api/test",
-                    defaults: new { controller = "TestController", action = "test" },
+                    defaults: new { controller = "TestController" },
                     constraints: new { controllerPriority = new ControllerPriorityConstraint("TestController") }
                 );
 

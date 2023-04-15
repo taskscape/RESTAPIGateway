@@ -1,6 +1,5 @@
 ﻿using System.Net.Http.Headers;
 using System.Security.Claims;
-using System.Text;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
@@ -25,28 +24,29 @@ namespace GenericTableAPI
 
             try
             {
-                var authenticationHeaderValue = AuthenticationHeaderValue.Parse(Request.Headers["Authorization"]);
+                AuthenticationHeaderValue authenticationHeaderValue = AuthenticationHeaderValue.Parse(Request.Headers["Authorization"]);
 
                 if (!"Basic".Equals(authenticationHeaderValue.Scheme, StringComparison.OrdinalIgnoreCase))
                     return AuthenticateResult.NoResult();
 
                 //Commented line throws an exception
                 //var credentials = Encoding.UTF8.GetString(Convert.FromBase64String(authenticationHeaderValue.Parameter)).Split(':', 2);
-                var credentials = authenticationHeaderValue.Parameter.Split(':', 2);
-                var username = credentials[0];
-                var password = credentials[1];
+                string[]? credentials = authenticationHeaderValue.Parameter?.Split(':', 2);
+                string? username = credentials?[0];
+                string? password = credentials?[1];
 
-                if (ValidateCredentials(username, password))
+                if (password == null || username == null || !ValidateCredentials(username, password))
                 {
-                    var claims = new[] { new Claim(ClaimTypes.Name, username) };
-                    var identity = new ClaimsIdentity(claims, Scheme.Name);
-                    var principal = new ClaimsPrincipal(identity);
-                    var ticket = new AuthenticationTicket(principal, Scheme.Name);
-
-                    return AuthenticateResult.Success(ticket);
+                    return AuthenticateResult.Fail("Invalid username or password.");
                 }
 
-                return AuthenticateResult.Fail("Invalid username or password.");
+                Claim[] claims = { new(ClaimTypes.Name, username) };
+                ClaimsIdentity identity = new(claims, Scheme.Name);
+                ClaimsPrincipal principal = new(identity);
+                AuthenticationTicket ticket = new(principal, Scheme.Name);
+
+                return AuthenticateResult.Success(ticket);
+
             }
             catch (FormatException)
             {
@@ -54,7 +54,7 @@ namespace GenericTableAPI
             }
         }
 
-        private bool ValidateCredentials(string username, string password)
+        private static bool ValidateCredentials(string username, string password)
         {
             return true;
         }
