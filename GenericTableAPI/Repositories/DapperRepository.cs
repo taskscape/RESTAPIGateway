@@ -10,6 +10,7 @@ public class DapperRepository
 {
     private readonly string? _connectionString;
     private readonly string? _schemaName;
+    private readonly ILogger _logger;
 
     private static object? SanitizeValue(object? value)
     {
@@ -29,10 +30,11 @@ public class DapperRepository
         return string.IsNullOrEmpty(schemaName) ? tableName : $"{schemaName}.{tableName}";
     }
 
-    public DapperRepository(string? connectionString, string? schemaName)
+    public DapperRepository(string? connectionString, string? schemaName, ILogger logger)
     {
         _connectionString = connectionString;
         _schemaName = schemaName;
+        _logger = logger;
     }
 
     /// <summary>
@@ -44,12 +46,21 @@ public class DapperRepository
     {
         using DatabaseHandler connectionHandler = new(_connectionString);
         connectionHandler.Open();
-        string sql = $"SELECT * FROM {GetTableName(tableName, _schemaName)}";
-        List<dynamic> result = new();
-        await foreach (dynamic item in ToDynamicList(await connectionHandler.ExecuteReaderAsync(sql)))
+
+        string query = $"SELECT * FROM {GetTableName(tableName, _schemaName)}";
+        try
         {
-            result.Add(item);
+            List<dynamic> result = new();
+            await foreach (dynamic item in ToDynamicList(await connectionHandler.ExecuteReaderAsync(query)))
+            {
+                result.Add(item);
+            }
         }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "An error occurred while executing GetAllAsync for query: " + query);
+        }
+
         connectionHandler.Close();
         return result;
     }
@@ -65,17 +76,27 @@ public class DapperRepository
         string primaryKeyColumn = GetPrimaryKeyColumnName(_connectionString, GetTableName(tableName, _schemaName), GetDatabaseType(_connectionString));
         using DatabaseHandler connectionHandler = new(_connectionString);
         connectionHandler.Open();
-        await using DbDataReader reader = await connectionHandler.ExecuteReaderAsync($"SELECT * FROM {GetTableName(tableName, _schemaName)} WHERE {primaryKeyColumn} = {primaryKey};");
-        if (await reader.ReadAsync())
+        string query = $"SELECT * FROM {GetTableName(tableName, _schemaName)} WHERE {primaryKeyColumn} = {primaryKey};";
+
+        try
         {
-            dynamic? result = new ExpandoObject();
-            IDictionary<string, object> dictionary = (IDictionary<string, object>)result;
-            for (int i = 0; i < reader.FieldCount; i++)
+            await using DbDataReader reader = await connectionHandler.ExecuteReaderAsync(query);
+            if (await reader.ReadAsync())
             {
-                dictionary.Add(reader.GetName(i), reader.GetValue(i));
+                dynamic? result = new ExpandoObject();
+                IDictionary<string, object> dictionary = (IDictionary<string, object>)result;
+                for (int i = 0; i < reader.FieldCount; i++)
+                {
+                    dictionary.Add(reader.GetName(i), reader.GetValue(i));
+                }
+
+                connectionHandler.Close();
+                return result;
             }
-            connectionHandler.Close();
-            return result;
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "An error occurred while executing GetByIdAsync for query: " + query);
         }
 
         connectionHandler.Close();
@@ -112,10 +133,24 @@ public class DapperRepository
 
         using DatabaseHandler connectionHandler = new(_connectionString);
         connectionHandler.Open();
-        object? id = await connectionHandler.ExecuteScalarAsync($"INSERT INTO {GetTableName(tableName, _schemaName)} ({columns}) OUTPUT Inserted.{primaryKeyColumn} VALUES ({strValues});");
-        connectionHandler.Close();
 
-        return id;
+        string query =
+            $"INSERT INTO {GetTableName(tableName, _schemaName)} ({columns}) OUTPUT Inserted.{primaryKeyColumn} VALUES ({strValues});";
+
+        try
+        {
+            object? id = await connectionHandler.ExecuteScalarAsync(query);
+            return id;
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "An error occurred while executing AddAsync for query: " + query);
+            return null;
+        }
+        finally
+        {
+            connectionHandler.Close();
+        }
     }
 
     /// <summary>
@@ -147,10 +182,23 @@ public class DapperRepository
         string primaryKeyColumn = GetPrimaryKeyColumnName(_connectionString, GetTableName(tableName, _schemaName), GetDatabaseType(_connectionString));
         using DatabaseHandler connectionHandler = new(_connectionString);
         connectionHandler.Open();
-        await connectionHandler.ExecuteScalarAsync($"UPDATE {GetTableName(tableName, _schemaName)} SET {setClauses} WHERE {primaryKeyColumn} = {primaryKey};");
-        connectionHandler.Close();
+        string query =
+            $"UPDATE {GetTableName(tableName, _schemaName)} SET {setClauses} WHERE {primaryKeyColumn} = {primaryKey};";
 
-        return true;
+        try
+        {
+            await connectionHandler.ExecuteScalarAsync(query);
+            return true;
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "An error occurred while executing UpdateAsync for query: " + query);
+            return false;
+        }
+        finally
+        {
+            connectionHandler.Close();
+        }
     }
 
     /// <summary>
@@ -164,8 +212,22 @@ public class DapperRepository
         string primaryKeyColumn = GetPrimaryKeyColumnName(_connectionString, GetTableName(tableName, _schemaName), GetDatabaseType(_connectionString));
         using DatabaseHandler connectionHandler = new(_connectionString);
         connectionHandler.Open();
-        await connectionHandler.ExecuteScalarAsync($"DELETE FROM {GetTableName(tableName, _schemaName)} WHERE {primaryKeyColumn} = {primaryKey};");
-        connectionHandler.Close();
-        return true;
+        string query = $"DELETE FROM {GetTableName(tableName, _schemaName)} WHERE {primaryKeyColumn} = {primaryKey};";
+
+        try
+        {
+            await connectionHandler.ExecuteScalarAsync(query);
+            return true;
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "An error occurred while executing DeleteAsync for query: " + query);
+            return false;
+        }
+        finally
+        {
+            connectionHandler.Close();
+
+        }
     }
 }

@@ -29,28 +29,34 @@ namespace GenericTableAPI.Controllers
 
             try
             {
-                _logger.LogInformation("Getting all entities from {tableName}. Timestamp: {timestamp}", tableName, timestamp);
+                _logger.LogInformation("Getting all entities from {0}. Timestamp: {1}", tableName, timestamp);
                 IEnumerable<dynamic> entities = await _service.GetAllAsync(tableName);
 
-                if (!entities.Any())
+                IEnumerable<dynamic> enumerable = entities as dynamic[] ?? entities.ToArray();
+                if (!enumerable.Any())
                 {
-                    _logger.LogInformation("No entities found for {tableName}. Timestamp: {timestamp}", tableName, timestamp);
+                    _logger.LogInformation("No entities found for {0}. Timestamp: {1}", tableName, timestamp);
                     return NoContent();
                 }
 
-                _logger.LogInformation("Found {count} entities from {tableName}. Timestamp: {timestamp}", entities.Count(), tableName, timestamp);
+                _logger.LogInformation("Found {0} entities from {1}. Timestamp: {2}", enumerable.Count(), tableName, timestamp);
+
+                Response.StatusCode = 200;
                 return Ok(entities);
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                _logger.LogError(ex, "An error occurred while getting entities from {tableName}. Timestamp: {timestamp}", tableName, timestamp);
-                return StatusCode(500, "An error occurred while processing your request");
+                _logger.LogError(exception, "An error occurred while getting entities from {0}. Timestamp: {1}", tableName, timestamp);
+                Response.StatusCode = 500;
             }
             finally
             {
                 string responseInfo = $"Response returned from {HttpContext.Request.Path}{HttpContext.Request.QueryString} with status code {Response.StatusCode}. Timestamp: {timestamp}";
                 _logger.LogInformation(responseInfo);
             }
+
+            return StatusCode(500, "An error occurred while processing your request");
+
         }
 
         [HttpGet("{id}")]
