@@ -26,7 +26,7 @@ public static class DatabaseUtilities
             return DatabaseType.Oracle;
         }
 
-        if (connectionString.Contains("SERVER=(") && connectionString.Contains("(HOST="))
+        if (connectionString.Contains("SERVER = (") && connectionString.Contains("(HOST="))
         {
             return DatabaseType.Oracle;
         }

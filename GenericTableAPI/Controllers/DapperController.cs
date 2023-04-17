@@ -1,11 +1,12 @@
 ﻿using GenericTableAPI.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 
 namespace GenericTableAPI.Controllers
 {
-    [Authorize(AuthenticationSchemes = "Bearer, BasicAuthentication")]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme + ",BasicAuthentication")]
     [Route("api/{tableName}")]
     [ApiController]
     public class DapperController : ControllerBase

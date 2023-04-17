@@ -1,0 +1,81 @@
+{
+	"info": {
+		"_postman_id": "cc182181-24a1-40dd-a2cf-23d8f0e1979a",
+		"name": "Test",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "721199"
+	},
+	"item": [
+		{
+			"name": "https://localhost:7104/api/test",
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "tes",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "test",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://localhost:7104/api/test",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "7104",
+					"path": [
+						"api",
+						"test"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "https://localhost:7104/api/test/basic",
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "test",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "test",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://localhost:7104/api/test/basic-auth",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "7104",
+					"path": [
+						"api",
+						"test",
+						"basic-auth"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

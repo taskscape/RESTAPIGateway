@@ -24,15 +24,13 @@ namespace GenericTableAPI
                 .ReadFrom.Configuration(configuration)
                 .CreateLogger();
 
-
-            // Add services to the container.
-
             builder.Services.AddControllers();
 
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSingleton(new DapperRepository(builder.Configuration.GetConnectionString("DefaultConnection"), builder.Configuration.GetValue<string>("SchemaName")));
             builder.Services.AddScoped<DapperService>();
             builder.Services.AddHttpContextAccessor();
+
             builder.Services.AddSwaggerGen(options =>
             {
                 options.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
@@ -45,6 +43,20 @@ namespace GenericTableAPI
 
                 options.OperationFilter<SecurityRequirementsOperationFilter>();
             });
+            builder.Services.AddSwaggerGen(options =>
+            {
+                options.AddSecurityDefinition("basic", new OpenApiSecurityScheme
+                {
+                    In = ParameterLocation.Header,
+                    Description = "Standard Authorization header using basic authentication scheme",
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "basic"
+                });
+            });
+
+            builder.Services.AddAuthentication("BasicAuthentication")
+                .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("BasicAuthentication", null);
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
@@ -59,14 +71,14 @@ namespace GenericTableAPI
                         };
                 });
 
-            builder.Services.AddAuthentication("BasicAuthentication")
-                .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("BasicAuthentication", null);
 
             builder.Logging.ClearProviders();
             builder.Logging.AddSerilog();
-            WebApplication app = builder.Build();
 
-            // Configure the HTTP request pipeline.
+            WebApplication app = builder.Build();
+            
+            app.UseRouting();
+
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
@@ -75,10 +87,10 @@ namespace GenericTableAPI
 
             app.UseHttpsRedirection();
             
-            app.UseRouting();
-            
             app.UseAuthentication();
             app.UseAuthorization();
+
+            // prioritize controllers in the following order
 
             app.UseEndpoints(endpoints =>
             {

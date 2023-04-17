@@ -1,5 +1,6 @@
 ﻿using System.Net.Http.Headers;
 using System.Security.Claims;
+using System.Text;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
@@ -20,20 +21,22 @@ namespace GenericTableAPI
         protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
         {
             if (!Request.Headers.ContainsKey("Authorization"))
+            {
                 return AuthenticateResult.Fail("Authorization header not found.");
+            }
 
             try
             {
-                AuthenticationHeaderValue authenticationHeaderValue = AuthenticationHeaderValue.Parse(Request.Headers["Authorization"]);
+                AuthenticationHeaderValue authenticationHeaderValue =
+                    AuthenticationHeaderValue.Parse(Request.Headers["Authorization"]);
 
                 if (!"Basic".Equals(authenticationHeaderValue.Scheme, StringComparison.OrdinalIgnoreCase))
                     return AuthenticateResult.NoResult();
 
-                //Commented line throws an exception
-                //var credentials = Encoding.UTF8.GetString(Convert.FromBase64String(authenticationHeaderValue.Parameter)).Split(':', 2);
-                string[]? credentials = authenticationHeaderValue.Parameter?.Split(':', 2);
-                string? username = credentials?[0];
-                string? password = credentials?[1];
+                string[]? credentials = Encoding.UTF8.GetString(Convert.FromBase64String(authenticationHeaderValue.Parameter)).Split(':', 2);
+
+                string? username = credentials.FirstOrDefault();
+                string? password = credentials.LastOrDefault();
 
                 if (password == null || username == null || !ValidateCredentials(username, password))
                 {
@@ -52,10 +55,12 @@ namespace GenericTableAPI
             {
                 return AuthenticateResult.Fail("Invalid authorization header.");
             }
+
         }
 
         private static bool ValidateCredentials(string username, string password)
         {
+            // TODO: implement user validation logic
             return true;
         }
     }
