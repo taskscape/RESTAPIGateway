@@ -1,0 +1,65 @@
+{
+  "Database": {
+    "Tables": {
+      "SharedTasks": [
+        "select"
+      ],
+      "tags": [
+        "select"
+      ],
+      "TagsOfTask": [
+        "select"
+      ],
+      "task": [
+        "select"
+      ],
+      "Activities": [
+        "select"
+      ],
+      "categories": [
+        "select"
+      ],
+      "task_subscriptions": [
+        "select"
+      ],
+      "comments": [
+        "select"
+      ],
+      "TaskInvoices": [
+        "select"
+      ],
+      "Context": [
+        "select"
+      ],
+      "TaskStates": [
+        "select"
+      ],
+      "ContextActions": [
+        "select"
+      ],
+      "TaskStats": [
+        "select"
+      ],
+      "ContextBalances": [
+        "select"
+      ],
+      "Templates": [
+        "select"
+      ],
+      "ContextContracts": [
+        "select"
+      ],
+      "ContextDiscounts": [
+        "select"
+      ],
+      "timelog": [
+        "select"
+      ],
+      "test": [
+        "select",
+        "update",
+        "delete"
+      ]
+    }
+  }
+}

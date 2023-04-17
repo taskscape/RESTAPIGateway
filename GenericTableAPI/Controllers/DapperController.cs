@@ -1,5 +1,6 @@
 ﻿using GenericTableAPI.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using GenericTableAPI.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
@@ -13,16 +14,21 @@ namespace GenericTableAPI.Controllers
     {
         private readonly DapperService _service;
         private readonly ILogger<DapperController> _logger;
+        private readonly IConfiguration _configuration;
 
-        public DapperController(DapperService service, ILogger<DapperController> logger)
+        public DapperController(DapperService service, ILogger<DapperController> logger, IConfiguration configuration)
         {
             _service = service;
             _logger = logger;
+            _configuration = configuration;
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<dynamic>>> GetAll(string tableName)
         {
+            if (!TableValidationUtility.ValidTablePermission(_configuration, tableName, "select"))
+                return Forbid();
+
             DateTimeOffset timestamp = DateTimeOffset.UtcNow;
             string requestInfo = $"GET request to {HttpContext.Request.Path}{HttpContext.Request.QueryString} from {HttpContext.Connection.RemoteIpAddress} by user {User.Identity?.Name ?? "unknown"}. Timestamp: {timestamp}";
             _logger.LogInformation(requestInfo);
@@ -62,6 +68,9 @@ namespace GenericTableAPI.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<dynamic>> GetById(string tableName, [FromRoute] string id)
         {
+            if (!TableValidationUtility.ValidTablePermission(_configuration, tableName, "select"))
+                return Forbid();
+
             DateTimeOffset timestamp = DateTimeOffset.UtcNow;
             string requestInfo = $"GET request to {HttpContext.Request.Path}{HttpContext.Request.QueryString} from {HttpContext.Connection.RemoteIpAddress} by user {User.Identity?.Name ?? "unknown"}. Timestamp: {timestamp}";
             _logger.LogInformation(requestInfo);
@@ -95,6 +104,9 @@ namespace GenericTableAPI.Controllers
         [HttpPost]
         public async Task<ActionResult> Add(string tableName, [FromBody] IDictionary<string, object?> values)
         {
+            if (!TableValidationUtility.ValidTablePermission(_configuration, tableName, "insert"))
+                return Forbid();
+
             DateTimeOffset timestamp = DateTimeOffset.UtcNow;
             Dictionary<string, string?> valuesDict = values.ToDictionary(pair => pair.Key, pair => pair.Value?.ToString());
 
@@ -132,6 +144,9 @@ namespace GenericTableAPI.Controllers
         [HttpPut("{id}")]
         public async Task<ActionResult> Update(string tableName, [FromRoute] string id, [FromBody] IDictionary<string, object?> values)
         {
+            if (!TableValidationUtility.ValidTablePermission(_configuration, tableName, "update"))
+                return Forbid();
+
             DateTimeOffset timestamp = DateTimeOffset.UtcNow;
             Dictionary<string, string?> valuesDict = values.ToDictionary(pair => pair.Key, pair => pair.Value?.ToString());
 
@@ -164,6 +179,9 @@ namespace GenericTableAPI.Controllers
         [HttpDelete("{id}")]
         public async Task<ActionResult> Delete(string tableName, string id)
         {
+            if (!TableValidationUtility.ValidTablePermission(_configuration, tableName, "delete"))
+                return Forbid();
+
             DateTimeOffset timestamp = DateTimeOffset.UtcNow;
             string requestInfo = $"GET request to {HttpContext.Request.Path} from {HttpContext.Connection.RemoteIpAddress} by user {User.Identity?.Name ?? "unknown."}. Timestamp: {timestamp}";
             _logger.LogInformation(requestInfo);
