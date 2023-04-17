@@ -11,7 +11,7 @@ public class DapperService
         _repository = repository;
     }
 
-    public Task<IEnumerable<dynamic>> GetAllAsync(string tableName)
+    public Task<IEnumerable<dynamic>?> GetAllAsync(string tableName)
     {
         return _repository.GetAllAsync(tableName);
     }

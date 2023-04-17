@@ -30,7 +30,7 @@ namespace GenericTableAPI.Controllers
             try
             {
                 _logger.LogInformation("Getting all entities from {0}. Timestamp: {1}", tableName, timestamp);
-                IEnumerable<dynamic> entities = await _service.GetAllAsync(tableName);
+                IEnumerable<dynamic>? entities = await _service.GetAllAsync(tableName);
 
                 IEnumerable<dynamic> enumerable = entities as dynamic[] ?? entities.ToArray();
                 if (!enumerable.Any())

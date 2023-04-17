@@ -10,7 +10,7 @@ public class DapperRepository
 {
     private readonly string? _connectionString;
     private readonly string? _schemaName;
-    private readonly ILogger _logger;
+    private readonly Serilog.ILogger _logger;
 
     private static object? SanitizeValue(object? value)
     {
@@ -30,7 +30,7 @@ public class DapperRepository
         return string.IsNullOrEmpty(schemaName) ? tableName : $"{schemaName}.{tableName}";
     }
 
-    public DapperRepository(string? connectionString, string? schemaName, ILogger logger)
+    public DapperRepository(string? connectionString, string? schemaName, Serilog.ILogger logger)
     {
         _connectionString = connectionString;
         _schemaName = schemaName;
@@ -42,7 +42,7 @@ public class DapperRepository
     /// </summary>
     /// <param name="tableName"></param>
     /// <returns>List of objects</returns>
-    public async Task<IEnumerable<dynamic>> GetAllAsync(string tableName)
+    public async Task<IEnumerable<dynamic>?> GetAllAsync(string tableName)
     {
         using DatabaseHandler connectionHandler = new(_connectionString);
         connectionHandler.Open();
@@ -50,19 +50,23 @@ public class DapperRepository
         string query = $"SELECT * FROM {GetTableName(tableName, _schemaName)}";
         try
         {
-            List<dynamic> result = new();
+            List<dynamic>? result = new();
             await foreach (dynamic item in ToDynamicList(await connectionHandler.ExecuteReaderAsync(query)))
             {
                 result.Add(item);
             }
+            return result;
         }
         catch (Exception exception)
         {
-            _logger.LogError(exception, "An error occurred while executing GetAllAsync for query: " + query);
+            _logger.Error(exception, "An error occurred while executing GetAllAsync for query: {0}", query);
+            return null;
         }
+        finally
+        {
+            connectionHandler.Close();
 
-        connectionHandler.Close();
-        return result;
+        }
     }
 
     /// <summary>
@@ -96,7 +100,7 @@ public class DapperRepository
         }
         catch (Exception exception)
         {
-            _logger.LogError(exception, "An error occurred while executing GetByIdAsync for query: " + query);
+            _logger.Error(exception, "An error occurred while executing GetByIdAsync for query: {0}", query);
         }
 
         connectionHandler.Close();
@@ -144,7 +148,7 @@ public class DapperRepository
         }
         catch (Exception exception)
         {
-            _logger.LogError(exception, "An error occurred while executing AddAsync for query: " + query);
+            _logger.Error(exception, "An error occurred while executing AddAsync for query: {0}", query);
             return null;
         }
         finally
@@ -165,7 +169,11 @@ public class DapperRepository
     public async Task<bool> UpdateAsync(string tableName, string primaryKey, IDictionary<string, object?> values)
     {
         Dictionary<string, object>? sanitizedValues = new();
-        if (sanitizedValues == null) throw new ArgumentNullException(nameof(sanitizedValues));
+        if (sanitizedValues == null)
+        {
+            throw new ArgumentNullException(nameof(sanitizedValues));
+        }
+
         foreach (KeyValuePair<string, object?> pair in values)
         {
             if (!Regex.IsMatch(pair.Key, @"^[\w\d]+$"))
@@ -192,7 +200,7 @@ public class DapperRepository
         }
         catch (Exception exception)
         {
-            _logger.LogError(exception, "An error occurred while executing UpdateAsync for query: " + query);
+            _logger.Error(exception, "An error occurred while executing UpdateAsync for query: {0}", query);
             return false;
         }
         finally
@@ -221,13 +229,12 @@ public class DapperRepository
         }
         catch (Exception exception)
         {
-            _logger.LogError(exception, "An error occurred while executing DeleteAsync for query: " + query);
+            _logger.Error(exception, "An error occurred while executing DeleteAsync for query: {0}", query);
             return false;
         }
         finally
         {
             connectionHandler.Close();
-
         }
     }
 }
