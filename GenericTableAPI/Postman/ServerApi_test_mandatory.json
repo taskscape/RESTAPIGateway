@@ -1,7 +1,7 @@
 {
 	"info": {
-		"_postman_id": "705ec971-4ac8-4817-80c5-8b57b75bc250",
-		"name": "New Collection",
+		"_postman_id": "4efe01e9-f1d4-461b-88d3-abc530c1158a",
+		"name": "TestCollection",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "21666607"
 	},
@@ -27,164 +27,13 @@
 				"method": "POST",
 				"header": [],
 				"body": {
-					"mode": "formdata",
-					"formdata": [
-						{
-							"key": "ID",
-							"value": "8",
-							"type": "text"
-						},
-						{
-							"key": "IMIE",
-							"value": "Tester",
-							"type": "text"
-						},
-						{
-							"key": "IMIE2",
-							"value": "TesterDw",
-							"type": "text"
-						},
-						{
-							"key": "NAZWISKO",
-							"value": "Kowalski",
-							"type": "text"
-						},
-						{
-							"key": "DATA_ZATRUDNIENIA",
-							"value": "2022-09-15",
-							"type": "text"
-						},
-						{
-							"key": "PLEC",
-							"value": "Mężczyzna",
-							"type": "text"
-						},
-						{
-							"key": "DATA_URODZENIA",
-							"value": "1998-04-13",
-							"type": "text"
-						},
-						{
-							"key": "KOD_MIEJSCOWOSCI_TYM",
-							"value": "45068",
-							"type": "text"
-						},
-						{
-							"key": "MIEJSCOWOSC_TYM",
-							"value": "Opole",
-							"type": "text"
-						},
-						{
-							"key": "ULICA_TYM",
-							"value": "1 Maja",
-							"type": "text"
-						},
-						{
-							"key": "NR_DOMU_TYM",
-							"value": "1",
-							"type": "text"
-						},
-						{
-							"key": "POCZTA_TYM",
-							"value": "sg",
-							"type": "text"
-						},
-						{
-							"key": "GMINA_TYM",
-							"value": "Opole",
-							"type": "text"
-						},
-						{
-							"key": "SLPO_ID_TYM",
-							"value": "3",
-							"type": "text"
-						},
-						{
-							"key": "KOD_MIEJSCOWOSCI_KORESP",
-							"value": "wfas",
-							"type": "text"
-						},
-						{
-							"key": "MIEJSCOWOSC_KORESP",
-							"value": "faefg",
-							"type": "text"
-						},
-						{
-							"key": "ULICA_KORESP",
-							"value": "eef",
-							"type": "text"
-						},
-						{
-							"key": "NR_DOMU_KORESP",
-							"value": "141",
-							"type": "text"
-						},
-						{
-							"key": "POCZTA_KORESP",
-							"value": "afesg",
-							"type": "text"
-						},
-						{
-							"key": "GMINA_KORESP",
-							"value": "deag",
-							"type": "text"
-						},
-						{
-							"key": "SLPO_ID_KORESP",
-							"value": "1",
-							"type": "text"
-						},
-						{
-							"key": "SLWO_ID_KORESP",
-							"value": "3",
-							"type": "text"
-						},
-						{
-							"key": "SKRA_ID_KORESP",
-							"value": "2",
-							"type": "text"
-						},
-						{
-							"key": "NR_PESEL",
-							"value": "141",
-							"type": "text"
-						},
-						{
-							"key": "SOBY_ID",
-							"value": "7",
-							"type": "text"
-						},
-						{
-							"key": "SSTC_ID",
-							"value": "4",
-							"type": "text"
-						},
-						{
-							"key": "FIRM_ID",
-							"value": "3",
-							"type": "text"
-						},
-						{
-							"key": "ADRES_PIT",
-							"value": "t",
-							"type": "text"
-						},
-						{
-							"key": "ADRES_PRZELEW",
-							"value": "b",
-							"type": "text"
-						},
-						{
-							"key": "ADRES_DOKUMENT",
-							"value": "h",
-							"type": "text"
-						},
-						{
-							"key": "IMPEXP",
-							"value": "k",
-							"type": "text"
+					"mode": "raw",
+					"raw": "{\r\n    \"id\": 8,\r\n    \"imie\": \"Tester\",\r\n    \"imie2\": \"TesterDw\",\r\n    \"nazwisko\": \"Kowalski\",\r\n    \"data_zatrudnienia\": \"2023-04-20\",\r\n    \"plec\": \"mezczyzna\",\r\n    \"data_urodzenia\": \"1994-06-16\",\r\n    \"kod_miejscowosci_tym\": 45068,\r\n    \"miejscowosc_tym\": \"Opole\",\r\n    \"ulica_tym\": \"1 Maja\",\r\n    \"nr_domu_tym\": 1,\r\n    \"poczta_tym\": \"sg\",\r\n    \"gmina_tym\": \"Opole\",\r\n    \"slpo_id_tym\": 3,\r\n    \"kod_miejscowosci_koresp\": \"wf\",\r\n    \"miejscowosc_koresp\": \"faeg\",\r\n    \"ulica_koresp\": \"eeff\",\r\n    \"nr_domu_koresp\": 13,\r\n    \"poczta_koresp\": \"kj\",\r\n    \"gmina_koresp\": \"di\",\r\n    \"slpo_id_koresp\": 1,\r\n    \"slwo_id_koresp\": 3,\r\n    \"skra_id_koresp\": 2,\r\n    \"nr_pesel\": 13,\r\n    \"soby_id\": 5,\r\n    \"sstc_id\": 4,\r\n    \"firm_id\": 9,\r\n    \"adres_pit\": \"t\",\r\n    \"adres_przelew\": \"g\",\r\n    \"adres_dokument\": \"y\",\r\n    \"impexp\": \"k\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
 						}
-					]
+					}
 				},
 				"url": {
 					"raw": "https://localhost:7104/api/kmp_imp_pracownicy",
@@ -196,13 +45,6 @@
 					"path": [
 						"api",
 						"kmp_imp_pracownicy"
-					],
-					"query": [
-						{
-							"key": "",
-							"value": null,
-							"disabled": true
-						}
 					]
 				}
 			},
@@ -215,13 +57,13 @@
 					"type": "basic",
 					"basic": [
 						{
-							"key": "username",
-							"value": "aa",
+							"key": "password",
+							"value": "bb",
 							"type": "string"
 						},
 						{
-							"key": "password",
-							"value": "bb",
+							"key": "username",
+							"value": "aa",
 							"type": "string"
 						}
 					]
@@ -229,24 +71,13 @@
 				"method": "PUT",
 				"header": [],
 				"body": {
-					"mode": "formdata",
-					"formdata": [
-						{
-							"key": "NR_EWIDENCYJNY",
-							"value": "12",
-							"type": "text"
-						},
-						{
-							"key": "NR_KARTY",
-							"value": "5",
-							"type": "text"
-						},
-						{
-							"key": "ID",
-							"value": "9",
-							"type": "text"
+					"mode": "raw",
+					"raw": "{\r\n    \"id\": 9,\r\n    \"nr_ewidencyjny\": \"12\",\r\n    \"nr_karty\": \"5\",\r\n    \"prac_id\": 7\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
 						}
-					]
+					}
 				},
 				"url": {
 					"raw": "https://localhost:7104/api/kmp_imp_pracownicy",
