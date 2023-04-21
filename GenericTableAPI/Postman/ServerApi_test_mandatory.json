@@ -28,7 +28,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"id\": 8,\r\n    \"imie\": \"Tester\",\r\n    \"imie2\": \"TesterDw\",\r\n    \"nazwisko\": \"Kowalski\",\r\n    \"data_zatrudnienia\": \"2023-04-20\",\r\n    \"plec\": \"mezczyzna\",\r\n    \"data_urodzenia\": \"1994-06-16\",\r\n    \"kod_miejscowosci_tym\": 45068,\r\n    \"miejscowosc_tym\": \"Opole\",\r\n    \"ulica_tym\": \"1 Maja\",\r\n    \"nr_domu_tym\": 1,\r\n    \"poczta_tym\": \"sg\",\r\n    \"gmina_tym\": \"Opole\",\r\n    \"slpo_id_tym\": 3,\r\n    \"kod_miejscowosci_koresp\": \"wf\",\r\n    \"miejscowosc_koresp\": \"faeg\",\r\n    \"ulica_koresp\": \"eeff\",\r\n    \"nr_domu_koresp\": 13,\r\n    \"poczta_koresp\": \"kj\",\r\n    \"gmina_koresp\": \"di\",\r\n    \"slpo_id_koresp\": 1,\r\n    \"slwo_id_koresp\": 3,\r\n    \"skra_id_koresp\": 2,\r\n    \"nr_pesel\": 13,\r\n    \"soby_id\": 5,\r\n    \"sstc_id\": 4,\r\n    \"firm_id\": 9,\r\n    \"adres_pit\": \"t\",\r\n    \"adres_przelew\": \"g\",\r\n    \"adres_dokument\": \"y\",\r\n    \"impexp\": \"k\"\r\n}",
+					"raw": "{\r\n    \"imie\": \"Tester\",\r\n    \"imie2\": \"TesterDw\",\r\n    \"nazwisko\": \"Kowalski\",\r\n    \"data_zatrudnienia\": \"2023-04-20\",\r\n    \"plec\": \"mezczyzna\",\r\n    \"data_urodzenia\": \"1994-06-16\",\r\n    \"kod_miejscowosci_tym\": 45068,\r\n    \"miejscowosc_tym\": \"Opole\",\r\n    \"ulica_tym\": \"1 Maja\",\r\n    \"nr_domu_tym\": 1,\r\n    \"poczta_tym\": \"sg\",\r\n    \"gmina_tym\": \"Opole\",\r\n    \"slpo_id_tym\": 3,\r\n    \"kod_miejscowosci_koresp\": \"wf\",\r\n    \"miejscowosc_koresp\": \"faeg\",\r\n    \"ulica_koresp\": \"eeff\",\r\n    \"nr_domu_koresp\": 13,\r\n    \"poczta_koresp\": \"kj\",\r\n    \"gmina_koresp\": \"di\",\r\n    \"slpo_id_koresp\": 1,\r\n    \"slwo_id_koresp\": 3,\r\n    \"skra_id_koresp\": 2,\r\n    \"nr_pesel\": 13,\r\n    \"soby_id\": 5,\r\n    \"sstc_id\": 4,\r\n    \"firm_id\": 9,\r\n    \"adres_pit\": \"t\",\r\n    \"adres_przelew\": \"g\",\r\n    \"adres_dokument\": \"y\",\r\n    \"impexp\": \"k\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -36,7 +36,7 @@
 					}
 				},
 				"url": {
-					"raw": "https://localhost:7104/api/kmp_imp_pracownicy",
+					"raw": "https://localhost:7104/api/kp_imp_pracownicy",
 					"protocol": "https",
 					"host": [
 						"localhost"
@@ -44,7 +44,7 @@
 					"port": "7104",
 					"path": [
 						"api",
-						"kmp_imp_pracownicy"
+						"kp_imp_pracownicy"
 					]
 				}
 			},
@@ -69,10 +69,17 @@
 					]
 				},
 				"method": "PUT",
-				"header": [],
+				"header": [
+					{
+						"key": "",
+						"value": "",
+						"type": "text",
+						"disabled": true
+					}
+				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"id\": 9,\r\n    \"nr_ewidencyjny\": \"12\",\r\n    \"nr_karty\": \"5\",\r\n    \"prac_id\": 7\r\n}",
+					"raw": "{\r\n    \"nr_ewidencyjny\": \"12\",\r\n    \"nr_karty\": \"5\",\r\n    \"prac_id\": 7\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -80,7 +87,7 @@
 					}
 				},
 				"url": {
-					"raw": "https://localhost:7104/api/kmp_imp_pracownicy",
+					"raw": "https://localhost:7104/api/kp_imp_pracownicy/9",
 					"protocol": "https",
 					"host": [
 						"localhost"
@@ -88,7 +95,15 @@
 					"port": "7104",
 					"path": [
 						"api",
-						"kmp_imp_pracownicy"
+						"kp_imp_pracownicy",
+						"9"
+					],
+					"query": [
+						{
+							"key": "",
+							"value": "",
+							"disabled": true
+						}
 					]
 				}
 			},

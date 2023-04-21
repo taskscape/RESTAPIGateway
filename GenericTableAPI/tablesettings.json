@@ -58,7 +58,8 @@
       "test": [
         "select",
         "update",
-        "delete"
+        "delete",
+        "insert"
       ]
     }
   }

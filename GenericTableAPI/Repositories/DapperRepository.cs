@@ -139,7 +139,7 @@ public class DapperRepository
         connectionHandler.Open();
 
         string query =
-            $"INSERT INTO {GetTableName(tableName, _schemaName)} ({columns}) OUTPUT Inserted.{primaryKeyColumn} VALUES ({strValues});";
+            $"INSERT INTO {GetTableName(tableName, _schemaName)} ({columns}) VALUES ({strValues}) RETURNING {primaryKeyColumn};";
 
         try
         {
