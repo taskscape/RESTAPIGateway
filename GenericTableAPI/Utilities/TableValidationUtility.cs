@@ -8,9 +8,13 @@ namespace GenericTableAPI.Utilities
         {
             if (configuration.GetSection("Database").Exists())
             {
-                List<string> configPermissions = configuration.GetSection("Database:Tables:" + tableName).Get<List<string>>();
-                if (!configPermissions.Contains(permission))
-                    return false;
+                var tableSection = configuration.GetSection("Database:Tables:" + tableName);
+                if (tableSection.Exists())
+                {
+                    List<string> configPermissions = tableSection.Get<List<string>>();
+                    if (!configPermissions.Contains(permission))
+                        return false;
+                }
             }
             return true;
         }
