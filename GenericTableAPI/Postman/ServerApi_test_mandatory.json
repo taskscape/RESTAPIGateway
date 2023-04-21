@@ -28,7 +28,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"imie\": \"Tester\",\r\n    \"imie2\": \"TesterDw\",\r\n    \"nazwisko\": \"Kowalski\",\r\n    \"data_zatrudnienia\": \"2023-04-20\",\r\n    \"plec\": \"mezczyzna\",\r\n    \"data_urodzenia\": \"1994-06-16\",\r\n    \"kod_miejscowosci_tym\": 45068,\r\n    \"miejscowosc_tym\": \"Opole\",\r\n    \"ulica_tym\": \"1 Maja\",\r\n    \"nr_domu_tym\": 1,\r\n    \"poczta_tym\": \"sg\",\r\n    \"gmina_tym\": \"Opole\",\r\n    \"slpo_id_tym\": 3,\r\n    \"kod_miejscowosci_koresp\": \"wf\",\r\n    \"miejscowosc_koresp\": \"faeg\",\r\n    \"ulica_koresp\": \"eeff\",\r\n    \"nr_domu_koresp\": 13,\r\n    \"poczta_koresp\": \"kj\",\r\n    \"gmina_koresp\": \"di\",\r\n    \"slpo_id_koresp\": 1,\r\n    \"slwo_id_koresp\": 3,\r\n    \"skra_id_koresp\": 2,\r\n    \"nr_pesel\": 13,\r\n    \"soby_id\": 5,\r\n    \"sstc_id\": 4,\r\n    \"firm_id\": 9,\r\n    \"adres_pit\": \"t\",\r\n    \"adres_przelew\": \"g\",\r\n    \"adres_dokument\": \"y\",\r\n    \"impexp\": \"k\"\r\n}",
+					"raw": "{\r\n    \"IMIE\": \"Tester\",\r\n    \"IMIE_2\": \"TesterDw\",\r\n    \"NAZWISKO\": \"Kowalski\",\r\n    \"DATA_ZATRUDNIENIA\": \"2023-04-20\",\r\n    \"PLEC\": \"mezczyzna\",\r\n    \"DATA_URODZENIA\": \"1994-06-16\",\r\n    \"NAZWISKO_RODOWE\": \"feaf\",\r\n    \"KOD_MIEJSCOWOSCI_TYM\": \"45068\",\r\n    \"MIEJSCOWOSC_TYM\": \"Opole\",\r\n    \"ULICA_TYM\": \"1 Maja\",\r\n    \"NR_DOMU_TYM\": \"1\",\r\n    \"POCZTA_TYM\": \"sg\",\r\n    \"GMINA_TYM\": \"Opole\",\r\n    \"SLPO_ID_TYM\": 3,\r\n    \"SLWO_ID_TYM\": 2,\r\n    \"SKRA_ID_TYM\": 7,\r\n    \"KOD_MIEJSCOWOSCI_KORESP\": \"wf\",\r\n    \"MIEJSCOWOSC_KORESP\": \"faeg\",\r\n    \"ULICA_KORESP\": \"eeff\",\r\n    \"NR_DOMU_KORESP\": \"13\",\r\n    \"POCZTA_KORESP\": \"kj\",\r\n    \"GMINA_KORESP\": \"di\",\r\n    \"SLPO_ID_KORESP\": 1,\r\n    \"SLWO_ID_KORESP\": 3,\r\n    \"SKRA_ID_KORESP\": 2,\r\n    \"NR_PESEL\": \"13\",\r\n    \"NR_PASZPORTU\": \"d13\",\r\n    \"SOBY_ID\": 5,\r\n    \"SSTC_ID\": 4,\r\n    \"FIRM_ID\": 101,\r\n    \"ADRES_PIT\": \"t\",\r\n    \"ADRES_PRZELEW\": \"g\",\r\n    \"ADRES_DOKUMENT\": \"y\",\r\n    \"IMPEXP\": \"e\",\r\n    \"PRAC_ID\": 3\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -79,7 +79,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"nr_ewidencyjny\": \"12\",\r\n    \"nr_karty\": \"5\",\r\n    \"prac_id\": 7\r\n}",
+					"raw": "{\r\n    \"NR_EWIDENCYJNY\": \"12\",\r\n    \"NR_KARTY\": \"5\",\r\n    \"PRAC_ID\": 7\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
