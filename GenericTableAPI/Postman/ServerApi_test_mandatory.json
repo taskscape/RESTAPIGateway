@@ -7,7 +7,7 @@
 	},
 	"item": [
 		{
-			"name": "https://localhost:7104/api/kmp_imp_pracownicy",
+			"name": "https://localhost:7104/api/kp_imp_pracownicy",
 			"request": {
 				"auth": {
 					"type": "basic",
