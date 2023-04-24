@@ -77,7 +77,9 @@ public class DapperRepository
     /// <returns></returns>
     public async Task<dynamic?> GetByIdAsync(string tableName, string primaryKey)
     {
-        string primaryKeyColumn = GetPrimaryKeyColumnName(_connectionString, GetTableName(tableName, _schemaName), GetDatabaseType(_connectionString));
+        string primaryKeyColumn = GetPrimaryKeyColumnName(_connectionString, tableName, GetDatabaseType(_connectionString));
+        _logger.Information("Primary key column name: {0} used for table: {1} in GetByIdAsync", primaryKeyColumn, tableName);
+
         using DatabaseHandler connectionHandler = new(_connectionString);
         connectionHandler.Open();
         string query = $"SELECT * FROM {GetTableName(tableName, _schemaName)} WHERE {primaryKeyColumn} = {primaryKey};";
@@ -132,14 +134,14 @@ public class DapperRepository
         }
 
         string columns = string.Join(", ", values.Keys);
-        string strValues = string.Join(", ", values.Values.Select(k => $"'{k}'"));
-        string primaryKeyColumn = GetPrimaryKeyColumnName(_connectionString, GetTableName(tableName, _schemaName), GetDatabaseType(_connectionString));
+        string results = string.Join(", ", values.Values.Select(k => $"'{k}'"));
+        string primaryKeyColumn = GetPrimaryKeyColumnName(_connectionString, tableName, GetDatabaseType(_connectionString));
+        _logger.Information("Primary key column name: {0} used for table: {1} in AddAsync", primaryKeyColumn, tableName);
 
         using DatabaseHandler connectionHandler = new(_connectionString);
         connectionHandler.Open();
 
-        string query =
-            $"INSERT INTO {GetTableName(tableName, _schemaName)} ({columns}) VALUES ({strValues}) RETURNING {primaryKeyColumn};";
+        string query = string.IsNullOrEmpty(primaryKeyColumn) ? $"INSERT INTO {GetTableName(tableName, _schemaName)} ({columns}) VALUES ({results});" : $"INSERT INTO {GetTableName(tableName, _schemaName)} ({columns}) VALUES ({results}) RETURNING {primaryKeyColumn};";
 
         try
         {
@@ -149,7 +151,7 @@ public class DapperRepository
         catch (Exception exception)
         {
             _logger.Error(exception, "An error occurred while executing AddAsync for query: {0}", query);
-            return null;
+            throw;
         }
         finally
         {
@@ -187,7 +189,9 @@ public class DapperRepository
 
         string setClauses = string.Join(", ", values.Select(k => $"{k.Key} = '{k.Value}'"));
 
-        string primaryKeyColumn = GetPrimaryKeyColumnName(_connectionString, GetTableName(tableName, _schemaName), GetDatabaseType(_connectionString));
+        string primaryKeyColumn = GetPrimaryKeyColumnName(_connectionString, tableName, GetDatabaseType(_connectionString));
+        _logger.Information("Primary key column name: {0} used for table: {1} in UpdateAsync", primaryKeyColumn, tableName);
+
         using DatabaseHandler connectionHandler = new(_connectionString);
         connectionHandler.Open();
         string query =
@@ -217,7 +221,9 @@ public class DapperRepository
     /// <returns>True on success</returns>
     public async Task<bool> DeleteAsync(string tableName, string primaryKey)
     {
-        string primaryKeyColumn = GetPrimaryKeyColumnName(_connectionString, GetTableName(tableName, _schemaName), GetDatabaseType(_connectionString));
+        string primaryKeyColumn = GetPrimaryKeyColumnName(_connectionString, tableName, GetDatabaseType(_connectionString));
+        _logger.Information("Primary key column name: {0} used for table: {1} in DeleteAsync", primaryKeyColumn, tableName);
+
         using DatabaseHandler connectionHandler = new(_connectionString);
         connectionHandler.Open();
         string query = $"DELETE FROM {GetTableName(tableName, _schemaName)} WHERE {primaryKeyColumn} = {primaryKey};";

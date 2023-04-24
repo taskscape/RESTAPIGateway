@@ -39,6 +39,14 @@ public static class DatabaseUtilities
         return DatabaseType.Unknown;
     }
 
+    /// <summary>
+    /// Retrieves the primary key column name for a given table
+    /// </summary>
+    /// <param name="connectionString">Connection string</param>
+    /// <param name="tableName">Table name must be provided without schema</param>
+    /// <param name="databaseType">Database type</param>
+    /// <returns></returns>
+    /// <exception cref="NotSupportedException"></exception>
     public static string GetPrimaryKeyColumnName(string? connectionString, string tableName, DatabaseType databaseType)
     {
         string query = databaseType switch
@@ -54,7 +62,7 @@ public static class DatabaseUtilities
                 WHERE cons.constraint_type = 'P'
                 AND cons.constraint_name = cols.constraint_name
                 AND cons.owner = cols.owner
-                AND cols.table_name = '{tableName.ToUpper()}'",
+                AND UPPER(cols.table_name) = '{tableName.ToUpper()}'",
             _ => throw new NotSupportedException("Unsupported database type.")
         };
 
