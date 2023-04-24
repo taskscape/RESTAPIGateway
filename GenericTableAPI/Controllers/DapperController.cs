@@ -26,13 +26,16 @@ namespace GenericTableAPI.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<dynamic>>> GetAll(string tableName)
         {
-            if (!TableValidationUtility.ValidTablePermission(_configuration, tableName, "select"))
-                return Forbid();
-
             DateTimeOffset timestamp = DateTimeOffset.UtcNow;
             string requestInfo = $"GET request to {HttpContext.Request.Path}{HttpContext.Request.QueryString} from {HttpContext.Connection.RemoteIpAddress} by user {User.Identity?.Name ?? "unknown"}. Timestamp: {timestamp}";
             _logger.LogInformation(requestInfo);
 
+            if (!TableValidationUtility.ValidTablePermission(_configuration, tableName, "select"))
+            {
+                _logger.LogWarning("User {0} attempted to access table {1} with GET-all and without permission. Timestamp: {2}", User.Identity?.Name ?? "unknown", tableName, timestamp);
+                return Forbid();
+            }
+            
             try
             {
                 _logger.LogInformation("Getting all entities from {0}. Timestamp: {1}", tableName, timestamp);
@@ -68,13 +71,18 @@ namespace GenericTableAPI.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<dynamic>> GetById(string tableName, [FromRoute] string id)
         {
-            if (!TableValidationUtility.ValidTablePermission(_configuration, tableName, "select"))
-                return Forbid();
 
             DateTimeOffset timestamp = DateTimeOffset.UtcNow;
             string requestInfo = $"GET request to {HttpContext.Request.Path}{HttpContext.Request.QueryString} from {HttpContext.Connection.RemoteIpAddress} by user {User.Identity?.Name ?? "unknown"}. Timestamp: {timestamp}";
             _logger.LogInformation(requestInfo);
-            _logger.LogInformation("Getting entity with id \"{id}\" from \"{tableName}\". Timestamp: {timestamp}", id, tableName, timestamp);
+
+            if (!TableValidationUtility.ValidTablePermission(_configuration, tableName, "select"))
+            {
+                _logger.LogWarning("User {0} attempted to access table {1} with GET-id command and without permission. Timestamp: {2}", User.Identity?.Name ?? "unknown", tableName, timestamp);
+                return Forbid();
+            }
+
+            _logger.LogInformation("Getting entity with from table: {0} using primary key: {1}. Timestamp: {2}", tableName, id, timestamp);
 
             try
             {
@@ -104,18 +112,22 @@ namespace GenericTableAPI.Controllers
         [HttpPost]
         public async Task<ActionResult> Add(string tableName, [FromBody] IDictionary<string, object?> values)
         {
-            if (!TableValidationUtility.ValidTablePermission(_configuration, tableName, "insert"))
-                return Forbid();
-
             DateTimeOffset timestamp = DateTimeOffset.UtcNow;
             Dictionary<string, string?> valuesDict = values.ToDictionary(pair => pair.Key, pair => pair.Value?.ToString());
-
             string requestInfo = $"POST request to \"{HttpContext.Request.Path}\" from \"{HttpContext.Connection.RemoteIpAddress}\" by user \"{User.Identity?.Name ?? "unknown"}\" with values: {JsonConvert.SerializeObject(valuesDict)}. Timestamp: {timestamp}";
             _logger.LogInformation(requestInfo);
+            
+            if (!TableValidationUtility.ValidTablePermission(_configuration, tableName, "insert"))
+            {
+                _logger.LogWarning("User {0} attempted to access table {1} with POST command and without permission. Timestamp: {2}", User.Identity?.Name ?? "unknown", tableName, timestamp);
+                return Forbid();
+
+            }
+            
+            _logger.LogInformation("Adding a new entity to table: {0} using values: {1}. Timestamp: {2}", tableName, JsonConvert.SerializeObject(valuesDict), timestamp);
 
             try
             {
-                _logger.LogInformation("Adding a new entity to \"{tableName}\": {values}. Timestamp: {timestamp}", tableName, JsonConvert.SerializeObject(valuesDict), timestamp);
                 object? id = await _service.AddAsync(tableName, values);
 
                 if (id == null)
@@ -144,18 +156,22 @@ namespace GenericTableAPI.Controllers
         [HttpPut("{id}")]
         public async Task<ActionResult> Update(string tableName, [FromRoute] string id, [FromBody] IDictionary<string, object?> values)
         {
-            if (!TableValidationUtility.ValidTablePermission(_configuration, tableName, "update"))
-                return Forbid();
-
             DateTimeOffset timestamp = DateTimeOffset.UtcNow;
             Dictionary<string, string?> valuesDict = values.ToDictionary(pair => pair.Key, pair => pair.Value?.ToString());
 
             string requestInfo = $"PUT request to \"{HttpContext.Request.Path}\" from \"{HttpContext.Connection.RemoteIpAddress}\" by user \"{User.Identity?.Name ?? "unknown"}\". Timestamp: {timestamp}";
             _logger.LogInformation(requestInfo);
 
+            if (!TableValidationUtility.ValidTablePermission(_configuration, tableName, "update"))
+            {
+                _logger.LogWarning("User {0} attempted to access table {1} with PUT command and without permission. Timestamp: {2}", User.Identity?.Name ?? "unknown", tableName, timestamp);
+                return Forbid();
+            }
+
+            _logger.LogInformation("Updating entity in a table: {0} with primary key: {1} using values: {2}. Timestamp: {3}", tableName, id, JsonConvert.SerializeObject(valuesDict), timestamp);
+            
             try
             {
-                _logger.LogInformation("Updating entity with id \"{id}\" in \"{tableName}\": \"{values}\". Timestamp: {timestamp}", id, tableName, JsonConvert.SerializeObject(valuesDict), timestamp);
                 await _service.UpdateAsync(tableName, id, values);
 
                 dynamic? updatedItem = await _service.GetByIdAsync(tableName, id);
@@ -179,14 +195,17 @@ namespace GenericTableAPI.Controllers
         [HttpDelete("{id}")]
         public async Task<ActionResult> Delete(string tableName, string id)
         {
-            if (!TableValidationUtility.ValidTablePermission(_configuration, tableName, "delete"))
-                return Forbid();
-
             DateTimeOffset timestamp = DateTimeOffset.UtcNow;
             string requestInfo = $"GET request to {HttpContext.Request.Path} from {HttpContext.Connection.RemoteIpAddress} by user {User.Identity?.Name ?? "unknown."}. Timestamp: {timestamp}";
             _logger.LogInformation(requestInfo);
 
-            _logger.LogInformation("Deleting entity with id {id} from {tableName}. Timestamp: {timestamp}", id, tableName, timestamp);
+            if (!TableValidationUtility.ValidTablePermission(_configuration, tableName, "delete"))
+            {
+                _logger.LogWarning("User {0} attempted to access table {1} with DELETE command and without permission. Timestamp: {2}", User.Identity?.Name ?? "unknown", tableName, timestamp);
+                return Forbid();
+            }
+            
+            _logger.LogInformation("Deleting entity from {0} using primary key: {1}. Timestamp: {2}", tableName, id, timestamp);
 
             try
             {
