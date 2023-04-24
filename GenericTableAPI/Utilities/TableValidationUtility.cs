@@ -1,22 +1,14 @@
-﻿using Microsoft.Extensions.Configuration;
-
-namespace GenericTableAPI.Utilities
+﻿namespace GenericTableAPI.Utilities
 {
     public static class TableValidationUtility
     {
         public static bool ValidTablePermission(IConfiguration configuration, string tableName, string permission)
         {
-            if (configuration.GetSection("Database").Exists())
-            {
-                var tableSection = configuration.GetSection("Database:Tables:" + tableName);
-                if (tableSection.Exists())
-                {
-                    List<string> configPermissions = tableSection.Get<List<string>>();
-                    if (!configPermissions.Contains(permission))
-                        return false;
-                }
-            }
-            return true;
+            if (!configuration.GetSection("Database").Exists()) return true;
+            IConfigurationSection tableSection = configuration.GetSection("Database:Tables:" + tableName);
+            if (!tableSection.Exists()) return true;
+            List<string> configPermissions = tableSection.Get<List<string>>();
+            return configPermissions.Contains(permission);
         }
     }
 }

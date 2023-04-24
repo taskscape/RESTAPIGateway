@@ -24,7 +24,7 @@ namespace GenericTableAPI
                 .ReadFrom.Configuration(configuration)
                 .CreateLogger();
 
-            builder.Configuration.AddJsonFile("tablesettings.json");
+            builder.Configuration.AddJsonFile("tablesettings.json", optional: true, reloadOnChange: true);
 
             // Add services to the container.
 
