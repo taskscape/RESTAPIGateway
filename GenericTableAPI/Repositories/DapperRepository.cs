@@ -141,7 +141,7 @@ public class DapperRepository
         using DatabaseHandler connectionHandler = new(_connectionString);
         connectionHandler.Open();
 
-        string query = string.IsNullOrEmpty(primaryKeyColumn) ? $"INSERT INTO {GetTableName(tableName, _schemaName)} ({columns}) VALUES ({results});" : $"INSERT INTO {GetTableName(tableName, _schemaName)} ({columns}) VALUES ({results}) RETURNING {primaryKeyColumn};";
+        string query = string.IsNullOrEmpty(primaryKeyColumn) ? $"INSERT INTO {GetTableName(tableName, _schemaName)} ({columns}) VALUES ({results});" : $"DECLARE ret VARCHAR(32); BEGIN INSERT INTO {GetTableName(tableName, _schemaName)} ({columns}) VALUES ({results}) RETURNING {primaryKeyColumn} INTO ret; SELECT ret; END;";
 
         try
         {
