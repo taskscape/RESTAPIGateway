@@ -132,13 +132,13 @@ namespace GenericTableAPI.Controllers
 
                 if (id == null)
                 {
-                    _logger.LogInformation("Failed to add a new entity to \"{tableName}\". Timestamp: {timestamp}", tableName, timestamp);
-                    return StatusCode(StatusCodes.Status500InternalServerError);
+                    _logger.LogInformation("Failed to establish new entity for table: {0}. Timestamp: {1}", tableName, timestamp);
+                    return Ok();
                 }
 
-                dynamic? newItem = await _service.GetByIdAsync(tableName, id.ToString());
+                dynamic? newItem = await _service.GetByIdAsync(tableName, id.ToString() ?? string.Empty);
 
-                _logger.LogInformation("Added a new entity with id \"{id}\" to \"{tableName}\". Timestamp: {timestamp}", id, tableName, timestamp);
+                _logger.LogInformation("Added a new entity for table: {0} with primary key: {1}. Timestamp: {2}", tableName, id, timestamp);
                 return Ok(newItem);
             }
             catch (Exception exception)
