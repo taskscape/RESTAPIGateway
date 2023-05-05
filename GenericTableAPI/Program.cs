@@ -47,6 +47,7 @@ namespace GenericTableAPI
 
                 options.OperationFilter<SecurityRequirementsOperationFilter>();
             });
+
             builder.Services.AddSwaggerGen(options =>
             {
                 options.AddSecurityDefinition("basic", new OpenApiSecurityScheme
@@ -83,14 +84,11 @@ namespace GenericTableAPI
             
             app.UseRouting();
 
-            if (app.Environment.IsDevelopment())
-            {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
+            app.UseSwagger();
+            app.UseSwaggerUI();
 
             app.UseHttpsRedirection();
-            
+
             app.UseAuthentication();
             app.UseAuthorization();
 
