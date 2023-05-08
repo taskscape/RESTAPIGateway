@@ -1,4 +1,4 @@
-﻿using GenericTableAPI.Repositories;
+using GenericTableAPI.Repositories;
 using GenericTableAPI.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -29,6 +29,10 @@ namespace GenericTableAPI
             // Add services to the container.
 
             builder.Services.AddControllers();
+
+
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen();
 
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSingleton(new DapperRepository(builder.Configuration.GetConnectionString("DefaultConnection"), builder.Configuration.GetValue<string>("SchemaName"), Log.Logger));

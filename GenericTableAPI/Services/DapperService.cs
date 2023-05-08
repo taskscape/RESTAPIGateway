@@ -1,5 +1,4 @@
 ﻿using GenericTableAPI.Repositories;
-
 namespace GenericTableAPI.Services;
 
 public class DapperService
@@ -11,7 +10,7 @@ public class DapperService
         _repository = repository;
     }
 
-    public Task<IEnumerable<dynamic>?> GetAllAsync(string tableName)
+    public Task<IEnumerable<dynamic>?> GetAllAsync(string tableName, string? where, string? orderBy, int? limit)
     {
         return _repository.GetAllAsync(tableName);
     }

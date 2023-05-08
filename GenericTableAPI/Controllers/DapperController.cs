@@ -24,7 +24,7 @@ namespace GenericTableAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<dynamic>>> GetAll(string tableName)
+        public async Task<ActionResult<IEnumerable<dynamic>>> GetAll(string tableName, string? where = null, string? orderBy = null, int? limit = null)
         {
             DateTimeOffset timestamp = DateTimeOffset.UtcNow;
             string requestInfo = $"GET request to {HttpContext.Request.Path}{HttpContext.Request.QueryString} from {HttpContext.Connection.RemoteIpAddress} by user {User.Identity?.Name ?? "unknown"}. Timestamp: {timestamp}";
@@ -35,20 +35,20 @@ namespace GenericTableAPI.Controllers
                 _logger.LogWarning("User {0} attempted to access table {1} with GET-all and without permission. Timestamp: {2}", User.Identity?.Name ?? "unknown", tableName, timestamp);
                 return Forbid();
             }
-            
+
             try
             {
                 _logger.LogInformation("Getting all entities from {0}. Timestamp: {1}", tableName, timestamp);
-                IEnumerable<dynamic>? entities = await _service.GetAllAsync(tableName);
+                IEnumerable<dynamic>? entities = await _service.GetAllAsync(tableName, where, orderBy, limit);
 
-                IEnumerable<dynamic> enumerable = entities as dynamic[] ?? entities.ToArray();
-                if (!enumerable.Any())
+
+                if (!entities.Any())
                 {
                     _logger.LogInformation("No entities found for {0}. Timestamp: {1}", tableName, timestamp);
                     return NoContent();
                 }
 
-                _logger.LogInformation("Found {0} entities from {1}. Timestamp: {2}", enumerable.Count(), tableName, timestamp);
+                _logger.LogInformation("Found {0} entities from {1}. Timestamp: {2}", entities.Count(), tableName, timestamp);
 
                 Response.StatusCode = 200;
                 return Ok(entities);
@@ -116,18 +116,19 @@ namespace GenericTableAPI.Controllers
             Dictionary<string, string?> valuesDict = values.ToDictionary(pair => pair.Key, pair => pair.Value?.ToString());
             string requestInfo = $"POST request to \"{HttpContext.Request.Path}\" from \"{HttpContext.Connection.RemoteIpAddress}\" by user \"{User.Identity?.Name ?? "unknown"}\" with values: {JsonConvert.SerializeObject(valuesDict)}. Timestamp: {timestamp}";
             _logger.LogInformation(requestInfo);
-            
+
             if (!TableValidationUtility.ValidTablePermission(_configuration, tableName, "insert"))
             {
                 _logger.LogWarning("User {0} attempted to access table {1} with POST command and without permission. Timestamp: {2}", User.Identity?.Name ?? "unknown", tableName, timestamp);
                 return Forbid();
 
             }
-            
+
             _logger.LogInformation("Adding a new entity to table: {0} using values: {1}. Timestamp: {2}", tableName, JsonConvert.SerializeObject(valuesDict), timestamp);
 
             try
             {
+                _logger.LogInformation("Adding a new entity to \"{0}\": {1}. Timestamp: {2}", tableName, JsonConvert.SerializeObject(valuesDict), timestamp);
                 object? id = await _service.AddAsync(tableName, values);
 
                 if (id == null)
@@ -169,9 +170,10 @@ namespace GenericTableAPI.Controllers
             }
 
             _logger.LogInformation("Updating entity in a table: {0} with primary key: {1} using values: {2}. Timestamp: {3}", tableName, id, JsonConvert.SerializeObject(valuesDict), timestamp);
-            
+
             try
             {
+                _logger.LogInformation("Updating entity with id \"{id}\" in \"{tableName}\": \"{values}\". Timestamp: {timestamp}", id, tableName, JsonConvert.SerializeObject(valuesDict), timestamp);
                 await _service.UpdateAsync(tableName, id, values);
 
                 dynamic? updatedItem = await _service.GetByIdAsync(tableName, id);
@@ -204,7 +206,7 @@ namespace GenericTableAPI.Controllers
                 _logger.LogWarning("User {0} attempted to access table {1} with DELETE command and without permission. Timestamp: {2}", User.Identity?.Name ?? "unknown", tableName, timestamp);
                 return Forbid();
             }
-            
+
             _logger.LogInformation("Deleting entity from {0} using primary key: {1}. Timestamp: {2}", tableName, id, timestamp);
 
             try
@@ -217,7 +219,7 @@ namespace GenericTableAPI.Controllers
                 throw;
             }
 
-            dynamic? deletedItem = await _service.GetByIdAsync(tableName, id);
+           dynamic? deletedItem = await _service.GetByIdAsync(tableName, id);
 
             if (deletedItem != null)
             {
