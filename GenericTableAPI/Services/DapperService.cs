@@ -12,7 +12,7 @@ public class DapperService
 
     public Task<IEnumerable<dynamic>?> GetAllAsync(string tableName, string? where, string? orderBy, int? limit)
     {
-        return _repository.GetAllAsync(tableName);
+        return _repository.GetAllAsync(tableName, where, orderBy, limit);
     }
 
     public Task<dynamic?> GetByIdAsync(string tableName, string id)
