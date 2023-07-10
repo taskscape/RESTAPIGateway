@@ -1,6 +1,7 @@
 using System.Net;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using RestSharp;
 
 [TestClass]
@@ -28,6 +29,19 @@ public class IntegrationTests : IDisposable
 
         return JsonConvert.DeserializeObject<string>(response.Content);
     }
+    //Returns the ID of the first element from Table 'test'
+    private int GetFirstId()
+    {
+        //Get the ID of first element
+        RestRequest request = new("api/test");
+        request.AddHeader("Authorization", "Bearer " + _bearerToken);
+        RestResponse response = _client.Execute(request);
+        if (HttpStatusCode.OK != response.StatusCode)
+            throw new Exception($"Got response code: {response.StatusCode} from GET request!");
+
+        return (int)JsonConvert.DeserializeObject<IEnumerable<JToken>>(response.Content).First().First.First;
+    }
+
     [TestMethod]
     public void Token_Post_ReturnsBadRequest()
     {
@@ -117,7 +131,7 @@ public class IntegrationTests : IDisposable
     [TestMethod]
     public void Test_GetById_ReturnsSuccess()
     {
-        int id = 13;
+        int id = GetFirstId();
         // Arrange
         RestRequest request = new("api/test/{id}", Method.Get)
         {
@@ -134,7 +148,7 @@ public class IntegrationTests : IDisposable
     [TestMethod]
     public void Test_Put_ReturnsSuccess()
     {
-        var id = 20;
+        var id = GetFirstId();
         // Arrange
         RestRequest request = new("api/test/{id}", Method.Put)
         {
@@ -152,7 +166,7 @@ public class IntegrationTests : IDisposable
     [TestMethod]
     public void Test_Delete_ReturnsSuccess()
     {
-        var id = 20;
+        var id = GetFirstId();
         // Arrange
         RestRequest request = new("api/test/{id}", Method.Delete)
         {
