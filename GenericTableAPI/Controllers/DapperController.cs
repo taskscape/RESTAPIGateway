@@ -69,7 +69,7 @@ namespace GenericTableAPI.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<dynamic>> GetById(string tableName, [FromRoute] string id)
+        public async Task<ActionResult<dynamic>> GetById(string tableName, [FromRoute] string id, string? primaryKeyColumnName)
         {
 
             DateTimeOffset timestamp = DateTimeOffset.UtcNow;
@@ -86,7 +86,7 @@ namespace GenericTableAPI.Controllers
 
             try
             {
-                dynamic? entity = await _service.GetByIdAsync(tableName, id);
+                dynamic? entity = await _service.GetByIdAsync(tableName, id, primaryKeyColumnName);
 
                 if (entity == null)
                 {
@@ -110,7 +110,7 @@ namespace GenericTableAPI.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> Add(string tableName, [FromBody] IDictionary<string, object?> values)
+        public async Task<ActionResult> Add(string tableName, [FromBody] IDictionary<string, object?> values, string? primaryKeyColumnName)
         {
             DateTimeOffset timestamp = DateTimeOffset.UtcNow;
             Dictionary<string, string?> valuesDict = values.ToDictionary(pair => pair.Key, pair => pair.Value?.ToString());
@@ -129,7 +129,7 @@ namespace GenericTableAPI.Controllers
             try
             {
                 _logger.LogInformation("Adding a new entity to \"{0}\": {1}. Timestamp: {2}", tableName, JsonConvert.SerializeObject(valuesDict), timestamp);
-                object? id = await _service.AddAsync(tableName, values);
+                object? id = await _service.AddAsync(tableName, values, primaryKeyColumnName);
 
                 if (id == null)
                 {
@@ -137,7 +137,7 @@ namespace GenericTableAPI.Controllers
                     return Ok();
                 }
 
-                dynamic? newItem = await _service.GetByIdAsync(tableName, id.ToString() ?? string.Empty);
+                dynamic? newItem = await _service.GetByIdAsync(tableName, id.ToString() ?? string.Empty, primaryKeyColumnName);
 
                 _logger.LogInformation("Added a new entity for table: {0} with primary key: {1}. Timestamp: {2}", tableName, id, timestamp);
                 return Ok(newItem);
@@ -155,7 +155,7 @@ namespace GenericTableAPI.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult> Update(string tableName, [FromRoute] string id, [FromBody] IDictionary<string, object?> values)
+        public async Task<ActionResult> Update(string tableName, [FromRoute] string id, [FromBody] IDictionary<string, object?> values, string? primaryKeyColumnName)
         {
             DateTimeOffset timestamp = DateTimeOffset.UtcNow;
             Dictionary<string, string?> valuesDict = values.ToDictionary(pair => pair.Key, pair => pair.Value?.ToString());
@@ -174,9 +174,9 @@ namespace GenericTableAPI.Controllers
             try
             {
                 _logger.LogInformation("Updating entity with id \"{id}\" in \"{tableName}\": \"{values}\". Timestamp: {timestamp}", id, tableName, JsonConvert.SerializeObject(valuesDict), timestamp);
-                await _service.UpdateAsync(tableName, id, values);
+                await _service.UpdateAsync(tableName, id, values, primaryKeyColumnName);
 
-                dynamic? updatedItem = await _service.GetByIdAsync(tableName, id);
+                dynamic? updatedItem = await _service.GetByIdAsync(tableName, id, primaryKeyColumnName);
 
                 if (updatedItem == null)
                 {
@@ -195,7 +195,7 @@ namespace GenericTableAPI.Controllers
         }
 
         [HttpDelete("{id}")]
-        public async Task<ActionResult> Delete(string tableName, string id)
+        public async Task<ActionResult> Delete(string tableName, string id, string? primaryKeyColumnName)
         {
             DateTimeOffset timestamp = DateTimeOffset.UtcNow;
             string requestInfo = $"GET request to {HttpContext.Request.Path} from {HttpContext.Connection.RemoteIpAddress} by user {User.Identity?.Name ?? "unknown."}. Timestamp: {timestamp}";
@@ -211,7 +211,7 @@ namespace GenericTableAPI.Controllers
 
             try
             {
-                await _service.DeleteAsync(tableName, id);
+                await _service.DeleteAsync(tableName, id, primaryKeyColumnName);
             }
             catch (Exception exception)
             {
@@ -219,7 +219,7 @@ namespace GenericTableAPI.Controllers
                 throw;
             }
 
-           dynamic? deletedItem = await _service.GetByIdAsync(tableName, id);
+           dynamic? deletedItem = await _service.GetByIdAsync(tableName, id, primaryKeyColumnName);
 
             if (deletedItem != null)
             {

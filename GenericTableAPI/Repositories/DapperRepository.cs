@@ -80,16 +80,17 @@ public class DapperRepository
     /// <param name="tableName">Table name</param>
     /// <param name="primaryKey">Primary key</param>
     /// <returns></returns>
-    public async Task<dynamic?> GetByIdAsync(string tableName, string primaryKey)
+    public async Task<dynamic?> GetByIdAsync(string tableName, string primaryKey, string primaryKeyColumnName = "")
     {
         DatabaseSyntaxService syntaxService = new DatabaseSyntaxService();
 
-        string primaryKeyColumn = GetPrimaryKeyColumnName(_connectionString, tableName, GetDatabaseType(_connectionString));
-        _logger.Information("Primary key column name: {0} used for table: {1} in GetByIdAsync", primaryKeyColumn, tableName);
-
+        if(string.IsNullOrEmpty(primaryKeyColumnName))
+            primaryKeyColumnName = GetPrimaryKeyColumnName(_connectionString, tableName, GetDatabaseType(_connectionString));
+        _logger.Information("Primary key column name: {0} used for table: {1} in GetByIdAsync", primaryKeyColumnName, tableName);
+        
         using DatabaseHandler connectionHandler = new(_connectionString);
         connectionHandler.Open();
-        string query = syntaxService.GetByIdQuery(tableName, primaryKey, primaryKeyColumn);
+        string query = syntaxService.GetByIdQuery(tableName, primaryKey, primaryKeyColumnName);
 
         try
         {
@@ -123,7 +124,7 @@ public class DapperRepository
     /// <param name="values">values to insert</param>
     /// <returns>Identifier of a newly created row</returns>
     /// <exception cref="ArgumentException"></exception>
-    public async Task<object?> AddAsync(string tableName, IDictionary<string, object?> values)
+    public async Task<object?> AddAsync(string tableName, IDictionary<string, object?> values, string primaryKeyColumnName = "")
     {
         // Validate and sanitize each column value
         foreach ((string? columnName, object? columnValue) in values)
@@ -137,15 +138,15 @@ public class DapperRepository
 
             // Sanitize the column value to prevent SQL injection
             object? sanitizedValue = SanitizeValue(columnValue);
-            string primaryKeyColumn = GetPrimaryKeyColumnName(_connectionString, tableName, GetDatabaseType(_connectionString));
+            if (string.IsNullOrEmpty(primaryKeyColumnName))
+                primaryKeyColumnName = GetPrimaryKeyColumnName(_connectionString, tableName, GetDatabaseType(_connectionString));
+            _logger.Information("Primary key column name: {0} used for table: {1} in AddAsync", primaryKeyColumnName, tableName);
             string columns = string.Join(", ", values.Keys);
             string results = string.Join(", ", values.Values.Select(k => $"'{k}'"));
 
-            string sql = syntaxService.AddQuery(tableName, values, columns, results, primaryKeyColumn, _connectionString);
+            string sql = syntaxService.AddQuery(tableName, values, columns, results, primaryKeyColumnName, _connectionString);
 
             using DatabaseHandler connectionHandler = new(_connectionString);
-
-            _logger.Information("Primary key column name: {0} used for table: {1} in AddAsync", primaryKeyColumn, tableName);
 
             connectionHandler.Open();
 
@@ -176,7 +177,7 @@ public class DapperRepository
         /// <returns>True on success</returns>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="ArgumentException"></exception>
-    public async Task<bool> UpdateAsync(string tableName, string primaryKey, IDictionary<string, object?> values)
+    public async Task<bool> UpdateAsync(string tableName, string primaryKey, IDictionary<string, object?> values, string primaryKeyColumnName = "")
     {
         DatabaseSyntaxService syntaxService = new DatabaseSyntaxService();
 
@@ -197,12 +198,13 @@ public class DapperRepository
 
         string setClauses = string.Join(", ", values.Select(k => $"{k.Key} = '{k.Value}'"));
 
-        string primaryKeyColumn = GetPrimaryKeyColumnName(_connectionString, tableName, GetDatabaseType(_connectionString));
-        _logger.Information("Primary key column name: {0} used for table: {1} in UpdateAsync", primaryKeyColumn, tableName);
+        if (string.IsNullOrEmpty(primaryKeyColumnName))
+            primaryKeyColumnName = GetPrimaryKeyColumnName(_connectionString, tableName, GetDatabaseType(_connectionString));
+        _logger.Information("Primary key column name: {0} used for table: {1} in UpdateAsync", primaryKeyColumnName, tableName);
 
         using DatabaseHandler connectionHandler = new(_connectionString);
         connectionHandler.Open();
-        string query = syntaxService.UpdateQuery(tableName, primaryKey, values, primaryKeyColumn, setClauses);
+        string query = syntaxService.UpdateQuery(tableName, primaryKey, values, primaryKeyColumnName, setClauses);
 
         try
         {
@@ -226,16 +228,17 @@ public class DapperRepository
         /// <param name="tableName">Table name</param>
         /// <param name="primaryKey">Primary key</param>
         /// <returns>True on success</returns>
-    public async Task<bool> DeleteAsync(string tableName, string primaryKey)
+    public async Task<bool> DeleteAsync(string tableName, string primaryKey, string primaryKeyColumnName = "")
     {
         DatabaseSyntaxService syntaxService = new DatabaseSyntaxService();
 
-        string primaryKeyColumn = GetPrimaryKeyColumnName(_connectionString, tableName, GetDatabaseType(_connectionString));
-        _logger.Information("Primary key column name: {0} used for table: {1} in DeleteAsync", primaryKeyColumn, tableName);
+        if (string.IsNullOrEmpty(primaryKeyColumnName))
+            primaryKeyColumnName = GetPrimaryKeyColumnName(_connectionString, tableName, GetDatabaseType(_connectionString));
 
+        _logger.Information("Primary key column name: {0} used for table: {1} in DeleteAsync", primaryKeyColumnName, tableName);
         using DatabaseHandler connectionHandler = new(_connectionString);
         connectionHandler.Open();
-        string query = syntaxService.DeleteQuery(tableName, primaryKey, primaryKeyColumn);
+        string query = syntaxService.DeleteQuery(tableName, primaryKey, primaryKeyColumnName);
 
         try
         {
