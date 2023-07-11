@@ -180,6 +180,111 @@ public class IntegrationTests : IDisposable
         // Assert
         Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
     }
+    [TestMethod]
+    public void Test_GetById_ColumnName_ReturnsSuccess()
+    {
+        int id = GetFirstId();
+        // Arrange
+        RestRequest request = new("api/test/{id}?primaryKeyColumnName=id", Method.Get)
+        {
+            RequestFormat = DataFormat.Json
+        };
+        request.AddUrlSegment("id", id);
+        request.AddHeader("Authorization", "Bearer " + _bearerToken);
+
+        // Act
+        RestResponse response = _client.Execute(request);
+        // Assert
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+    }
+    [TestMethod]
+    public void Test_GetById_ColumnName_ReturnsError()
+    {
+        int id = GetFirstId();
+        // Arrange
+        RestRequest request = new("api/test/{id}?primaryKeyColumnName=abc", Method.Get)
+        {
+            RequestFormat = DataFormat.Json
+        };
+        request.AddUrlSegment("id", id);
+        request.AddHeader("Authorization", "Bearer " + _bearerToken);
+
+        // Act
+        RestResponse response = _client.Execute(request);
+        // Assert
+        Assert.AreEqual(HttpStatusCode.NotFound, response.StatusCode);
+    }
+    [TestMethod]
+    public void Test_Delete_ColumnName_ReturnsSuccess()
+    {
+        var id = GetFirstId();
+        // Arrange
+        RestRequest request = new("api/test/{id}?primaryKeyColumnName=id", Method.Delete)
+        {
+            RequestFormat = DataFormat.Json
+        };
+        request.AddUrlSegment("id", id);
+        request.AddHeader("Authorization", "Bearer " + _bearerToken);
+
+        // Act
+        RestResponse response = _client.Execute(request);
+        // Assert
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+    }
+    [TestMethod]
+    public void Test_Delete_ColumnName_ReturnsError()
+    {
+        var id = GetFirstId();
+        // Arrange
+        RestRequest request = new("api/test/{id}?primaryKeyColumnName=abc", Method.Delete)
+        {
+            RequestFormat = DataFormat.Json
+        };
+        request.AddUrlSegment("id", id);
+        request.AddHeader("Authorization", "Bearer " + _bearerToken);
+
+        // Act
+        RestResponse response = _client.Execute(request);
+        // Assert
+        Assert.AreEqual(HttpStatusCode.InternalServerError, response.StatusCode);
+    }
+    [TestMethod]
+    public void Test_Put_ColumnName_ReturnsSuccess()
+    {
+        var id = GetFirstId();
+        // Arrange
+        RestRequest request = new("api/test/{id}?primaryKeyColumnName=id", Method.Put)
+        {
+            RequestFormat = DataFormat.Json
+        };
+        request.AddUrlSegment("id", id);
+        request.AddJsonBody(new { FullName = "foo", Phone = "123" });
+        request.AddHeader("Authorization", "Bearer " + _bearerToken);
+
+        // Act
+        RestResponse response = _client.Execute(request);
+        // Assert
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+    }
+    [TestMethod]
+    public void Test_Put_ColumnName_ReturnsError()
+    {
+        var id = GetFirstId();
+        // Arrange
+        RestRequest request = new("api/test/{id}?primaryKeyColumnName=abc", Method.Put)
+        {
+            RequestFormat = DataFormat.Json
+        };
+        request.AddUrlSegment("id", id);
+        request.AddJsonBody(new { FullName = "foo", Phone = "123" });
+        request.AddHeader("Authorization", "Bearer " + _bearerToken);
+
+        // Act
+        RestResponse response = _client.Execute(request);
+        // Assert
+        Assert.AreEqual(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
     public void Dispose()
     {
         //throw new NotImplementedException();
