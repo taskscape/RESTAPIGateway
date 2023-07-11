@@ -216,7 +216,7 @@ namespace GenericTableAPI.Controllers
             catch (Exception exception)
             {
                 _logger.LogError($"Error while processing request: {requestInfo} - {exception}. Timestamp: {timestamp}");
-                throw;
+                return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while processing your request");
             }
 
            dynamic? deletedItem = await _service.GetByIdAsync(tableName, id, primaryKeyColumnName);

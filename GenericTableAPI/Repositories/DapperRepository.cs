@@ -248,7 +248,7 @@ public class DapperRepository
         catch (Exception exception)
         {
             _logger.Error(exception, "An error occurred while executing DeleteAsync for query: {0}", query);
-            return false;
+            throw;
         }
         finally
         {
