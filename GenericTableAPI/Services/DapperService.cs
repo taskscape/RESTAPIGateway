@@ -15,23 +15,23 @@ public class DapperService
         return _repository.GetAllAsync(tableName, where, orderBy, limit);
     }
 
-    public Task<dynamic?> GetByIdAsync(string tableName, string id, string primaryKeyColumnName = "")
+    public Task<dynamic?> GetByIdAsync(string tableName, string id, string? columnName = "")
     {
-        return _repository.GetByIdAsync(tableName, id, primaryKeyColumnName);
+        return _repository.GetByIdAsync(tableName, id, columnName);
     }
 
-    public Task<object?> AddAsync(string tableName, IDictionary<string, object?> values, string primaryKeyColumnName = "")
+    public Task<object?> AddAsync(string tableName, IDictionary<string, object?> values, string? columnName = "")
     {
-        return _repository.AddAsync(tableName, values, primaryKeyColumnName);
+        return _repository.AddAsync(tableName, values, columnName);
     }
 
-    public Task<bool> UpdateAsync(string tableName, string id, IDictionary<string, object?> values, string primaryKeyColumnName = "")
+    public Task<bool> UpdateAsync(string tableName, string id, IDictionary<string, object?> values, string? columnName = "")
     {
-        return _repository.UpdateAsync(tableName, id, values, primaryKeyColumnName);
+        return _repository.UpdateAsync(tableName, id, values, columnName);
     }
 
-    public Task<bool> DeleteAsync(string tableName, string id, string primaryKeyColumnName = "")
+    public Task<bool> DeleteAsync(string tableName, string id, string? columnName = "")
     {
-        return _repository.DeleteAsync(tableName, id, primaryKeyColumnName);
+        return _repository.DeleteAsync(tableName, id, columnName);
     }
 }

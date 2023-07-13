@@ -73,7 +73,7 @@ public class DapperRepository
     /// <param name="primaryKey">Primary key</param>
     /// <param name="columnName">Optional column name to use for primaryKey, if not default</param>
     /// <returns></returns>
-    public async Task<dynamic?> GetByIdAsync(string tableName, string primaryKey, string columnName = "")
+    public async Task<dynamic?> GetByIdAsync(string tableName, string primaryKey, string? columnName = "")
     {
         DatabaseSyntaxService syntaxService = new();
 
@@ -119,38 +119,38 @@ public class DapperRepository
     /// </summary>
     /// <param name="tableName">Table name</param>
     /// <param name="values">values to insert</param>
-    /// <param name="primaryKeyColumnName">Optional column name to use for primaryKey, if not default</param>
+    /// <param name="columnName">Optional column name to use for primaryKey, if not default</param>
     /// <returns>Identifier of a newly created row</returns>
     /// <exception cref="ArgumentException"></exception>
-    public async Task<object?> AddAsync(string tableName, IDictionary<string, object?> values, string primaryKeyColumnName = "")
+    public async Task<object?> AddAsync(string tableName, IDictionary<string, object?> values, string? columnName = "")
     {
         // Validate and sanitize each column value
-        foreach ((string? columnName, object? columnValue) in values)
+        foreach ((string? key, object? value) in values)
         {
-            if (!Regex.IsMatch(columnName, @"^[\w\d]+$|^[\w\d]+$"))
+            if (!Regex.IsMatch(key, @"^[\w\d]+$|^[\w\d]+$"))
             {
-                throw new ArgumentException("Repository.AddAsync: Invalid column name: " + columnName);
+                throw new ArgumentException("Repository.AddAsync: Invalid column name: " + key);
             }
 
             // Sanitize the column value to prevent SQL injection
-            object? sanitizedValue = SanitizeValue(columnValue);
+            object? sanitizedValue = SanitizeValue(value);
 
             // Add the sanitized value to the SQL insert statement
-            values[columnName] = sanitizedValue;
+            values[key] = sanitizedValue;
         }
 
-        if (string.IsNullOrEmpty(primaryKeyColumnName))
+        if (string.IsNullOrEmpty(columnName))
         {
-            primaryKeyColumnName = GetPrimaryKeyColumnName(_connectionString, tableName, GetDatabaseType(_connectionString));
+            columnName = GetPrimaryKeyColumnName(_connectionString, tableName, GetDatabaseType(_connectionString));
         }
 
-        _logger.Information("Repository.AddAsync: Primary key column name: {0} used for table: {1}", primaryKeyColumnName, tableName);
+        _logger.Information("Repository.AddAsync: Primary key column name: {0} used for table: {1}", columnName, tableName);
 
         string columns = string.Join(", ", values.Keys);
         string results = string.Join(", ", values.Values.Select(k => $"'{k}'"));
 
         DatabaseSyntaxService syntaxService = new();
-        string query = syntaxService.AddQuery(tableName, _schemaName, values, columns, results, primaryKeyColumnName, _connectionString);
+        string query = syntaxService.AddQuery(tableName, _schemaName, values, columns, results, columnName, _connectionString);
 
         using DatabaseHandler connectionHandler = new(_connectionString);
         connectionHandler.Open();
@@ -182,7 +182,7 @@ public class DapperRepository
     /// <returns>True on success</returns>
     /// <exception cref="ArgumentNullException"></exception>
     /// <exception cref="ArgumentException"></exception>
-    public async Task<bool> UpdateAsync(string tableName, string primaryKey, IDictionary<string, object?> values, string columnName = "")
+    public async Task<bool> UpdateAsync(string tableName, string primaryKey, IDictionary<string, object?> values, string? columnName = "")
     {
         DatabaseSyntaxService syntaxService = new();
 
@@ -241,7 +241,7 @@ public class DapperRepository
     /// <param name="primaryKey">Primary key</param>
     /// <param name="columnName">Optional column name to use for primaryKey, if not default</param>
     /// <returns>True on success</returns>
-    public async Task<bool> DeleteAsync(string tableName, string primaryKey, string columnName = "")
+    public async Task<bool> DeleteAsync(string tableName, string primaryKey, string? columnName = "")
     {
         DatabaseSyntaxService syntaxService = new();
 
