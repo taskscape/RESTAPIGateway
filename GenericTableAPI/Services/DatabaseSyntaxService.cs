@@ -1,5 +1,4 @@
-﻿using GenericTableAPI.Utilities;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.Text.RegularExpressions;
 using static GenericTableAPI.Utilities.DatabaseUtilities;
 
@@ -7,7 +6,18 @@ namespace GenericTableAPI.Services
 {
     public class DatabaseSyntaxService
     {
-        public string GetAllQuery(string tableName, string? where = null, string? orderBy = null, int? limit = null, string? connectionString = null)
+        /// <summary>
+        /// Returns the table name with schemaName if it is not null
+        /// </summary>
+        /// <param name="tableName"></param>
+        /// <param name="schemaName"></param>
+        /// <returns><see cref="string"/></returns>
+        private static string GetTableName(string tableName, string? schemaName)
+        {
+            return string.IsNullOrEmpty(schemaName) ? tableName : $"{schemaName}.{tableName}";
+        }
+
+        public string GetAllQuery(string tableName, string? schemaName, string? where = null, string? orderBy = null, int? limit = null, string? connectionString = null)
         {
             if (string.IsNullOrEmpty(tableName) || !Regex.IsMatch(tableName, @"^\w+$"))
             {
@@ -24,36 +34,37 @@ namespace GenericTableAPI.Services
                 throw new ArgumentException("Invalid ORDER BY clause");
             }
 
-            DatabaseType dbType = DatabaseUtilities.GetDatabaseType(connectionString);
-            string sql = $"SELECT";
+            DatabaseType dbType = GetDatabaseType(connectionString);
+            string query = $"SELECT";
+            tableName = GetTableName(tableName, schemaName);
 
             switch (dbType)
             {
                 case DatabaseType.SqlServer:
                     if (limit.HasValue)
                     {
-                        sql += $" TOP {limit.Value} ";
+                        query += $" TOP {limit.Value} ";
                     }
-                    sql += $" * FROM {tableName}";
+                    query += $" * FROM {tableName}";
                     if (!string.IsNullOrEmpty(where))
                     {
-                        sql += $" WHERE {where}";
+                        query += $" WHERE {where}";
                     }
                     break;
 
                 case DatabaseType.Oracle:
-                    sql = $" * FROM {tableName}";
+                    query += $" * FROM {tableName}";
                     if (!string.IsNullOrEmpty(where))
                     {
-                        sql += $" WHERE {where}";
+                        query += $" WHERE {where}";
                         if (limit.HasValue)
                         {
-                            sql += $" AND ROWNUM <= {limit.Value}";
+                            query += $" AND ROWNUM <= {limit.Value}";
                         }
                     }
                     else if (limit.HasValue)
                     {
-                        sql += $" WHERE ROWNUM <= {limit.Value}";
+                        query += $" WHERE ROWNUM <= {limit.Value}";
                     }
                     break;
 
@@ -63,13 +74,13 @@ namespace GenericTableAPI.Services
 
             if (!string.IsNullOrEmpty(orderBy))
             {
-                sql += $" ORDER BY {orderBy}";
+                query += $" ORDER BY {orderBy}";
             }
 
-            return sql;
+            return query;
         }
 
-        public string GetByIdQuery(string tableName, [FromRoute] string id, string? primaryKeyColumn = null)
+        public string GetByIdQuery(string tableName, string? schemaName, [FromRoute] string id, string? primaryKeyColumn = null)
         {
             if (string.IsNullOrEmpty(id) || !Regex.IsMatch(id, @"^\w+$"))
             {
@@ -81,31 +92,32 @@ namespace GenericTableAPI.Services
                 throw new ArgumentException("Invalid table name");
             }
 
+            tableName = GetTableName(tableName, schemaName);
             string sql = $"SELECT * FROM {tableName} WHERE {primaryKeyColumn} = '{id}'";
 
             return sql;
         }
 
-        public string AddQuery(string tableName, IDictionary<string, object> values, string? columns = null, string? strValues = null, string? primaryKeyColumn = null, string? connectionString = null)
+        public string AddQuery(string tableName, string? schemaName, IDictionary<string, object?> values, string? columns = null, string? strValues = null, string? primaryKeyColumn = null, string? connectionString = null)
         {
             if (string.IsNullOrEmpty(tableName) || !Regex.IsMatch(tableName, @"^\w+$"))
             {
                 throw new ArgumentException("Invalid table name");
             }
 
-            DatabaseType dbType = DatabaseUtilities.GetDatabaseType(connectionString);
+            DatabaseType databaseType = GetDatabaseType(connectionString);
 
-            string sql = "";
+            string sql;
+            tableName = GetTableName(tableName, schemaName);
 
-            switch (dbType)
+            switch (databaseType)
             {
                 case DatabaseType.SqlServer:
                     sql = $"INSERT INTO {tableName} ({columns}) OUTPUT Inserted.{primaryKeyColumn} VALUES ({strValues})";
                     break;
 
                 case DatabaseType.Oracle:
-                    string sequenceName = $"{tableName}_SEQ";
-                    sql = $"INSERT INTO {tableName} ({columns}) VALUES ({strValues}); SELECT {sequenceName}.CURRVAL FROM DUAL";
+                    sql = $"DECLARE ret VARCHAR(32); BEGIN INSERT INTO {tableName} ({columns}) VALUES ({strValues}) RETURNING ID INTO ret; DBMS_OUTPUT.PUT_LINE(ret); END;";
                     break;
                 default:
                     throw new NotSupportedException("Unknown database type.");
@@ -113,7 +125,7 @@ namespace GenericTableAPI.Services
             return sql;
         }
 
-        public string UpdateQuery(string tableName, string id, IDictionary<string, object> values, string? primaryKeyColumn = null, string? setClauses = null)
+        public string UpdateQuery(string tableName, string? schemaName, string id, IDictionary<string, object> values, string? primaryKeyColumn = null, string? setClauses = null)
         {
             if (string.IsNullOrEmpty(id) || !Regex.IsMatch(id, @"^\w+$"))
             {
@@ -125,12 +137,14 @@ namespace GenericTableAPI.Services
                 throw new ArgumentException("Invalid table name");
             }
 
-            string sql = $"UPDATE {tableName} SET {setClauses} WHERE {primaryKeyColumn} = {id}";
+            tableName = GetTableName(tableName, schemaName);
+
+            string sql = $"UPDATE {tableName} SET {setClauses} WHERE {primaryKeyColumn} = '{id}'";
 
             return sql;
         }
 
-        public string DeleteQuery(string tableName, string id, string primaryKeyColumn = null)
+        public string DeleteQuery(string tableName, string? schemaName, string id, string primaryKeyColumn = null)
         {
             if (string.IsNullOrEmpty(id) || !Regex.IsMatch(id, @"^\w+$"))
             {
@@ -141,6 +155,8 @@ namespace GenericTableAPI.Services
             {
                 throw new ArgumentException("Invalid table name");
             }
+
+            tableName = GetTableName(tableName, schemaName);
 
             string sql = $"DELETE FROM {tableName} WHERE {primaryKeyColumn} = '{id}'";
 

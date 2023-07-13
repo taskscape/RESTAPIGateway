@@ -1,10 +1,8 @@
 ﻿using System.Data.Common;
 using System.Dynamic;
-using System.Text;
 using System.Text.RegularExpressions;
 using GenericTableAPI.Services;
 using GenericTableAPI.Utilities;
-using Microsoft.IdentityModel.Tokens;
 using static GenericTableAPI.Utilities.DatabaseUtilities;
 
 namespace GenericTableAPI.Repositories;
@@ -22,17 +20,6 @@ public class DapperRepository
         return sanitizedValue;
     }
 
-    /// <summary>
-    /// Returns the table name with schemaName if it is not null
-    /// </summary>
-    /// <param name="tableName"></param>
-    /// <param name="schemaName"></param>
-    /// <returns><see cref="string"/></returns>
-    private static string GetTableName(string tableName, string? schemaName)
-    {
-        return string.IsNullOrEmpty(schemaName) ? tableName : $"{schemaName}.{tableName}";
-    }
-
     public DapperRepository(string? connectionString, string? schemaName, Serilog.ILogger logger)
     {
         _connectionString = connectionString;
@@ -44,19 +31,25 @@ public class DapperRepository
     /// Returns all rows from a given table
     /// </summary>
     /// <param name="tableName"></param>
+    /// <param name="where"></param>
+    /// <param name="orderBy"></param>
+    /// <param name="limit"></param>
     /// <returns>List of objects</returns>
     public async Task<IEnumerable<dynamic>?> GetAllAsync(string tableName, string? where = null, string? orderBy = null, int? limit = null)
     {
-        DatabaseSyntaxService syntaxService = new DatabaseSyntaxService();
+        DatabaseSyntaxService syntaxService = new();
 
         using DatabaseHandler connectionHandler = new(_connectionString);
         connectionHandler.Open();
 
-        string query = syntaxService.GetAllQuery(tableName, where, orderBy, limit, _connectionString);
+        string query = syntaxService.GetAllQuery(tableName, _schemaName, where, orderBy, limit, _connectionString);
         try
         {
+            _logger.Information("Repository.GetAllAsync: executing: " + query);
+            IAsyncEnumerable<dynamic> results = ToDynamicList(await connectionHandler.ExecuteReaderAsync(query));
+
             List<dynamic>? result = new();
-            await foreach (dynamic item in ToDynamicList(await connectionHandler.ExecuteReaderAsync(query)))
+            await foreach (dynamic item in results)
             {
                 result.Add(item);
             }
@@ -64,13 +57,12 @@ public class DapperRepository
         }
         catch (Exception exception)
         {
-            _logger.Error(exception, "An error occurred while executing GetAllAsync for query: {0}", query);
+            _logger.Error(exception, "Repository.GetAllAsync: An error occurred while executing: {0}", query);
             return null;
         }
         finally
         {
             connectionHandler.Close();
-
         }
     }
 
@@ -79,29 +71,34 @@ public class DapperRepository
     /// </summary>
     /// <param name="tableName">Table name</param>
     /// <param name="primaryKey">Primary key</param>
+    /// <param name="columnName">Optional column name to use for primaryKey, if not default</param>
     /// <returns></returns>
-    public async Task<dynamic?> GetByIdAsync(string tableName, string primaryKey, string primaryKeyColumnName = "")
+    public async Task<dynamic?> GetByIdAsync(string tableName, string primaryKey, string columnName = "")
     {
-        DatabaseSyntaxService syntaxService = new DatabaseSyntaxService();
+        DatabaseSyntaxService syntaxService = new();
 
-        if(string.IsNullOrEmpty(primaryKeyColumnName))
-            primaryKeyColumnName = GetPrimaryKeyColumnName(_connectionString, tableName, GetDatabaseType(_connectionString));
-        _logger.Information("Primary key column name: {0} used for table: {1} in GetByIdAsync", primaryKeyColumnName, tableName);
+        if (string.IsNullOrEmpty(columnName))
+        {
+            columnName = GetPrimaryKeyColumnName(_connectionString, tableName, GetDatabaseType(_connectionString));
+        }
         
+        _logger.Information("Repository.GetByIdAsync: Primary key column name: {0} used for table: {1}", columnName, tableName);
+
         using DatabaseHandler connectionHandler = new(_connectionString);
         connectionHandler.Open();
-        string query = syntaxService.GetByIdQuery(tableName, primaryKey, primaryKeyColumnName);
+        string query = syntaxService.GetByIdQuery(tableName, _schemaName, primaryKey, columnName);
 
         try
         {
+            _logger.Information("Repository.GetByIdAsync: executing: " + query);
             await using DbDataReader reader = await connectionHandler.ExecuteReaderAsync(query);
             if (await reader.ReadAsync())
             {
                 dynamic? result = new ExpandoObject();
                 IDictionary<string, object> dictionary = (IDictionary<string, object>)result;
-                for (int i = 0; i < reader.FieldCount; i++)
+                for (int columnIndex = 0; columnIndex < reader.FieldCount; columnIndex++)
                 {
-                    dictionary.Add(reader.GetName(i), reader.GetValue(i));
+                    dictionary.Add(reader.GetName(columnIndex), reader.GetValue(columnIndex));
                 }
 
                 connectionHandler.Close();
@@ -110,7 +107,7 @@ public class DapperRepository
         }
         catch (Exception exception)
         {
-            _logger.Error(exception, "An error occurred while executing GetByIdAsync for query: {0}", query);
+            _logger.Error(exception, "Repository.GetByIdAsync: An error occurred while executing: {0}", query);
         }
 
         connectionHandler.Close();
@@ -122,6 +119,7 @@ public class DapperRepository
     /// </summary>
     /// <param name="tableName">Table name</param>
     /// <param name="values">values to insert</param>
+    /// <param name="primaryKeyColumnName">Optional column name to use for primaryKey, if not default</param>
     /// <returns>Identifier of a newly created row</returns>
     /// <exception cref="ArgumentException"></exception>
     public async Task<object?> AddAsync(string tableName, IDictionary<string, object?> values, string primaryKeyColumnName = "")
@@ -129,67 +127,77 @@ public class DapperRepository
         // Validate and sanitize each column value
         foreach ((string? columnName, object? columnValue) in values)
         {
-            DatabaseSyntaxService syntaxService = new DatabaseSyntaxService();
-
             if (!Regex.IsMatch(columnName, @"^[\w\d]+$|^[\w\d]+$"))
             {
-                throw new ArgumentException("Invalid column name");
+                throw new ArgumentException("Repository.AddAsync: Invalid column name: " + columnName);
             }
 
             // Sanitize the column value to prevent SQL injection
             object? sanitizedValue = SanitizeValue(columnValue);
-            if (string.IsNullOrEmpty(primaryKeyColumnName))
-                primaryKeyColumnName = GetPrimaryKeyColumnName(_connectionString, tableName, GetDatabaseType(_connectionString));
-            _logger.Information("Primary key column name: {0} used for table: {1} in AddAsync", primaryKeyColumnName, tableName);
-            string columns = string.Join(", ", values.Keys);
-            string results = string.Join(", ", values.Values.Select(k => $"'{k}'"));
 
-            string sql = syntaxService.AddQuery(tableName, values, columns, results, primaryKeyColumnName, _connectionString);
-
-            using DatabaseHandler connectionHandler = new(_connectionString);
-
-            connectionHandler.Open();
-
-            try
-            {
-                object? result = await connectionHandler.ExecuteScalarAsync(sql);
-                return result;
-            }
-            catch (Exception exception)
-            {
-                _logger.Error(exception, "An error occurred while executing AddAsync for query: {0}", sql);
-                throw;
-            }
-            finally
-            {
-                connectionHandler.Close();
-            }
+            // Add the sanitized value to the SQL insert statement
+            values[columnName] = sanitizedValue;
         }
-        return null;
+
+        if (string.IsNullOrEmpty(primaryKeyColumnName))
+        {
+            primaryKeyColumnName = GetPrimaryKeyColumnName(_connectionString, tableName, GetDatabaseType(_connectionString));
+        }
+
+        _logger.Information("Repository.AddAsync: Primary key column name: {0} used for table: {1}", primaryKeyColumnName, tableName);
+
+        string columns = string.Join(", ", values.Keys);
+        string results = string.Join(", ", values.Values.Select(k => $"'{k}'"));
+
+        DatabaseSyntaxService syntaxService = new();
+        string query = syntaxService.AddQuery(tableName, _schemaName, values, columns, results, primaryKeyColumnName, _connectionString);
+
+        using DatabaseHandler connectionHandler = new(_connectionString);
+        connectionHandler.Open();
+
+        try
+        {
+            _logger.Information("Repository.AddAsync: executing: " + query);
+            object? result = await connectionHandler.ExecuteScalarAsync(query);
+            return result;
+        }
+        catch (Exception exception)
+        {
+            _logger.Error(exception, "Repository.AddAsync: An error occurred while executing: {0}", query);
+            throw;
+        }
+        finally
+        {
+            connectionHandler.Close();
+        }
     }
 
-        /// <summary>
-        /// Updates a row in a given table
-        /// </summary>
-        /// <param name="tableName">Table name</param>
-        /// <param name="primaryKey">Primary key</param>
-        /// <param name="values">values to update</param>
-        /// <returns>True on success</returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="ArgumentException"></exception>
-    public async Task<bool> UpdateAsync(string tableName, string primaryKey, IDictionary<string, object?> values, string primaryKeyColumnName = "")
+    /// <summary>
+    /// Updates a row in a given table
+    /// </summary>
+    /// <param name="tableName">Table name</param>
+    /// <param name="primaryKey">Primary key</param>
+    /// <param name="values">values to update</param>
+    /// <param name="columnName">Optional column name to use for primaryKey, if not default</param>
+    /// <returns>True on success</returns>
+    /// <exception cref="ArgumentNullException"></exception>
+    /// <exception cref="ArgumentException"></exception>
+    public async Task<bool> UpdateAsync(string tableName, string primaryKey, IDictionary<string, object?> values, string columnName = "")
     {
-        DatabaseSyntaxService syntaxService = new DatabaseSyntaxService();
+        DatabaseSyntaxService syntaxService = new();
 
         Dictionary<string, object>? sanitizedValues = new();
         if (sanitizedValues == null)
         {
-            throw new ArgumentNullException(nameof(sanitizedValues));}
+            _logger.Error("Repository.UpdateAsync: sanitizedValues is null");
+            throw new ArgumentNullException(nameof(sanitizedValues));
+        }
+
         foreach (KeyValuePair<string, object?> pair in values)
         {
             if (!Regex.IsMatch(pair.Key, @"^[\w\d]+$"))
             {
-                throw new ArgumentException("Invalid column name");
+                throw new ArgumentException("Repository.UpdateAsync: Invalid column name: " + columnName);
             }
 
             object? sanitizedValue = SanitizeValue(pair.Value);
@@ -198,23 +206,27 @@ public class DapperRepository
 
         string setClauses = string.Join(", ", values.Select(k => $"{k.Key} = '{k.Value}'"));
 
-        if (string.IsNullOrEmpty(primaryKeyColumnName))
-            primaryKeyColumnName = GetPrimaryKeyColumnName(_connectionString, tableName, GetDatabaseType(_connectionString));
-        _logger.Information("Primary key column name: {0} used for table: {1} in UpdateAsync", primaryKeyColumnName, tableName);
+        if (string.IsNullOrEmpty(columnName))
+        {
+            columnName = GetPrimaryKeyColumnName(_connectionString, tableName, GetDatabaseType(_connectionString));
+        }
+
+        _logger.Information("Repository.UpdateAsync: Primary key column name: {0} used for table: {1}", columnName, tableName);
 
         using DatabaseHandler connectionHandler = new(_connectionString);
         connectionHandler.Open();
-        string query = syntaxService.UpdateQuery(tableName, primaryKey, values, primaryKeyColumnName, setClauses);
+        string query = syntaxService.UpdateQuery(tableName, _schemaName, primaryKey, values, columnName, setClauses);
 
         try
         {
+            _logger.Information("Repository.UpdateAsync: executing: " + query);
             await connectionHandler.ExecuteScalarAsync(query);
             return true;
         }
         catch (Exception exception)
         {
-            _logger.Error(exception, "An error occurred while executing UpdateAsync for query: {0}", query);
-            return false;
+            _logger.Error(exception, "Repository.UpdateAsync: An error occurred while executing: {0}", query);
+            throw;
         }
         finally
         {
@@ -222,32 +234,37 @@ public class DapperRepository
         }
     }
 
-        /// <summary>
-        /// Deletes a row from a table
-        /// </summary>
-        /// <param name="tableName">Table name</param>
-        /// <param name="primaryKey">Primary key</param>
-        /// <returns>True on success</returns>
-    public async Task<bool> DeleteAsync(string tableName, string primaryKey, string primaryKeyColumnName = "")
+    /// <summary>
+    /// Deletes a row from a table
+    /// </summary>
+    /// <param name="tableName">Table name</param>
+    /// <param name="primaryKey">Primary key</param>
+    /// <param name="columnName">Optional column name to use for primaryKey, if not default</param>
+    /// <returns>True on success</returns>
+    public async Task<bool> DeleteAsync(string tableName, string primaryKey, string columnName = "")
     {
-        DatabaseSyntaxService syntaxService = new DatabaseSyntaxService();
+        DatabaseSyntaxService syntaxService = new();
 
-        if (string.IsNullOrEmpty(primaryKeyColumnName))
-            primaryKeyColumnName = GetPrimaryKeyColumnName(_connectionString, tableName, GetDatabaseType(_connectionString));
+        if (string.IsNullOrEmpty(columnName))
+        {
+            columnName = GetPrimaryKeyColumnName(_connectionString, tableName, GetDatabaseType(_connectionString));
+        }
 
-        _logger.Information("Primary key column name: {0} used for table: {1} in DeleteAsync", primaryKeyColumnName, tableName);
+        _logger.Information("Repository.DeleteAsync: Primary key column name: {0} used for table: {1}", columnName, tableName);
+
         using DatabaseHandler connectionHandler = new(_connectionString);
         connectionHandler.Open();
-        string query = syntaxService.DeleteQuery(tableName, primaryKey, primaryKeyColumnName);
+        string query = syntaxService.DeleteQuery(tableName, _schemaName, primaryKey, columnName);
 
         try
         {
+            _logger.Information("Repository.DeleteAsync: executing: " + query);
             await connectionHandler.ExecuteScalarAsync(query);
             return true;
         }
         catch (Exception exception)
         {
-            _logger.Error(exception, "An error occurred while executing DeleteAsync for query: {0}", query);
+            _logger.Error(exception, "Repository.DeleteAsync: An error occurred while executing: {0}", query);
             throw;
         }
         finally
