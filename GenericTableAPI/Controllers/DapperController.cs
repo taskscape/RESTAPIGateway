@@ -147,8 +147,18 @@ namespace GenericTableAPI.Controllers
 
                 dynamic? newItem = await _service.GetByIdAsync(tableName, id.ToString() ?? string.Empty, columnName);
 
-                _logger.LogInformation("Added a new entity for table: {TableName} with identifier: {ID}. Timestamp: {TimeStamp}", tableName, id, timestamp);
-                return Ok(newItem);
+                if (newItem == null)
+                {
+                    _logger.LogInformation("Failed to establish new entity for table: {TableName}. Timestamp: {TimeStamp}", tableName, timestamp);
+                    return Ok();
+                }
+                else ;
+
+                {
+                    _logger.LogInformation("Added a new entity for table: {TableName} with identifier: {ID}. Timestamp: {TimeStamp}", tableName, id, timestamp);
+                    return CreatedAtAction(nameof(GetById), new { id = id.ToString() }, newItem);
+                }
+
             }
             catch (Exception exception)
             {
