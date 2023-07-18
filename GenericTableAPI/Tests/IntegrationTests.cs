@@ -126,7 +126,7 @@ public class IntegrationTests : IDisposable
         // Act
         RestResponse response = _client.Execute(request);
         // Assert
-        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+        Assert.AreEqual(HttpStatusCode.Created, response.StatusCode);
     }
     [TestMethod]
     public void Test_GetById_ReturnsSuccess()

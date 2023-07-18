@@ -4,6 +4,7 @@ using GenericTableAPI.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using Microsoft.AspNetCore.Http.Extensions;
 
 namespace GenericTableAPI.Controllers
 {
@@ -76,7 +77,7 @@ namespace GenericTableAPI.Controllers
 
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("{id}", Name = nameof(GetById))]
         public async Task<ActionResult<dynamic>> GetById(string tableName, [FromRoute] string id, string? primaryKeyColumnName)
         {
 
@@ -152,11 +153,10 @@ namespace GenericTableAPI.Controllers
                     _logger.LogInformation("Failed to establish new entity for table: {TableName}. Timestamp: {TimeStamp}", tableName, timestamp);
                     return Ok();
                 }
-                else ;
-
+                else
                 {
                     _logger.LogInformation("Added a new entity for table: {TableName} with identifier: {ID}. Timestamp: {TimeStamp}", tableName, id, timestamp);
-                    return CreatedAtAction(nameof(GetById), new { id = id.ToString() }, newItem);
+                    return CreatedAtRoute(nameof(GetById), new { tableName, id = id.ToString(), primaryKeyColumnName = columnName }, newItem);
                 }
 
             }
