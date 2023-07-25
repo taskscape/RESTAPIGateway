@@ -21,20 +21,25 @@ namespace GenericTableAPI.Controllers
         public async Task<IActionResult> Post(User _userData)
         {
             if (_userData?.UserName == null || _userData.Password == null) return BadRequest();
-            User? user = GetUser(_userData.UserName, _userData.Password);
 
-            if (user != null)
+            if (ValidateCredentials(_userData.UserName, _userData.Password))
             {
-                return Ok(CreateToken(user));
+                return Ok(CreateToken(_userData));
             }
 
             return BadRequest("Invalid credentials");
 
         }
 
-        private static User? GetUser(string userName, string password)
+        private bool ValidateCredentials(string userName, string password)
         {
-            return !string.IsNullOrEmpty(userName) ? new User() { UserName = "test", Password = "123" } : null;
+            string? confUsername = _configuration.GetSection("JwtSettings:Username").Value;
+            string? confPassword = _configuration.GetSection("JwtSettings:Password").Value;
+
+            if (confUsername == userName && confPassword == password)
+                return true;
+            else
+                return false;
         }
         private string CreateToken(User user)
         {

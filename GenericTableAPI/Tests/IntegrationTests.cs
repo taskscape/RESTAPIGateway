@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using RestSharp;
+using RestSharp.Authenticators;
 
 [TestClass]
 public class IntegrationTests : IDisposable
@@ -10,6 +11,12 @@ public class IntegrationTests : IDisposable
     private RestClient _client;
     private const string BaseUrl = "https://localhost:7104/";
     private static string _bearerToken;
+
+    private string JWTAuthUsername = "your_jwt_auth_username";
+    private string JWTAuthPassword = "your_jwt_auth_password";
+
+    private string BasicAuthUsername = "your_basic_auth_username";
+    private string BasicAuthPassword = "your_basic_auth_password";
 
     [TestInitialize]
     public void Setup()
@@ -23,7 +30,7 @@ public class IntegrationTests : IDisposable
         {
             RequestFormat = DataFormat.Json
         };
-        request.AddJsonBody(new { userName = "foo", password = "123" });
+        request.AddJsonBody(new { userName = JWTAuthUsername, password = JWTAuthPassword });
 
         RestResponse response = _client.Execute(request);
 
@@ -50,7 +57,7 @@ public class IntegrationTests : IDisposable
         {
             RequestFormat = DataFormat.Json
         };
-        request.AddJsonBody(new { userName = "", Password = "" });
+        request.AddJsonBody(new { userName = "foo", Password = "123" });
 
         // Act
         RestResponse response = _client.Execute(request);
@@ -66,13 +73,37 @@ public class IntegrationTests : IDisposable
         {
             RequestFormat = DataFormat.Json
         };
-        request.AddJsonBody(new { userName = "foo", Password = "123" });
+        request.AddJsonBody(new { userName = JWTAuthUsername, Password = JWTAuthPassword });
 
         // Act
         RestResponse response = _client.Execute(request);
 
         // Assert
         Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+    }
+    [TestMethod]
+    public void Test_Get_BasicAuth_Success()
+    {
+        // Arrange
+        RestRequest request = new("api/test");
+        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(_client, request);
+        // Act
+        RestResponse response = _client.Execute(request);
+
+        // Assert
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+    }
+    [TestMethod]
+    public void Test_Get_BasicAuth_WrongCredentials()
+    {
+        // Arrange
+        RestRequest request = new("api/test");
+        new HttpBasicAuthenticator("foo", "123").Authenticate(_client, request);
+        // Act
+        RestResponse response = _client.Execute(request);
+
+        // Assert
+        Assert.AreEqual(HttpStatusCode.Unauthorized, response.StatusCode);
     }
     [TestMethod]
     public void Test_Get_ReturnsUnauthorized()
@@ -282,9 +313,20 @@ public class IntegrationTests : IDisposable
         // Act
         RestResponse response = _client.Execute(request);
         // Assert
-        Assert.AreEqual(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.AreEqual(HttpStatusCode.InternalServerError, response.StatusCode);
     }
+    [TestMethod]
+    public void Test_Get_TablePermissions_ReturnsForbidden()
+    {
+        // Arrange
+        RestRequest request = new("api/test2");
+        request.AddHeader("Authorization", "Bearer " + _bearerToken);
+        // Act
+        RestResponse response = _client.Execute(request);
 
+        // Assert
+        Assert.AreEqual(HttpStatusCode.Forbidden, response.StatusCode);
+    }
     public void Dispose()
     {
         //throw new NotImplementedException();

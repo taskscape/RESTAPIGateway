@@ -119,7 +119,7 @@ namespace GenericTableAPI.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> Add(string tableName, [FromBody] IDictionary<string, object?> values, string? columnName)
+        public async Task<ActionResult> Add(string tableName, [FromBody] IDictionary<string, object?> values, string? primaryKeyColumnName)
         {
             DateTimeOffset timestamp = DateTimeOffset.UtcNow;
             Dictionary<string, string?> valuesDict = values.ToDictionary(pair => pair.Key, pair => pair.Value?.ToString());
@@ -138,7 +138,7 @@ namespace GenericTableAPI.Controllers
             try
             {
                 _logger.LogInformation("Adding a new entity to {TableName}: {Values}. Timestamp: {TimeStamp}", tableName, JsonConvert.SerializeObject(valuesDict), timestamp);
-                object? id = await _service.AddAsync(tableName, values, columnName);
+                object? id = await _service.AddAsync(tableName, values, primaryKeyColumnName);
 
                 if (id == null)
                 {
@@ -146,7 +146,7 @@ namespace GenericTableAPI.Controllers
                     return Ok();
                 }
 
-                dynamic? newItem = await _service.GetByIdAsync(tableName, id.ToString() ?? string.Empty, columnName);
+                dynamic? newItem = await _service.GetByIdAsync(tableName, id.ToString() ?? string.Empty, primaryKeyColumnName);
 
                 if (newItem == null)
                 {
@@ -156,7 +156,7 @@ namespace GenericTableAPI.Controllers
                 else
                 {
                     _logger.LogInformation("Added a new entity for table: {TableName} with identifier: {ID}. Timestamp: {TimeStamp}", tableName, id, timestamp);
-                    return CreatedAtRoute(nameof(GetById), new { tableName, id = id.ToString(), primaryKeyColumnName = columnName }, newItem);
+                    return CreatedAtRoute(nameof(GetById), new { tableName, id = id.ToString(), primaryKeyColumnName }, newItem);
                 }
 
             }
@@ -173,7 +173,7 @@ namespace GenericTableAPI.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult> Update(string tableName, [FromRoute] string id, [FromBody] IDictionary<string, object?> values, string? columnName)
+        public async Task<ActionResult> Update(string tableName, [FromRoute] string id, [FromBody] IDictionary<string, object?> values, string? primaryKeyColumnName)
         {
             DateTimeOffset timestamp = DateTimeOffset.UtcNow;
             Dictionary<string, string?> valuesDict = values.ToDictionary(pair => pair.Key, pair => pair.Value?.ToString());
@@ -192,9 +192,9 @@ namespace GenericTableAPI.Controllers
             try
             {
                 _logger.LogInformation("Updating entity with identifier={ID} in {TableName}: {Values}. Timestamp: {TimeStamp}", id, tableName, JsonConvert.SerializeObject(valuesDict), timestamp);
-                await _service.UpdateAsync(tableName, id, values, columnName);
+                await _service.UpdateAsync(tableName, id, values, primaryKeyColumnName);
 
-                dynamic? updatedItem = await _service.GetByIdAsync(tableName, id, columnName);
+                dynamic? updatedItem = await _service.GetByIdAsync(tableName, id, primaryKeyColumnName);
 
                 if (updatedItem == null)
                 {

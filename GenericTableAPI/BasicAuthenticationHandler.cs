@@ -9,13 +9,16 @@ namespace GenericTableAPI
 {
     public class BasicAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
     {
+        private readonly IConfiguration _configuration;
         public BasicAuthenticationHandler(
             IOptionsMonitor<AuthenticationSchemeOptions> options,
             ILoggerFactory logger,
             UrlEncoder encoder,
-            ISystemClock clock)
+            ISystemClock clock,
+            IConfiguration config)
             : base(options, logger, encoder, clock)
         {
+            _configuration = config;
         }
 
         protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
@@ -58,10 +61,16 @@ namespace GenericTableAPI
 
         }
 
-        private static bool ValidateCredentials(string username, string password)
+        private bool ValidateCredentials(string username, string password)
         {
             // TODO: implement user validation logic
-            return true;
+            string? confUsername = _configuration.GetSection("BasicAuthSettings:Username").Value;
+            string? confPassword = _configuration.GetSection("BasicAuthSettings:Password").Value;
+
+            if (confUsername == username && confPassword == password)
+                return true;
+            else
+                return false;
         }
     }
 }
