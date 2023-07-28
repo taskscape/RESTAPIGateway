@@ -6,7 +6,7 @@
         {
             if (!configuration.GetSection("Database").Exists()) return true;
             IConfigurationSection tableSection = configuration.GetSection("Database:Tables:" + tableName);
-            if (!tableSection.Exists()) return true;
+            if (!tableSection.Exists()) return false;
             List<string> configPermissions = tableSection.Get<List<string>>();
             return configPermissions.Contains(permission);
         }

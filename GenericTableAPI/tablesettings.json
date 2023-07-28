@@ -62,7 +62,7 @@
         "insert"
       ],
       "test2": [
-        "none"
+        "select"
       ]
     }
   }
