@@ -63,14 +63,10 @@ namespace GenericTableAPI
 
         private bool ValidateCredentials(string username, string password)
         {
-            // TODO: implement user validation logic
             string? confUsername = _configuration.GetSection("BasicAuthSettings:Username").Value;
             string? confPassword = _configuration.GetSection("BasicAuthSettings:Password").Value;
 
-            if (confUsername == username && confPassword == password)
-                return true;
-            else
-                return false;
+            return confUsername == username && confPassword == password;
         }
     }
 }

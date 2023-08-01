@@ -36,10 +36,7 @@ namespace GenericTableAPI.Controllers
             string? confUsername = _configuration.GetSection("JwtSettings:Username").Value;
             string? confPassword = _configuration.GetSection("JwtSettings:Password").Value;
 
-            if (confUsername == userName && confPassword == password)
-                return true;
-            else
-                return false;
+            return confUsername == userName && confPassword == password;
         }
         private string CreateToken(User user)
         {

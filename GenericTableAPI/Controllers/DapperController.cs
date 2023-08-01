@@ -4,7 +4,6 @@ using GenericTableAPI.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
-using Microsoft.AspNetCore.Http.Extensions;
 
 namespace GenericTableAPI.Controllers
 {

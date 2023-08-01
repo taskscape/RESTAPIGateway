@@ -86,30 +86,30 @@ public static class DatabaseUtilities
     {
         while (await reader.ReadAsync())
         {
-            dynamic obj = new ExpandoObject();
-            IDictionary<string, object> objAsDictionary = obj;
+            dynamic expandoObject = new ExpandoObject();
+            IDictionary<string, object> dictionary = expandoObject;
 
             for (int i = 0; i < reader.FieldCount; i++)
             {
-                objAsDictionary[reader.GetName(i)] = reader.GetValue(i);
+                dictionary[reader.GetName(i)] = reader.GetValue(i);
             }
 
-            yield return obj;
+            yield return expandoObject;
         }
     }
 
     public static IEnumerable<dynamic>? ToDynamic(DbDataReader reader)
     {
         if (!reader.Read()) return null;
-        dynamic? obj = new ExpandoObject();
-        IDictionary<string, object> objAsDictionary = obj;
+        dynamic? expandoObject = new ExpandoObject();
+        IDictionary<string, object> dictionary = expandoObject;
 
         for (int i = 0; i < reader.FieldCount; i++)
         {
-            objAsDictionary[reader.GetName(i)] = reader.GetValue(i);
+            dictionary[reader.GetName(i)] = reader.GetValue(i);
         }
 
-        return obj;
+        return expandoObject;
 
     }
 
