@@ -1,10 +1,10 @@
-# REST API Service
+# REST API Gateway
 
 This is the universal REST API Server, primarly used for bridging RESTful clients with any MSSQL or Oracle database.
 
 ## Description
 
-The service operated by connecting to a database directly and exposing REST API endpoint(s) using any IIS binding(s).
+REST API Gateway is a service that sits in front of a database and provides a REST API interface. It acts as an intermediary between clients, such as web or mobile applications, and your database (SQL Server, Oracle, or Sybase). The service includes additional features for security, scaling, and management. Its goal is to make the integration of different systems easier and more straightforward by offering an innovative bridging service that can be quickly deployed.
 
 ## Requirements
 
@@ -22,6 +22,55 @@ The service must be installed by extracting the installation package (ZIP) into 
 You need to manually configure a new website by poiting it to the root directory where the files have been extracted.
 
 You need to manually configure the new website bindings by exposing service endpoints via HTTP or HTTP(s) interfaces.
+
+## Basic usage
+
+The service can be used by querrying configured endpoints by providing database table name(s) with appropiate parameters and HTTP verbs, for example:
+
+- `GET` `http://localhost/api/{tablename}/{id}` - returns 200 HTTP code and JSON object in response body for a given `id` from a table `tablename` representing the row specified by the primary key.
+- `POST` `http://localhost/api/{tablename}` - accepts JSON object as a parameter of request body and returns 201 HTTP code for a newly created primary key identifying created database row.
+- `DELETE` `http://localhost/api/{tablename}/{id}` - returns 200 HTTP code and empty response body for a given `id` of a table `tablename` representing deletion of a specific row from a database.
+
+## Composition
+
+The service can be used to specify more complex composition requests that allow calling inner API methods in a sequential manner that allows accessing  return values using JSON Path and use as parameters for calling subsequent API methods. In this usage scenario user may want to perform multiple operations on multiple tables in a single API call.
+
+example of a composite of three API methods:
+
+- First is a `GET` method, obtaining `name` variable from the `FullName` property of the last element of the returned JSON object, as well as the `number` parameter from the "PhoneNumber" of the 16th element of the returned JSON object.
+- Second is a `POST` method creating new record using the `number` and `name` variables to create a new record in the `tablename` table and returning the new record object, as well as `Id` value of a new record and assinging it to `newId` variable.
+- Third is a `DELETE` method removing newly created record using the `newId` variable as an input parameter used in the method path in order to perform delete operation on the underlying table for the newly created record. 
+
+```json
+{
+  "requests": [
+    {
+      "method": "get",
+      "endpoint": "https://localhost/api/tablename",
+      "returns": {
+        "name": "[-1:].FullName",
+        "number": "[16].PhoneNumber"
+      },
+      {
+        "method": "post",
+        "endpoint": "https://localhost/api/tablename",
+        "parameters": {
+          "phone": "{number}",
+          "fullname": "{name} - edited"
+        },
+        "returns": {
+          "new": "$",
+          "newId": "Id"
+        }
+      },
+      {
+        "method": "delete",
+        "endpoint": "https://localhost/api/tablename/{newId}"
+      }
+    }
+  ]
+}
+```
 
 ## Configuration
 
