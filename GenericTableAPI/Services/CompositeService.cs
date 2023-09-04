@@ -9,7 +9,7 @@ using GenericTableAPI.Controllers;
 using Microsoft.AspNetCore.Http;
 using Azure.Core;
 
-namespace GenericTableAPI.Routines
+namespace GenericTableAPI.Services
 {
     public class CompositeService
     {
