@@ -6,47 +6,12 @@ using RestSharp;
 using RestSharp.Authenticators;
 
 [TestClass]
-public class IntegrationTests : IDisposable
+public class IntegrationTests : BaseTestClass
 {
-    private RestClient _client;
-    private const string BaseUrl = "https://localhost:7104/";
-    private static string _bearerToken;
-
-    private string JWTAuthUsername = "your_jwt_auth_username";
-    private string JWTAuthPassword = "your_jwt_auth_password";
-
-    private string BasicAuthUsername = "your_basic_auth_username";
-    private string BasicAuthPassword = "your_basic_auth_password";
-
     [TestInitialize]
-    public void Setup()
+    public void Init()
     {
-        _client = new RestClient(BaseUrl);
-        _bearerToken = GetBearerToken();
-    }
-    private string GetBearerToken()
-    {
-        RestRequest request = new("api/token", Method.Post)
-        {
-            RequestFormat = DataFormat.Json
-        };
-        request.AddJsonBody(new { userName = JWTAuthUsername, password = JWTAuthPassword });
-
-        RestResponse response = _client.Execute(request);
-
-        return JsonConvert.DeserializeObject<string>(response.Content);
-    }
-    //Returns the ID of the first element from Table 'test'
-    private int GetFirstId()
-    {
-        //Get the ID of first element
-        RestRequest request = new("api/test");
-        request.AddHeader("Authorization", "Bearer " + _bearerToken);
-        RestResponse response = _client.Execute(request);
-        if (HttpStatusCode.OK != response.StatusCode)
-            throw new Exception($"Got response code: {response.StatusCode} from GET request!");
-
-        return (int)JsonConvert.DeserializeObject<IEnumerable<JToken>>(response.Content).First().First.First;
+        Setup();
     }
     #region GET Tests
     [TestMethod]
@@ -349,9 +314,4 @@ public class IntegrationTests : IDisposable
         Assert.AreEqual(HttpStatusCode.InternalServerError, response.StatusCode);
     }
     #endregion
-
-    public void Dispose()
-    {
-        //throw new NotImplementedException();
-    }
 }
