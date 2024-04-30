@@ -15,7 +15,7 @@ namespace GenericTableAPI.Controllers
         {
             return Task.FromResult<ActionResult>(new OkResult());
         }
-        
+
         [HttpGet]
         [Route("basic-auth")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme + ",BasicAuthentication")]

@@ -14,27 +14,24 @@ namespace GenericTableAPI.Controllers
     {
         private readonly CompositeService _service;
         private readonly ILogger<DapperController> _logger;
-        private readonly IConfiguration _configuration;
-        public CompositeController(ILogger<DapperController> logger, IConfiguration configuration, CompositeService service)
+        public CompositeController(ILogger<DapperController> logger, CompositeService service)
         {
             _service = service;
             _logger = logger;
-            _configuration = configuration;
         }
 
         [HttpPost]
-        public async Task<ActionResult> Post([FromBody] CompositeRequestModel values)
+        public async Task<ActionResult> Post([FromBody] CompositeRequest compositeRequest)
         {
             DateTimeOffset timestamp = DateTimeOffset.UtcNow;
-            string requestInfo = $"POST request to \"{HttpContext.Request.Path}\" from \"{HttpContext.Connection.RemoteIpAddress}\" by user \"{User.Identity?.Name ?? "unknown"}\" with values: {JsonConvert.SerializeObject(values)}. Timestamp: {timestamp}";
-            _logger.LogInformation(requestInfo);
+            _logger.LogInformation("POST request to \"{Path}\" from \"{RemoteIpAddress}\" by user \"{UserName}\" with values: {Values}. Timestamp: {Timestamp}", HttpContext.Request.Path, HttpContext.Connection.RemoteIpAddress, User.Identity?.Name ?? "unknown", JsonConvert.SerializeObject(compositeRequest), timestamp);
 
             _service.AuthorizationHeader = HttpContext.Request.Headers.Authorization;
-            var result = await _service.RunCompositeRequest(values);
+            var result = await _service.RunCompositeRequest(compositeRequest);
 
             return StatusCode(result.Code, result.Content);
         }
 
-       
+
     }
 }

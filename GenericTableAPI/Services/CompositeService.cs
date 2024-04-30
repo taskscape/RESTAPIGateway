@@ -1,150 +1,184 @@
-﻿using Azure;
-using GenericTableAPI.Models;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Primitives;
+﻿using GenericTableAPI.Models;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using System.Net.Http.Headers;
-using GenericTableAPI.Controllers;
-using Microsoft.AspNetCore.Http;
-using Azure.Core;
+using System.Text;
+using Microsoft.Extensions.Primitives;
 
 namespace GenericTableAPI.Services
 {
-    public class CompositeService
+    public class CompositeService(IHttpClientFactory httpClientFactory, ILogger<CompositeService> logger)
     {
-        private readonly ILogger<DapperController> _logger;
-        private readonly IConfiguration _configuration;
-        private static readonly HttpClient _client = new HttpClient();
-
-        private Dictionary<string, string> ReturnedParameters = new();
+        private readonly Dictionary<string, string> _returnedParameters = new();
 
         public StringValues? AuthorizationHeader { get; set; }
 
-        public CompositeService(ILogger<DapperController> logger, IConfiguration configuration)
+        public async Task<StringResponse> RunCompositeRequest(CompositeRequest compositeRequest)
         {
-            _logger = logger;
-            _configuration = configuration;
-        }
-        public async Task<StringResponseModel> RunCompositeRequest(CompositeRequestModel values)
-        {
-            string AllResponses = "";
+            if (compositeRequest.Requests == null || compositeRequest.Requests.Count == 0)
+            {
+                return new StringResponse(StatusCodes.Status400BadRequest, "Invalid input for composite request.");
+            }
+
+            StringBuilder allResponses = new();
             HttpRequestMessage httpRequest = new();
             try
             {
-                foreach (var request in values.Requests)
+                foreach (ApiRequest request in compositeRequest.Requests)
                 {
-                    DateTimeOffset timestamp = DateTimeOffset.UtcNow;
-                    string requestInfo = $"{request.Method.ToUpper()} request to \"{request.Endpoint}\" with values: {JsonConvert.SerializeObject(request.Parameters)}. Timestamp: {timestamp}";
-                    _logger.LogInformation(requestInfo);
-
-                    //Preparing the request
-                    httpRequest = new HttpRequestMessage
+                    if (string.IsNullOrEmpty(request.Method) ||
+                        string.IsNullOrEmpty(request.Endpoint))
                     {
-                        Method = new HttpMethod(AddParameters(request.Method, request.Parameters)),
-                        RequestUri = new Uri(AddParameters(request.Endpoint, request.Parameters))
-                    };
-
-                    if (request.Parameters != null)
-                        httpRequest.Content = JsonContent.Create(AddParameters(request.Parameters));
-
-                    if (AuthorizationHeader.HasValue)
-                    {
-                        string[] splittedHeader = AuthorizationHeader.ToString().Split(' ');
-                        httpRequest.Headers.Authorization = new AuthenticationHeaderValue(splittedHeader[0], splittedHeader[1]);
+                        logger.LogError("Invalid input for composite request.");
+                        allResponses.AppendLine("[ERROR] Invalid input for composite request.");
+                        return new StringResponse(StatusCodes.Status400BadRequest, allResponses.ToString());
                     }
 
+                    DateTimeOffset timestamp = DateTimeOffset.UtcNow;
+                    if (logger.IsEnabled(LogLevel.Information))
+                    {
+                        logger.LogInformation(
+                            $"{request.Method?.ToUpper() ?? "UNKNOWN"} request to \"{request.Endpoint}\" with parameters: {(request.Parameters != null ? JsonConvert.SerializeObject(request.Parameters) : "null")}. Timestamp: {timestamp}");
+                    }
+
+                    httpRequest = PrepareHttpRequest(request);
+
                     //Getting the response
-                    var response = _client.Send(httpRequest);
+                    HttpClient client = httpClientFactory.CreateClient();
+                    HttpResponseMessage response = await client.SendAsync(httpRequest);
 
                     if (response.IsSuccessStatusCode)
                     {
-                        _logger.LogInformation($"Response returned from \"{httpRequest.RequestUri}\" with status code {response.StatusCode}. Timestamp: {timestamp}");
-                        dynamic? content = JsonConvert.DeserializeObject<dynamic>(await response.Content.ReadAsStringAsync());
-                        AllResponses += $"[SUCCESS] \"{httpRequest.Method}\" \"{httpRequest.RequestUri}\" ended up with {(int)response.StatusCode} {response.StatusCode} \n";
-                        
-                        if (request.Returns != null)
-                        {
-                            foreach (var requestReturn in request.Returns)
-                            {
-                                try
-                                {
-                                    string contentPathValue;
-                                    IEnumerable<JToken> obj = content.SelectTokens(AddParameters(requestReturn.Value, request.Parameters));
+                        logger.LogInformation(
+                            $"Response returned from \"{httpRequest.RequestUri}\" with status code {response.StatusCode}. Timestamp: {timestamp}");
+                        JObject? content =
+                            JsonConvert.DeserializeObject<JObject>(await response.Content.ReadAsStringAsync());
+                        allResponses.AppendLine(
+                            $"[SUCCESS] \"{httpRequest.Method}\" \"{httpRequest.RequestUri}\" ended up with {(int)response.StatusCode} {response.StatusCode}");
 
+                        if (request.Returns == null) continue;
+                        foreach (KeyValuePair<string, string> requestReturn in request.Returns)
+                        {
+                            try
+                            {
+                                string? contentPathValue = null;
+                                IEnumerable<JToken>? obj =
+                                    content?.SelectTokens(ReplaceUrlParameters(requestReturn.Value,
+                                        request.Parameters));
+
+                                if (obj != null)
+                                {
                                     if (obj.Count() > 1)
                                     {
-                                        contentPathValue = "[";
-                                        foreach (var item in obj)
-                                        {
-                                            contentPathValue += "\"" + item.ToString() + "\", ";
-                                        }
-                                        contentPathValue = contentPathValue.Remove(contentPathValue.Length - 2, 2) + "]";
+                                        contentPathValue = obj.Aggregate("[",
+                                            (current, item) => current + ("\"" + item + "\", "));
+                                        contentPathValue = contentPathValue.Remove(contentPathValue.Length - 2, 2) +
+                                                           "]";
                                     }
                                     else
                                     {
-                                        contentPathValue = obj.First().ToString();
+                                        contentPathValue = obj.FirstOrDefault()?.ToString();
                                     }
-
-                                    ReturnedParameters.Add(requestReturn.Key, contentPathValue);
-                                    AllResponses += $"[INFO] Returned parameter: {requestReturn.Key} = {contentPathValue}\n";
-                                }
-                                catch (Exception ex)
-                                {
-                                    _logger.LogError($"Returned parameter: {requestReturn.Value} not found!");
-                                    AllResponses += $"[ERROR] \"{httpRequest.Method}\" \"{httpRequest.RequestUri}\" Could not find {AddParameters(requestReturn.Value, request.Parameters)} Reason: {ex.Message}\n";
-                                    return new StringResponseModel(StatusCodes.Status400BadRequest, AllResponses);
                                 }
 
+                                if (contentPathValue == null) continue;
+                                _returnedParameters.Add(requestReturn.Key, contentPathValue);
+                                allResponses.AppendLine(
+                                    $"[INFO] Returned parameter: {requestReturn.Key} = {contentPathValue}");
                             }
+                            catch (Exception ex)
+                            {
+                                logger.LogError($"Returned parameter: {requestReturn.Value} not found!");
+                                allResponses.AppendLine(
+                                    $"[ERROR] \"{httpRequest.Method}\" \"{httpRequest.RequestUri}\" Could not find {ReplaceUrlParameters(requestReturn.Value, request.Parameters)} Reason: {ex.Message}");
+                                return new StringResponse(StatusCodes.Status400BadRequest, allResponses.ToString());
+                            }
+
                         }
                     }
                     else
                     {
-                        _logger.LogError($"Response returned from \"{httpRequest.RequestUri}\" with status code {response.StatusCode}. Timestamp: {timestamp}");
-                        AllResponses += $"[ERROR] \"{httpRequest.Method}\" \"{httpRequest.RequestUri}\" ended up with {(int)response.StatusCode} {response.StatusCode}! \n";
-                        return new StringResponseModel(StatusCodes.Status500InternalServerError, AllResponses);
+                        logger.LogError(
+                            $"Response returned from \"{httpRequest.RequestUri}\" with status code {response.StatusCode}. Timestamp: {timestamp}");
+                        allResponses.AppendLine(
+                            $"[ERROR] \"{httpRequest.Method}\" \"{httpRequest.RequestUri}\" ended up with {(int)response.StatusCode} {response.StatusCode}!");
+                        return new StringResponse(StatusCodes.Status500InternalServerError, allResponses.ToString());
                     }
                 }
 
-                return new StringResponseModel(StatusCodes.Status200OK, AllResponses);
+                return new StringResponse(StatusCodes.Status200OK, allResponses.ToString());
             }
             catch (Exception exception)
             {
-                _logger.LogError(exception, $"Error while processing request: {httpRequest.Method} {httpRequest.RequestUri} thrown an exception: {exception.Message}");
-                AllResponses += $"[FATAL ERROR] \"{httpRequest.Method}\" \"{httpRequest.RequestUri}\" thrown an exception: {exception.Message}\n";
-                return new StringResponseModel(StatusCodes.Status500InternalServerError, AllResponses);
+                logger.LogError(exception,
+                    $"Error while processing request: {httpRequest.Method} {httpRequest.RequestUri} thrown an exception: {exception.Message}");
+                allResponses.AppendLine(
+                    $"[FATAL ERROR] \"{httpRequest.Method}\" \"{httpRequest.RequestUri}\" thrown an exception: {exception.Message}");
+                return new StringResponse(StatusCodes.Status500InternalServerError, allResponses.ToString());
             }
         }
 
-        private Dictionary<string, string>? AddParameters(Dictionary<string, string>? parameters)
+        private HttpRequestMessage PrepareHttpRequest(ApiRequest request)
         {
-            if (parameters == null)
-                return parameters;
-
-            foreach (var item in parameters)
+            if (request.Method == null) throw new InvalidOperationException("Request method missing");
+            HttpRequestMessage httpRequest = new()
             {
-                parameters[AddParameters(item.Key)] = AddParameters(item.Value);
+                Method = new HttpMethod(ReplaceUrlParameters(request.Method, request.Parameters)),
+            };
+
+            if (request.Endpoint != null && Uri.TryCreate(ReplaceUrlParameters(request.Endpoint, request.Parameters),
+                    UriKind.Absolute, out Uri? uriResult))
+            {
+                httpRequest.RequestUri = uriResult;
+            }
+            else
+            {
+                throw new InvalidOperationException("Invalid URI");
             }
 
-            return parameters;
+            if (request.Parameters != null)
+            {
+                httpRequest.Content = JsonContent.Create(ReplaceContentParameters(request.Parameters));
+            }
+
+            AddAuthorizationHeader(httpRequest);
+
+            return httpRequest;
         }
 
-        private string AddParameters(string String, Dictionary<string, string>? parameters = null)
+        private void AddAuthorizationHeader(HttpRequestMessage httpRequest)
         {
-            foreach (var parameter in ReturnedParameters)
+            if (!AuthorizationHeader.HasValue || string.IsNullOrEmpty(AuthorizationHeader.Value)) return;
+            if (AuthorizationHeader.Value == 2)
             {
-                String = String.Replace("{" + parameter.Key + "}", parameter.Value);
+                httpRequest.Headers.Authorization =
+                    new AuthenticationHeaderValue(AuthorizationHeader.Value[0], AuthorizationHeader.Value[1]);
             }
+        }
 
+        private Dictionary<string, string>? ReplaceContentParameters(Dictionary<string, string>? parameters)
+        {
             if (parameters == null)
-                return String;
-            foreach (var parameter in parameters)
+                return null;
+
+            Dictionary<string, string> modifiedParameters = new(parameters);
+            foreach (KeyValuePair<string, string> item in parameters)
             {
-                String = String.Replace("{" + parameter.Key + "}", parameter.Value);
+                modifiedParameters[ReplaceUrlParameters(item.Key)] = ReplaceUrlParameters(item.Value);
             }
 
-            return String;
+            return modifiedParameters;
+        }
+
+        private string ReplaceUrlParameters(string template, Dictionary<string, string>? parameters = null)
+        {
+            template = _returnedParameters.Aggregate(template,
+                (current, parameter) => current.Replace("{" + parameter.Key + "}", parameter.Value));
+
+            return parameters == null
+                ? template
+                : parameters.Aggregate(template,
+                    (current, parameter) => current.Replace("{" + parameter.Key + "}", parameter.Value));
         }
     }
 }

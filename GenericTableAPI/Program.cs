@@ -37,6 +37,7 @@ namespace GenericTableAPI
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSingleton(new DapperRepository(builder.Configuration.GetConnectionString("DefaultConnection"), builder.Configuration.GetValue<string>("SchemaName"), Log.Logger));
             builder.Services.AddScoped<DapperService>();
+            builder.Services.AddHttpClient();
             builder.Services.AddHttpContextAccessor();
 
             builder.Services.AddScoped<CompositeService>();
@@ -52,6 +53,15 @@ namespace GenericTableAPI
                 });
 
                 options.OperationFilter<SecurityRequirementsOperationFilter>();
+                options.SwaggerDoc("v1",
+                    new OpenApiInfo
+                    {
+                        Title = "My API - V1",
+                        Version = "v1"
+                    }
+                );
+                string filePath = Path.Combine(AppContext.BaseDirectory, "GenericTableAPI.xml");
+                options.IncludeXmlComments(filePath);
             });
 
             builder.Services.AddSwaggerGen(options =>

@@ -1,8 +1,10 @@
 ﻿using System.Data.Common;
 using System.Dynamic;
 using System.Text.RegularExpressions;
+using GenericTableAPI.Models;
 using GenericTableAPI.Services;
 using GenericTableAPI.Utilities;
+using Microsoft.Data.SqlClient;
 using static GenericTableAPI.Utilities.DatabaseUtilities;
 
 namespace GenericTableAPI.Repositories;
@@ -37,12 +39,10 @@ public class DapperRepository
     /// <returns>List of objects</returns>
     public async Task<IEnumerable<dynamic>?> GetAllAsync(string tableName, string? where = null, string? orderBy = null, int? limit = null)
     {
-        DatabaseSyntaxService syntaxService = new();
-
         using DatabaseHandler connectionHandler = new(_connectionString);
         connectionHandler.Open();
 
-        string query = syntaxService.GetAllQuery(tableName, _schemaName, where, orderBy, limit, _connectionString);
+        string query = DatabaseSyntaxService.GetAllQuery(tableName, _schemaName, where, orderBy, limit, _connectionString);
         try
         {
             _logger.Information("Repository.GetAllAsync: executing: " + query);
@@ -75,8 +75,6 @@ public class DapperRepository
     /// <returns></returns>
     public async Task<dynamic?> GetByIdAsync(string tableName, string primaryKey, string? columnName = "")
     {
-        DatabaseSyntaxService syntaxService = new();
-
         if (string.IsNullOrEmpty(columnName))
         {
             columnName = GetPrimaryKeyColumnName(_connectionString, tableName, GetDatabaseType(_connectionString));
@@ -86,7 +84,7 @@ public class DapperRepository
 
         using DatabaseHandler connectionHandler = new(_connectionString);
         connectionHandler.Open();
-        string query = syntaxService.GetByIdQuery(tableName, _schemaName, primaryKey, columnName);
+        string query = DatabaseSyntaxService.GetByIdQuery(tableName, _schemaName, primaryKey, columnName);
 
         try
         {
@@ -149,8 +147,7 @@ public class DapperRepository
         string columns = string.Join(", ", values.Keys);
         string results = string.Join(", ", values.Values.Select(k => $"'{k}'"));
 
-        DatabaseSyntaxService syntaxService = new();
-        string query = syntaxService.AddQuery(tableName, _schemaName, values, columns, results, columnName, _connectionString);
+        string query = DatabaseSyntaxService.AddQuery(tableName, _schemaName, values, columns, results, columnName, _connectionString);
 
         using DatabaseHandler connectionHandler = new(_connectionString);
         connectionHandler.Open();
@@ -184,8 +181,6 @@ public class DapperRepository
     /// <exception cref="ArgumentException"></exception>
     public async Task<bool> UpdateAsync(string tableName, string primaryKey, IDictionary<string, object?> values, string? columnName = "")
     {
-        DatabaseSyntaxService syntaxService = new();
-
         Dictionary<string, object>? sanitizedValues = new();
         if (sanitizedValues == null)
         {
@@ -215,7 +210,7 @@ public class DapperRepository
 
         using DatabaseHandler connectionHandler = new(_connectionString);
         connectionHandler.Open();
-        string query = syntaxService.UpdateQuery(tableName, _schemaName, primaryKey, values, columnName, setClauses);
+        string query = DatabaseSyntaxService.UpdateQuery(tableName, _schemaName, primaryKey, values, columnName, setClauses);
 
         try
         {
@@ -243,8 +238,6 @@ public class DapperRepository
     /// <returns>True on success</returns>
     public async Task<bool> DeleteAsync(string tableName, string primaryKey, string? columnName = "")
     {
-        DatabaseSyntaxService syntaxService = new();
-
         if (string.IsNullOrEmpty(columnName))
         {
             columnName = GetPrimaryKeyColumnName(_connectionString, tableName, GetDatabaseType(_connectionString));
@@ -254,7 +247,7 @@ public class DapperRepository
 
         using DatabaseHandler connectionHandler = new(_connectionString);
         connectionHandler.Open();
-        string query = syntaxService.DeleteQuery(tableName, _schemaName, primaryKey, columnName);
+        string query = DatabaseSyntaxService.DeleteQuery(tableName, _schemaName, primaryKey, columnName);
 
         try
         {
@@ -266,6 +259,42 @@ public class DapperRepository
         {
             _logger.Error(exception, "Repository.DeleteAsync: An error occurred while executing: {0}", query);
             throw;
+        }
+        finally
+        {
+            connectionHandler.Close();
+        }
+    }
+    
+    /// <summary>
+    /// Executes a stored procedure asynchronously and returns the results as a list of objects.
+    /// </summary>
+    /// <param name="procedureName">The name of the stored procedure to execute.</param>
+    /// <param name="values">A collection of parameters to pass to the stored procedure.</param>
+    /// <returns>A list of objects representing the rows returned by the stored procedure, or null if an error occurs.</returns>
+    /// <exception cref="Exception">Thrown if an error occurs while executing the stored procedure.</exception>
+    public async Task<List<object>?> ExecuteAsync(string procedureName, IEnumerable<StoredProcedureParameter?> values)
+    {
+        using DatabaseHandler connectionHandler = new(_connectionString);
+        connectionHandler.Open();
+        
+        string query = DatabaseSyntaxService.ExecuteQuery(procedureName, values, _connectionString);
+
+        try
+        {
+            _logger.Information("Repository.ExecuteAsync: executing: " + query);
+            IAsyncEnumerable<dynamic> results = ToDynamicList(await connectionHandler.ExecuteReaderAsync(query));
+            List<dynamic> result = new();
+            await foreach (dynamic item in results)
+            {
+                result.Add(item);
+            }
+            return result;
+        }
+        catch (SqlException exception)
+        {
+            _logger.Error(exception, "Repository.ExecuteAsync: An error occurred while executing: {0}", query);
+            throw new Exception();
         }
         finally
         {

@@ -27,9 +27,34 @@ You need to manually configure the new website bindings by exposing service endp
 
 The service can be used by querrying configured endpoints by providing database table name(s) with appropiate parameters and HTTP verbs, for example:
 
-- `GET` `http://localhost/api/{tablename}/{id}` - returns 200 HTTP code and JSON object in response body for a given `id` from a table `tablename` representing the row specified by the primary key.
-- `POST` `http://localhost/api/{tablename}` - accepts JSON object as a parameter of request body and returns 201 HTTP code for a newly created primary key identifying created database row.
-- `DELETE` `http://localhost/api/{tablename}/{id}` - returns 200 HTTP code and empty response body for a given `id` of a table `tablename` representing deletion of a specific row from a database.
+### `GET` `http://localhost/api/query/{tablename}`
+- Returns 200 HTTP code and JSON object in response body with all rows from the table `tablename`.
+### `GET` `http://localhost/api/query/{tablename}/{id}`
+- Returns 200 HTTP code and JSON object in response body for a given `id` from a table `tablename` representing the row specified by the primary key.
+### `POST` `http://localhost/api/query/{tablename}` 
+- Accepts JSON object as a parameter of request body and returns 201 HTTP code for a newly created primary key identifying created database row.
+### `UPDATE` `http://localhost/api/query/{tablename}/{id}`
+- Accepts JSON object as a parameter of request body and returns 200 HTTP code along an updated JSON object for a given `id` from a table `tablename`.
+### `DELETE` `http://localhost/api/query/{tablename}/{id}`
+- Returns 200 HTTP code and empty response body for a given `id` of a table `tablename` representing deletion of a specific row from a database.
+### `POST` `http://localhost/api/procedure/{procedureName}`
+- Accepts JSON object as a parameter of request body and returns 200 HTTP code for a succesful procedure execution along with JSON object in response body. The request body must be a valid json object, for example:
+
+```json
+[
+  {
+    "name": "Parameter1",
+    "value": "sampleValue1",
+    "type": "string"
+  },
+  {
+    "name": "Parameter2",
+    "value": "10",
+    "type": "int"
+  }
+]
+ ```
+- The only allowed types are `string`, `int`, `float` and `null`. For type `null`, `value` is not taken into account. For a parameterless procedure, leave empty brackets `[]`.
 
 ## Composition
 
@@ -46,14 +71,14 @@ example of a composite of three API methods:
   "requests": [
     {
       "method": "get",
-      "endpoint": "https://localhost/api/tablename",
+      "endpoint": "https://localhost/api/query/tablename",
       "returns": {
         "name": "[-1:].FullName",
         "number": "[16].PhoneNumber"
       },
       {
         "method": "post",
-        "endpoint": "https://localhost/api/tablename",
+        "endpoint": "https://localhost/api/query/tablename",
         "parameters": {
           "phone": "{number}",
           "fullname": "{name} - edited"
@@ -65,7 +90,7 @@ example of a composite of three API methods:
       },
       {
         "method": "delete",
-        "endpoint": "https://localhost/api/tablename/{newId}"
+        "endpoint": "https://localhost/api/query/tablename/{newId}"
       }
     }
   ]

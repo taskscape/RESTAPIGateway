@@ -1,0 +1,190 @@
+{
+	"info": {
+		"_postman_id": "745453b4-f021-4170-9b25-645caece6745",
+		"name": "StoredProcedures",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "15773461"
+	},
+	"item": [
+		{
+			"name": "Execute existing SP that returns a table",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "[]",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://localhost:44356/api/procedure/GetCategoriesListed",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "44356",
+					"path": [
+						"api",
+						"procedure",
+						"GetCategoriesListed"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Execute non-existing SP",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "[]",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://localhost:44356/api/procedure/StoredProcedureThatDoesNotExist",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "44356",
+					"path": [
+						"api",
+						"procedure",
+						"StoredProcedureThatDoesNotExist"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Execute existing SP with parameters that does not take in any",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "[{\r\n    \"name\":\"test\",\r\n    \"value\": \"58\",\r\n    \"type\": \"int\"\r\n}]",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://localhost:44356/api/procedure/GetCategoriesListed",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "44356",
+					"path": [
+						"api",
+						"procedure",
+						"GetCategoriesListed"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Execute existing SP with parameters that returns one row",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "[{\r\n    \"name\": \"commentId\",\r\n    \"value\": \"2\",\r\n    \"type\": \"int\"\r\n}]",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://localhost:44356/api/procedure/GetCommentById",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "44356",
+					"path": [
+						"api",
+						"procedure",
+						"GetCommentById"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Execute existing SP with parameters that returns an empty result",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "[{\r\n    \"name\": \"commentId\",\r\n    \"value\": \"1500\",\r\n    \"type\": \"int\"\r\n}]",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://localhost:44356/api/procedure/GetCommentById",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "44356",
+					"path": [
+						"api",
+						"procedure",
+						"GetCommentById"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Execute existing SP that has an error",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "[]",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://localhost:44356/api/procedure/BackupDatabase",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "44356",
+					"path": [
+						"api",
+						"procedure",
+						"BackupDatabase"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

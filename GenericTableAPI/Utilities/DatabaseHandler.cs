@@ -41,8 +41,7 @@ public class DatabaseHandler : IDisposable
     {
         DbCommand command = _connection.CreateCommand();
         command.CommandText = query;
-        Task<object?> result = command.ExecuteScalarAsync();
-        return result;
+        return command.ExecuteScalarAsync();
     }
 
     public void Dispose()

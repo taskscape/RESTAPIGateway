@@ -1,4 +1,5 @@
-﻿using GenericTableAPI.Repositories;
+﻿using GenericTableAPI.Models;
+using GenericTableAPI.Repositories;
 namespace GenericTableAPI.Services;
 
 public class DapperService
@@ -33,5 +34,10 @@ public class DapperService
     public Task<bool> DeleteAsync(string tableName, string id, string? columnName = "")
     {
         return _repository.DeleteAsync(tableName, id, columnName);
+    }
+    
+    public Task<List<object>?> ExecuteAsync(string procedureName, IEnumerable<StoredProcedureParameter?> values)
+    {
+        return _repository.ExecuteAsync(procedureName, values);
     }
 }
