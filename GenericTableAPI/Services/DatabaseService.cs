@@ -2,11 +2,11 @@
 using GenericTableAPI.Repositories;
 namespace GenericTableAPI.Services;
 
-public class DapperService
+public class DatabaseService
 {
     private readonly DapperRepository _repository;
 
-    public DapperService(DapperRepository repository)
+    public DatabaseService(DapperRepository repository)
     {
         _repository = repository;
     }

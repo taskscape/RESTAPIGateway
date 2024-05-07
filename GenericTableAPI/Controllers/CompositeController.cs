@@ -13,8 +13,8 @@ namespace GenericTableAPI.Controllers
     public class CompositeController : ControllerBase
     {
         private readonly CompositeService _service;
-        private readonly ILogger<DapperController> _logger;
-        public CompositeController(ILogger<DapperController> logger, CompositeService service)
+        private readonly ILogger<DatabaseController> _logger;
+        public CompositeController(ILogger<DatabaseController> logger, CompositeService service)
         {
             _service = service;
             _logger = logger;

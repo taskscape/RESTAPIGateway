@@ -12,13 +12,13 @@ namespace GenericTableAPI.Controllers
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme + ",BasicAuthentication")]
     [ApiController]
     [Route("api")]
-    public class DapperController : ControllerBase
+    public class DatabaseController : ControllerBase
     {
-        private readonly DapperService _service;
-        private readonly ILogger<DapperController> _logger;
+        private readonly DatabaseService _service;
+        private readonly ILogger<DatabaseController> _logger;
         private readonly IConfiguration _configuration;
 
-        public DapperController(DapperService service, ILogger<DapperController> logger, IConfiguration configuration)
+        public DatabaseController(DatabaseService service, ILogger<DatabaseController> logger, IConfiguration configuration)
         {
             _service = service;
             _logger = logger;
@@ -250,8 +250,8 @@ namespace GenericTableAPI.Controllers
         /// <summary>
         /// Executes a specified stored procedure. 
         /// </summary>
-        /// <param name="procedureName"></param>
-        /// <param name="values"></param>
+        /// <param name="procedureName">stored procedure name</param>
+        /// <param name="values">stored procedure parameters</param>
         [Route("procedure/{procedureName}")]
         [HttpPost]
         public async Task<ActionResult> ExecuteProcedure(string procedureName, [FromBody] IEnumerable<StoredProcedureParameter?> values)

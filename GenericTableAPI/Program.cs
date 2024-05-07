@@ -36,7 +36,7 @@ namespace GenericTableAPI
 
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSingleton(new DapperRepository(builder.Configuration.GetConnectionString("DefaultConnection"), builder.Configuration.GetValue<string>("SchemaName"), Log.Logger));
-            builder.Services.AddScoped<DapperService>();
+            builder.Services.AddScoped<DatabaseService>();
             builder.Services.AddHttpClient();
             builder.Services.AddHttpContextAccessor();
 

@@ -6,7 +6,7 @@ using static GenericTableAPI.Utilities.DatabaseUtilities;
 
 namespace GenericTableAPI.Services
 {
-    public partial class DatabaseSyntaxService
+    public partial class SyntaxService
     {
         private static readonly Regex TableNameRegex = TableNameRegexInit();
         private static readonly Regex WhereClauseRegex = WhereClauseRegexInit();

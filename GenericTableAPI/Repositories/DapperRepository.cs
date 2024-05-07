@@ -42,7 +42,7 @@ public class DapperRepository
         using DatabaseHandler connectionHandler = new(_connectionString);
         connectionHandler.Open();
 
-        string query = DatabaseSyntaxService.GetAllQuery(tableName, _schemaName, where, orderBy, limit, _connectionString);
+        string query = SyntaxService.GetAllQuery(tableName, _schemaName, where, orderBy, limit, _connectionString);
         try
         {
             _logger.Information("Repository.GetAllAsync: executing: " + query);
@@ -84,7 +84,7 @@ public class DapperRepository
 
         using DatabaseHandler connectionHandler = new(_connectionString);
         connectionHandler.Open();
-        string query = DatabaseSyntaxService.GetByIdQuery(tableName, _schemaName, primaryKey, columnName);
+        string query = SyntaxService.GetByIdQuery(tableName, _schemaName, primaryKey, columnName);
 
         try
         {
@@ -147,7 +147,7 @@ public class DapperRepository
         string columns = string.Join(", ", values.Keys);
         string results = string.Join(", ", values.Values.Select(k => $"'{k}'"));
 
-        string query = DatabaseSyntaxService.AddQuery(tableName, _schemaName, values, columns, results, columnName, _connectionString);
+        string query = SyntaxService.AddQuery(tableName, _schemaName, values, columns, results, columnName, _connectionString);
 
         using DatabaseHandler connectionHandler = new(_connectionString);
         connectionHandler.Open();
@@ -210,7 +210,7 @@ public class DapperRepository
 
         using DatabaseHandler connectionHandler = new(_connectionString);
         connectionHandler.Open();
-        string query = DatabaseSyntaxService.UpdateQuery(tableName, _schemaName, primaryKey, values, columnName, setClauses);
+        string query = SyntaxService.UpdateQuery(tableName, _schemaName, primaryKey, values, columnName, setClauses);
 
         try
         {
@@ -247,7 +247,7 @@ public class DapperRepository
 
         using DatabaseHandler connectionHandler = new(_connectionString);
         connectionHandler.Open();
-        string query = DatabaseSyntaxService.DeleteQuery(tableName, _schemaName, primaryKey, columnName);
+        string query = SyntaxService.DeleteQuery(tableName, _schemaName, primaryKey, columnName);
 
         try
         {
@@ -278,7 +278,7 @@ public class DapperRepository
         using DatabaseHandler connectionHandler = new(_connectionString);
         connectionHandler.Open();
         
-        string query = DatabaseSyntaxService.ExecuteQuery(procedureName, values, _connectionString);
+        string query = SyntaxService.ExecuteQuery(procedureName, values, _connectionString);
 
         try
         {
