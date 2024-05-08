@@ -30,7 +30,6 @@ namespace GenericTableAPI
 
             builder.Services.AddControllers();
 
-
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
@@ -76,28 +75,45 @@ namespace GenericTableAPI
                 });
             });
 
-            builder.Services.AddAuthentication("BasicAuthentication")
-                .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("BasicAuthentication", null);
-            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddJwtBearer(options =>
-                {
-                    string? token = builder.Configuration.GetSection("JwtSettings:Key").Value;
-                    if (token != null)
+            // Authentication Configuration
+            string? jwtKey = builder.Configuration["JwtSettings:Key"];
+            string? basicAuthUser = builder.Configuration["BasicAuthSettings:Username"];
+
+            if (!string.IsNullOrEmpty(jwtKey))
+            {
+                builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                    .AddJwtBearer(options =>
+                    {
                         options.TokenValidationParameters = new TokenValidationParameters
                         {
                             ValidateIssuerSigningKey = true,
-                            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(token)),
+                            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
                             ValidateIssuer = false,
                             ValidateAudience = false
                         };
+                    });
+            }
+            else if (!string.IsNullOrEmpty(basicAuthUser))
+            {
+                builder.Services.AddAuthentication("BasicAuthentication")
+                    .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("BasicAuthentication", null);
+            }
+            else
+            {
+                // No authentication configured
+                /*
+                builder.Services.AddAuthorization(options =>
+                {
+                    options.DefaultPolicy = new AuthorizationPolicyBuilder().RequireAssertion(_ => true).Build();
                 });
-
+                */
+            }
 
             builder.Logging.ClearProviders();
             builder.Logging.AddSerilog();
 
             WebApplication app = builder.Build();
-            
+
             app.UseRouting();
 
             app.UseSwagger();
@@ -118,7 +134,7 @@ namespace GenericTableAPI
                     defaults: new { controller = "TokenController" },
                     constraints: new { controllerPriority = new ControllerPriorityConstraint("TokenController") }
                 );
-                
+
                 endpoints.MapControllerRoute(
                     name: "TestController",
                     pattern: "api/test",
@@ -129,10 +145,10 @@ namespace GenericTableAPI
                 endpoints.MapControllerRoute(
                     name: "GenericController",
                     pattern: "{controller}",
-                    defaults: new { controller = "DapperController" }
+                    defaults: new { controller = "DatabaseController" }
                 );
             });
-            
+
             app.MapControllers();
 
             app.Run();
