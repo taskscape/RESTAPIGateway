@@ -148,7 +148,7 @@ You need to subsitute tokens denoted by square brackets with actual values (with
 
 The solution supports authentication using either basic auth or JWT token auth. The exact security model supported depends on whether each of the security models is configured.
 
-In order to enable JWT token based security for API endpoints, the following values need to be configured:
+In order to enable JWT token based authentication for API endpoints, the following values need to be configured:
 
 ```text
   "JwtSettings": {
@@ -161,7 +161,7 @@ In order to enable JWT token based security for API endpoints, the following val
 
 If above section is configured, only users with a valid JWT token will be permitted to use the API endpoints.
 
-In order to enable BASIC auth security for exposed API endpoints, the following values need to be configured:
+In order to enable BASIC authentication for exposed API endpoints, the following values need to be configured:
 
 ```text
   "BasicAuthSettings": {
@@ -172,7 +172,9 @@ In order to enable BASIC auth security for exposed API endpoints, the following 
 
 If above section is configured, only users with a valid combination of username and password will be permitted to use the API endpoints.
 
-You need to subsitute tokens denoted by square brackets with actual values (without square brackets). 
+If none of the sections (`JwtSettings` or `BasicAuthSettings`) are provided,the exposed endpoints will require no authentication.
+
+You need to subsitute tokens denoted by square brackets with actual values (without square brackets).
 
 ### Auditing
 
@@ -220,4 +222,4 @@ The owner of the service is responsible for maintaining the service.
 
 ## Ownership
 
-The service is owned by the "Pentagon" HR Team
+The service is owned by the "Pentagon" Team
