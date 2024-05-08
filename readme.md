@@ -172,7 +172,7 @@ In order to enable BASIC authentication for exposed API endpoints, the following
 
 If above section is configured, only users with a valid combination of username and password will be permitted to use the API endpoints.
 
-If none of the sections (`JwtSettings` or `BasicAuthSettings`) are provided,the exposed endpoints will require no authentication.
+If none of the sections (`JwtSettings` or `BasicAuthSettings`) are provided, the exposed endpoints will require no authentication.
 
 You need to subsitute tokens denoted by square brackets with actual values (without square brackets).
 
@@ -222,4 +222,4 @@ The owner of the service is responsible for maintaining the service.
 
 ## Ownership
 
-The service is owned by the "Pentagon" Team
+The service is owned by the "Pentagon" Team, please refer to [https://restapigateway.com](RESTAPIGateway.com) website for more detials.
