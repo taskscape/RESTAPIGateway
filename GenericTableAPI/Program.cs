@@ -79,6 +79,7 @@ namespace GenericTableAPI
             // Authentication Configuration
             string? jwtKey = builder.Configuration["JwtSettings:Key"];
             string? basicAuthUser = builder.Configuration["BasicAuthSettings:Username"];
+            bool isAuthenticationConfigured = false;
 
             if (!string.IsNullOrEmpty(jwtKey))
             {
@@ -93,38 +94,50 @@ namespace GenericTableAPI
                             ValidateAudience = false
                         };
                     });
+                isAuthenticationConfigured = true;
             }
             else if (!string.IsNullOrEmpty(basicAuthUser))
             {
                 builder.Services.AddAuthentication("BasicAuthentication")
                     .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("BasicAuthentication", null);
+                isAuthenticationConfigured = true;
             }
-            else
+            
+            builder.Services.AddAuthorization(options =>
             {
-                // No authentication configured
-                
-                builder.Services.AddAuthorization(options =>
+                // Define a custom policy that allows authenticated or anonymous access based on configuration
+                options.AddPolicy("DynamicAuthentication", policyBuilder =>
                 {
-                    options.DefaultPolicy = new AuthorizationPolicyBuilder().RequireAssertion(_ => true).Build();
+                    policyBuilder.RequireAssertion(context =>
+                    {
+                        // Logic to determine if authentication should be enforced
+                        if (!isAuthenticationConfigured)
+                        {
+                            return true; // Always succeed authorization
+                        }
+                        return context.User.Identity.IsAuthenticated; // Check if the user is authenticated
+                    });
                 });
-                
-            }
-
+            });
+            
             builder.Logging.ClearProviders();
             builder.Logging.AddSerilog();
 
             WebApplication app = builder.Build();
-
+            
             app.UseRouting();
 
             app.UseSwagger();
             app.UseSwaggerUI();
 
             app.UseHttpsRedirection();
-
-            app.UseAuthentication();
+            
+            if (isAuthenticationConfigured)
+            {
+                app.UseAuthentication();
+            }
             app.UseAuthorization();
-
+            
             // prioritize controllers in the following order
 
             app.UseEndpoints(endpoints =>

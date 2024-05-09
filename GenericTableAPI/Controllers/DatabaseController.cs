@@ -1,6 +1,5 @@
 ﻿using GenericTableAPI.Models;
 using GenericTableAPI.Services;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using GenericTableAPI.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -9,7 +8,7 @@ using Newtonsoft.Json;
 
 namespace GenericTableAPI.Controllers
 {
-    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme + ",BasicAuthentication")]
+    [Authorize(Policy = "DynamicAuthentication")]
     [ApiController]
     [Route("api")]
     public class DatabaseController : ControllerBase

@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GenericTableAPI.Controllers
@@ -10,15 +9,15 @@ namespace GenericTableAPI.Controllers
     public class TestController
     {
         [HttpGet]
-        [Route("no-auth")]
+        [Route("no-authentication")]
         public Task<ActionResult> Test()
         {
             return Task.FromResult<ActionResult>(new OkResult());
         }
 
         [HttpGet]
-        [Route("basic-auth")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme + ",BasicAuthentication")]
+        [Route("dynamic-authentication")]
+        [Authorize(Policy = "DynamicAuthentication")]
         public Task<ActionResult> TestBasicAuth()
         {
             return Task.FromResult<ActionResult>(new OkResult());

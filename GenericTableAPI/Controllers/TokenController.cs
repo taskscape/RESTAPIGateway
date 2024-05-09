@@ -18,17 +18,16 @@ namespace GenericTableAPI.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Post(User _userData)
+        public async Task<IActionResult> Post(User userData)
         {
-            if (_userData?.UserName == null || _userData.Password == null) return BadRequest();
+            if (userData?.UserName == null || userData.Password == null) return BadRequest();
 
-            if (ValidateCredentials(_userData.UserName, _userData.Password))
+            if (ValidateCredentials(userData.UserName, userData.Password))
             {
-                return Ok(CreateToken(_userData));
+                return Ok(CreateToken(userData));
             }
 
             return BadRequest("Invalid credentials");
-
         }
 
         private bool ValidateCredentials(string userName, string password)
@@ -40,11 +39,11 @@ namespace GenericTableAPI.Controllers
         }
         private string CreateToken(User user)
         {
-            List<Claim> claims = new()
-            {
+            List<Claim> claims =
+            [
                 new Claim(ClaimTypes.Name, user.UserName),
                 new Claim(ClaimTypes.Role, "Admin")
-            };
+            ];
 
             SymmetricSecurityKey key = new(System.Text.Encoding.UTF8.GetBytes(_configuration.GetSection("JwtSettings:Key").Value));
 
