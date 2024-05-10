@@ -27,17 +27,17 @@ You need to manually configure the new website bindings by exposing service endp
 
 The service can be used by querrying configured endpoints by providing database table name(s) with appropiate parameters and HTTP verbs, for example:
 
-### `GET` `http://localhost/api/query/{tablename}`
+### `GET` `http://localhost/api/tables/{tablename}`
 - Returns 200 HTTP code and JSON object in response body with all rows from the table `tablename`.
-### `GET` `http://localhost/api/query/{tablename}/{id}`
+### `GET` `http://localhost/api/tables/{tablename}/{id}`
 - Returns 200 HTTP code and JSON object in response body for a given `id` from a table `tablename` representing the row specified by the primary key.
-### `POST` `http://localhost/api/query/{tablename}` 
+### `POST` `http://localhost/api/tables/{tablename}` 
 - Accepts JSON object as a parameter of request body and returns 201 HTTP code for a newly created primary key identifying created database row.
-### `UPDATE` `http://localhost/api/query/{tablename}/{id}`
+### `UPDATE` `http://localhost/api/tables/{tablename}/{id}`
 - Accepts JSON object as a parameter of request body and returns 200 HTTP code along an updated JSON object for a given `id` from a table `tablename`.
-### `DELETE` `http://localhost/api/query/{tablename}/{id}`
+### `DELETE` `http://localhost/api/tables/{tablename}/{id}`
 - Returns 200 HTTP code and empty response body for a given `id` of a table `tablename` representing deletion of a specific row from a database.
-### `POST` `http://localhost/api/procedure/{procedureName}`
+### `POST` `http://localhost/api/procedures/{procedureName}`
 - Accepts JSON object as a parameter of request body and returns 200 HTTP code for a succesful procedure execution along with JSON object in response body. The request body must be a valid json object, for example:
 
 ```json
@@ -71,14 +71,14 @@ example of a composite of three API methods:
   "requests": [
     {
       "method": "get",
-      "endpoint": "https://localhost/api/query/tablename",
+      "endpoint": "https://localhost/api/tables/tablename",
       "returns": {
         "name": "[-1:].FullName",
         "number": "[16].PhoneNumber"
       },
       {
         "method": "post",
-        "endpoint": "https://localhost/api/query/tablename",
+        "endpoint": "https://localhost/api/tables/tablename",
         "parameters": {
           "phone": "{number}",
           "fullname": "{name} - edited"
@@ -90,7 +90,7 @@ example of a composite of three API methods:
       },
       {
         "method": "delete",
-        "endpoint": "https://localhost/api/query/tablename/{newId}"
+        "endpoint": "https://localhost/api/tables/tablename/{newId}"
       }
     }
   ]
