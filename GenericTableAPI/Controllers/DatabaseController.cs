@@ -29,7 +29,7 @@ namespace GenericTableAPI.Controllers
         public async Task<ActionResult<IEnumerable<dynamic>>> GetAll(string tableName, string? where = null, string? orderBy = null, int? limit = null)
         {
             DateTimeOffset timestamp = DateTimeOffset.UtcNow;
-            var requestInfo = $"GET request to \"{HttpContext.Request.Path}{HttpContext.Request.QueryString}\" from \"{HttpContext.Connection.RemoteIpAddress}\" by user \"{User.Identity?.Name ?? "unknown"}\". Timestamp: {timestamp}";
+            string requestInfo = $"GET request to \"{HttpContext.Request.Path}{HttpContext.Request.QueryString}\" from \"{HttpContext.Connection.RemoteIpAddress}\" by user \"{User.Identity?.Name ?? "unknown"}\". Timestamp: {timestamp}";
             dynamic? responseObj = null;
             _logger.LogInformation("{RequestInfo}", requestInfo);
         
@@ -59,7 +59,7 @@ namespace GenericTableAPI.Controllers
             }
             finally
             {
-                var responseInfo = $"Response returned from {HttpContext.Request.Path}{HttpContext.Request.QueryString} with status code {responseObj?.StatusCode}. Timestamp: {timestamp}";
+                string responseInfo = $"Response returned from {HttpContext.Request.Path}{HttpContext.Request.QueryString} with status code {responseObj?.StatusCode}. Timestamp: {timestamp}";
                 _logger.LogInformation("{ResponseInfo}", responseInfo);
             }
         
@@ -71,7 +71,7 @@ namespace GenericTableAPI.Controllers
         public async Task<ActionResult<dynamic>> GetById(string tableName, [FromRoute] string id, string? primaryKeyColumnName)
         {
             DateTimeOffset timestamp = DateTimeOffset.UtcNow;
-            var requestInfo = $"GET request to \"{HttpContext.Request.Path}{HttpContext.Request.QueryString}\" from \"{HttpContext.Connection.RemoteIpAddress}\" by user \"{User.Identity?.Name ?? "unknown"}\". Timestamp: {timestamp}";
+            string requestInfo = $"GET request to \"{HttpContext.Request.Path}{HttpContext.Request.QueryString}\" from \"{HttpContext.Connection.RemoteIpAddress}\" by user \"{User.Identity?.Name ?? "unknown"}\". Timestamp: {timestamp}";
             dynamic? responseObj = null;
             _logger.LogInformation("{RequestInfo}", requestInfo);
         
@@ -102,7 +102,7 @@ namespace GenericTableAPI.Controllers
             }
             finally
             {
-                var responseInfo = $"Response returned from {HttpContext.Request.Path}{HttpContext.Request.QueryString} with status code {responseObj?.StatusCode}. Timestamp: {timestamp}";
+                string responseInfo = $"Response returned from {HttpContext.Request.Path}{HttpContext.Request.QueryString} with status code {responseObj?.StatusCode}. Timestamp: {timestamp}";
                 _logger.LogInformation("{ResponseInfo}", responseInfo);
             }
         }
@@ -113,7 +113,7 @@ namespace GenericTableAPI.Controllers
         {
             DateTimeOffset timestamp = DateTimeOffset.UtcNow;
             Dictionary<string, string?> valuesDict = values.ToDictionary(pair => pair.Key, pair => pair.Value?.ToString());
-            var requestInfo = $"POST request to \"{HttpContext.Request.Path}{HttpContext.Request.QueryString}\" from \"{HttpContext.Connection.RemoteIpAddress}\" by user \"{User.Identity?.Name ?? "unknown"}\" with values: {JsonConvert.SerializeObject(valuesDict)}. Timestamp: {timestamp}";
+            string requestInfo = $"POST request to \"{HttpContext.Request.Path}{HttpContext.Request.QueryString}\" from \"{HttpContext.Connection.RemoteIpAddress}\" by user \"{User.Identity?.Name ?? "unknown"}\" with values: {JsonConvert.SerializeObject(valuesDict)}. Timestamp: {timestamp}";
             dynamic? responseObj = null;
             _logger.LogInformation("{RequestInfo}", requestInfo);
         
@@ -155,7 +155,7 @@ namespace GenericTableAPI.Controllers
             }
             finally
             {
-                var responseInfo = $"Response returned from \"{HttpContext.Request.Path}{HttpContext.Request.QueryString}\" with status code {responseObj?.StatusCode}. Timestamp: {timestamp}";
+                string responseInfo = $"Response returned from \"{HttpContext.Request.Path}{HttpContext.Request.QueryString}\" with status code {responseObj?.StatusCode}. Timestamp: {timestamp}";
                 _logger.LogInformation("{ResponseInfo}", responseInfo);
             }
         }
@@ -166,7 +166,7 @@ namespace GenericTableAPI.Controllers
         {
             DateTimeOffset timestamp = DateTimeOffset.UtcNow;
             Dictionary<string, string?> valuesDict = values.ToDictionary(pair => pair.Key, pair => pair.Value?.ToString());
-            var requestInfo = $"PUT request to \"{HttpContext.Request.Path}{HttpContext.Request.QueryString}\" from \"{HttpContext.Connection.RemoteIpAddress}\" by user \"{User.Identity?.Name ?? "unknown"}\". Timestamp: {timestamp}";
+            string requestInfo = $"PUT request to \"{HttpContext.Request.Path}{HttpContext.Request.QueryString}\" from \"{HttpContext.Connection.RemoteIpAddress}\" by user \"{User.Identity?.Name ?? "unknown"}\". Timestamp: {timestamp}";
             dynamic? responseObj = null;
             _logger.LogInformation("{RequestInfo}", requestInfo);
         
@@ -199,7 +199,7 @@ namespace GenericTableAPI.Controllers
             }
             finally
             {
-                var responseInfo = $"Response returned from \"{HttpContext.Request.Path}{HttpContext.Request.QueryString}\" with status code {responseObj?.StatusCode}. Timestamp: {timestamp}";
+                string responseInfo = $"Response returned from \"{HttpContext.Request.Path}{HttpContext.Request.QueryString}\" with status code {responseObj?.StatusCode}. Timestamp: {timestamp}";
                 _logger.LogInformation("{ResponseInfo}", responseInfo);
             }
         }
@@ -209,7 +209,7 @@ namespace GenericTableAPI.Controllers
         public async Task<ActionResult> Delete(string tableName, string id, string? primaryKeyColumnName)
         {
             DateTimeOffset timestamp = DateTimeOffset.UtcNow;
-            var requestInfo = $"DELETE request to \"{HttpContext.Request.Path}{HttpContext.Request.QueryString}\" from \"{HttpContext.Connection.RemoteIpAddress}\" by user \"{User.Identity?.Name ?? "unknown"}\". Timestamp: {timestamp}";
+            string requestInfo = $"DELETE request to \"{HttpContext.Request.Path}{HttpContext.Request.QueryString}\" from \"{HttpContext.Connection.RemoteIpAddress}\" by user \"{User.Identity?.Name ?? "unknown"}\". Timestamp: {timestamp}";
             dynamic? responseObj = null;
             _logger.LogInformation("{RequestInfo}", requestInfo);
         
@@ -241,7 +241,7 @@ namespace GenericTableAPI.Controllers
             }
             finally
             {
-                var responseInfo = $"Response returned from \"{HttpContext.Request.Path}{HttpContext.Request.QueryString}\" with status code {responseObj?.StatusCode}. Timestamp: {timestamp}";
+                string responseInfo = $"Response returned from \"{HttpContext.Request.Path}{HttpContext.Request.QueryString}\" with status code {responseObj?.StatusCode}. Timestamp: {timestamp}";
                 _logger.LogInformation("{ResponseInfo}", responseInfo);
             }
         }
@@ -256,7 +256,7 @@ namespace GenericTableAPI.Controllers
         public async Task<ActionResult> ExecuteProcedure(string procedureName, [FromBody] IEnumerable<StoredProcedureParameter?> values)
         {
             DateTimeOffset timestamp = DateTimeOffset.UtcNow;
-            var requestInfo = $"POST request to \"{HttpContext.Request.Path}{HttpContext.Request.QueryString}\" from \"{HttpContext.Connection.RemoteIpAddress}\" by user \"{User.Identity?.Name ?? "unknown"}\" with values: {JsonConvert.SerializeObject(values)}. Timestamp: {timestamp}";
+            string requestInfo = $"POST request to \"{HttpContext.Request.Path}{HttpContext.Request.QueryString}\" from \"{HttpContext.Connection.RemoteIpAddress}\" by user \"{User.Identity?.Name ?? "unknown"}\" with values: {JsonConvert.SerializeObject(values)}. Timestamp: {timestamp}";
             dynamic? responseObj = null;
             _logger.LogInformation("{RequestInfo}", requestInfo);
 
@@ -285,7 +285,7 @@ namespace GenericTableAPI.Controllers
             }
             finally
             {
-                var responseInfo = $"Response returned from \"{HttpContext.Request.Path}{HttpContext.Request.QueryString}\" with status code {responseObj?.StatusCode}. Timestamp: {timestamp}";
+                string responseInfo = $"Response returned from \"{HttpContext.Request.Path}{HttpContext.Request.QueryString}\" with status code {responseObj?.StatusCode}. Timestamp: {timestamp}";
                  _logger.LogInformation("{ResponseInfo}", responseInfo);
             }
         }
