@@ -24,7 +24,7 @@ namespace GenericTableAPI.Controllers
             _configuration = configuration;
         }
 
-        [Route("query/{tableName}")]
+        [Route("tables/{tableName}")]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<dynamic>>> GetAll(string tableName, string? where = null, string? orderBy = null, int? limit = null)
         {
@@ -66,7 +66,7 @@ namespace GenericTableAPI.Controllers
             return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while processing your request");
         }
 
-        [Route("query/{tableName}/{id}")]
+        [Route("tables/{tableName}/{id}")]
         [HttpGet]
         public async Task<ActionResult<dynamic>> GetById(string tableName, [FromRoute] string id, string? primaryKeyColumnName)
         {
@@ -107,7 +107,7 @@ namespace GenericTableAPI.Controllers
             }
         }
 
-        [Route("query/{tableName}")]
+        [Route("tables/{tableName}")]
         [HttpPost]
         public async Task<ActionResult> Add(string tableName, [FromBody] IDictionary<string, object?> values, string? primaryKeyColumnName)
         {
@@ -160,7 +160,7 @@ namespace GenericTableAPI.Controllers
             }
         }
         
-        [Route("query/{tableName}/{id}")]
+        [Route("tables/{tableName}/{id}")]
         [HttpPut]
         public async Task<ActionResult> Update(string tableName, [FromRoute] string id, [FromBody] IDictionary<string, object?> values, string? primaryKeyColumnName)
         {
@@ -204,7 +204,7 @@ namespace GenericTableAPI.Controllers
             }
         }
         
-        [Route("query/{tableName}/{id}")]
+        [Route("tables/{tableName}/{id}")]
         [HttpDelete]
         public async Task<ActionResult> Delete(string tableName, string id, string? primaryKeyColumnName)
         {
@@ -251,7 +251,7 @@ namespace GenericTableAPI.Controllers
         /// </summary>
         /// <param name="procedureName">stored procedure name</param>
         /// <param name="values">stored procedure parameters</param>
-        [Route("procedure/{procedureName}")]
+        [Route("procedures/{procedureName}")]
         [HttpPost]
         public async Task<ActionResult> ExecuteProcedure(string procedureName, [FromBody] IEnumerable<StoredProcedureParameter?> values)
         {
