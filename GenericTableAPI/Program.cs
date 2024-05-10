@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.Filters;
 using Serilog;
@@ -79,7 +78,6 @@ namespace GenericTableAPI
             // Authentication Configuration
             string? jwtKey = builder.Configuration["JwtSettings:Key"];
             string? basicAuthUser = builder.Configuration["BasicAuthSettings:Username"];
-            bool isAuthenticationConfigured = false;
 
             if (!string.IsNullOrEmpty(jwtKey))
             {
@@ -94,13 +92,16 @@ namespace GenericTableAPI
                             ValidateAudience = false
                         };
                     });
-                isAuthenticationConfigured = true;
             }
             else if (!string.IsNullOrEmpty(basicAuthUser))
             {
                 builder.Services.AddAuthentication("BasicAuthentication")
                     .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("BasicAuthentication", null);
-                isAuthenticationConfigured = true;
+            }
+            else
+            {
+                builder.Services.AddAuthentication("NoAuthentication")
+                    .AddScheme<AuthenticationSchemeOptions, NoAuthenticationHandler>("NoAuthentication", null);
             }
             
             builder.Services.AddAuthorization(options =>
@@ -108,15 +109,7 @@ namespace GenericTableAPI
                 // Define a custom policy that allows authenticated or anonymous access based on configuration
                 options.AddPolicy("DynamicAuthentication", policyBuilder =>
                 {
-                    policyBuilder.RequireAssertion(context =>
-                    {
-                        // Logic to determine if authentication should be enforced
-                        if (!isAuthenticationConfigured)
-                        {
-                            return true; // Always succeed authorization
-                        }
-                        return context.User.Identity.IsAuthenticated; // Check if the user is authenticated
-                    });
+                    policyBuilder.RequireAssertion(context => context.User.Identity.IsAuthenticated);
                 });
             });
             
@@ -132,10 +125,7 @@ namespace GenericTableAPI
 
             app.UseHttpsRedirection();
             
-            if (isAuthenticationConfigured)
-            {
-                app.UseAuthentication();
-            }
+            app.UseAuthentication();
             app.UseAuthorization();
             
             // prioritize controllers in the following order
