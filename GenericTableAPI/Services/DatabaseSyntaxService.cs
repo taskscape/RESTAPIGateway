@@ -209,6 +209,31 @@ namespace GenericTableAPI.Services
 
             return sql;
         }
+        
+        /// <summary>
+        /// Constructs a SQL REPLACE query to replace a record in a table.
+        /// </summary>
+        /// <param name="tableName">The name of the table.</param>
+        /// <param name="schemaName">The name of the schema (optional).</param>
+        /// <param name="id">The value of the primary key.</param>
+        /// <param name="values">A dictionary containing column names and their corresponding values to update.</param>
+        /// <param name="primaryKeyColumn">The name of the primary key column.</param>
+        /// <param name="setClauses">A comma-separated list of column name = value pairs for the SET clause.</param>
+        /// <returns>The SQL REPLACE query.</returns>
+        public static string ReplaceQuery(string tableName, string? schemaName, string id, IDictionary<string, object> values, string? primaryKeyColumn = null, string? setClauses = null)
+        {
+            ValidateTableName(tableName);
+            if (string.IsNullOrEmpty(id) || !TableNameRegex.IsMatch(id))
+            {
+                throw new ArgumentException(InvalidTableNameMessage);
+            }
+
+            tableName = GetTableName(tableName, schemaName);
+
+            var sql = $"MERGE INTO {tableName} SET {setClauses} WHERE {primaryKeyColumn} = '{id}'"; // TODO implement MERGE properlu for SQL Server and the equivalent for Oracle DB
+
+            return sql;
+        }
 
         /// <summary>
         /// Constructs a SQL DELETE query to delete a record from a table.

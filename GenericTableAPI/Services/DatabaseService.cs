@@ -30,6 +30,11 @@ public class DatabaseService
     {
         return _repository.UpdateAsync(tableName, id, values, columnName);
     }
+    
+    public Task<bool> PatchAsync(string tableName, string id, IDictionary<string, object?> values, string? columnName = "")
+    {
+        return _repository.PatchAsync(tableName, id, values, columnName);
+    }
 
     public Task<bool> DeleteAsync(string tableName, string id, string? columnName = "")
     {
