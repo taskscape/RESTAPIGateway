@@ -179,7 +179,7 @@ public class DapperRepository
     /// <returns>True on success</returns>
     /// <exception cref="ArgumentNullException"></exception>
     /// <exception cref="ArgumentException"></exception>
-    public async Task<bool> UpdateAsync(string tableName, string primaryKey, IDictionary<string, object?> values, string? columnName = "")
+    public async Task<bool> UpdateAsync(string tableName, string primaryKey, IDictionary<string, object?> values,List<object> columns, string? columnName = "")
     {
         Dictionary<string, object>? sanitizedValues = new();
         if (sanitizedValues == null)
@@ -199,18 +199,25 @@ public class DapperRepository
             sanitizedValues.Add(pair.Key, sanitizedValue);
         }
 
-        string setClauses = string.Join(", ", values.Select(k => $"{k.Key} = '{k.Value}'"));
-
         if (string.IsNullOrEmpty(columnName))
         {
             columnName = GetPrimaryKeyColumnName(_connectionString, tableName, GetDatabaseType(_connectionString));
         }
+        
+        foreach (var column in columns)
+        {
+            if (!values.ContainsKey(column.ToString()) && (string)column != columnName)
+            { 
+                values.Add(column.ToString(), null);   
+            }
+        }
+        string setClauses = string.Join(", ", values.Select(k => $"{k.Key} = '{k.Value}'"));
 
         _logger.Information("Repository.UpdateAsync: Primary key column name: {0} used for table: {1}", columnName, tableName);
 
         using DatabaseHandler connectionHandler = new(_connectionString);
         connectionHandler.Open();
-        string query = SyntaxService.ReplaceQuery(tableName, _schemaName, primaryKey, values, columnName, setClauses);
+        string query = SyntaxService.ReplaceQuery(tableName, _schemaName, primaryKey, values, _connectionString, columnName, setClauses);
 
         try
         {
@@ -355,6 +362,45 @@ public class DapperRepository
         {
             _logger.Error(exception, "Repository.ExecuteAsync: An error occurred while executing: {0}", query);
             throw new Exception();
+        }
+        finally
+        {
+            connectionHandler.Close();
+        }
+    }
+    
+    /// <summary>
+    /// Returns all column names from a given table
+    /// </summary>
+    /// <param name="tableName"></param>
+    /// <returns>List of objects</returns>
+    public async Task<List<object>?> GetColumnsAsync(string tableName)
+    {
+        using DatabaseHandler connectionHandler = new(_connectionString);
+        connectionHandler.Open();
+
+        string query = SyntaxService.GetColumnsQuery(tableName, _schemaName, _connectionString);
+        try
+        {
+            _logger.Information("Repository.GetColumnsAsync: executing: " + query);
+            IAsyncEnumerable<dynamic> results = ToDynamicList(await connectionHandler.ExecuteReaderAsync(query));
+
+            List<dynamic>? result = new();
+            await foreach (dynamic item in results)
+            {
+                IDictionary<string, object> propertyValues = item;
+
+                foreach (var property in propertyValues.Keys)
+                {
+                    result.Add(propertyValues[property]);
+                } 
+            }
+            return result;
+        }
+        catch (Exception exception)
+        {
+            _logger.Error(exception, "Repository.GetColumnsAsync: An error occurred while executing: {0}", query);
+            return null;
         }
         finally
         {

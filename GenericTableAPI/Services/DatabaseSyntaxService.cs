@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Text.RegularExpressions;
 using GenericTableAPI.Models;
+using Microsoft.IdentityModel.Tokens;
 using static GenericTableAPI.Utilities.DatabaseUtilities;
 
 namespace GenericTableAPI.Services
@@ -220,17 +221,36 @@ namespace GenericTableAPI.Services
         /// <param name="primaryKeyColumn">The name of the primary key column.</param>
         /// <param name="setClauses">A comma-separated list of column name = value pairs for the SET clause.</param>
         /// <returns>The SQL REPLACE query.</returns>
-        public static string ReplaceQuery(string tableName, string? schemaName, string id, IDictionary<string, object> values, string? primaryKeyColumn = null, string? setClauses = null)
+        public static string ReplaceQuery(string tableName, string? schemaName, string id, IDictionary<string, object> values, string connectionString, string? primaryKeyColumn = null, string? setClauses = null)
         {
             ValidateTableName(tableName);
             if (string.IsNullOrEmpty(id) || !TableNameRegex.IsMatch(id))
             {
                 throw new ArgumentException(InvalidTableNameMessage);
             }
-
+            
+            DatabaseType databaseType = GetDatabaseType(connectionString);
             tableName = GetTableName(tableName, schemaName);
+            
+            string keys = primaryKeyColumn;
+            if (!values.IsNullOrEmpty())
+            {
+                keys = $"{primaryKeyColumn}, {string.Join(", ", values.Keys)}";
+            }
+            string sql;
+            switch (databaseType)
+            {
+                case DatabaseType.SqlServer:
+                    sql = $"MERGE INTO {tableName} AS target USING (SELECT {keys} FROM {tableName} WHERE {primaryKeyColumn} = {id}) AS source ON (target.id = source.id) WHEN MATCHED THEN UPDATE SET {setClauses};";
+                    break;
 
-            var sql = $"MERGE INTO {tableName} SET {setClauses} WHERE {primaryKeyColumn} = '{id}'"; // TODO implement MERGE properlu for SQL Server and the equivalent for Oracle DB
+                case DatabaseType.Oracle:
+                    sql = $""; //TODO implement
+                    break;
+                case DatabaseType.Unknown:
+                default:
+                    throw new NotSupportedException("Unknown database type.");
+            }
 
             return sql;
         }
@@ -327,6 +347,37 @@ namespace GenericTableAPI.Services
 
             return sql;
         }
+        
+        /// <summary>
+        /// Constructs a SQL SELECT query to retrieve column names from a table.
+        /// </summary>
+        /// <param name="tableName">The name of the table.</param>
+        /// <param name="schemaName">The name of the schema (optional).</param>
+        /// <param name="connectionString">The connection string.</param>
+        /// <returns>The SQL SELECT query.</returns>
+        public static string GetColumnsQuery(string tableName, string? schemaName, string? connectionString = null)
+        {
+            ValidateTableName(tableName);
+            DatabaseType databaseType = GetDatabaseType(connectionString);
+            
+            tableName = GetTableName(tableName, schemaName);
+            string sql;
+            switch (databaseType)
+            {
+                case DatabaseType.SqlServer:
+                    sql = $"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '{tableName}'";
+                    break;
+                case DatabaseType.Oracle:
+                    sql = $"SELECT COLUMN_NAME FROM ALL_TAB_COLS WHERE TABLE_NAME = '{tableName}'";
+                    break;
+                case DatabaseType.Unknown:
+                default:
+                    throw new NotSupportedException();
+            }
+
+            return sql;
+        }
+        
         [GeneratedRegex(@"^\w+$", RegexOptions.Compiled)]
         private static partial Regex TableNameRegexInit();
         [GeneratedRegex(@"^\w+\s*=.*$", RegexOptions.Compiled)]

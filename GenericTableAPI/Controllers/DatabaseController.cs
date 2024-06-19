@@ -225,7 +225,8 @@ namespace GenericTableAPI.Controllers
             try
             {
                 _logger.LogInformation("Updating entity with identifier={ID} in {TableName}: {Values}. Timestamp: {TimeStamp}", id, tableName, JsonConvert.SerializeObject(valuesDict), timestamp);
-                await _service.UpdateAsync(tableName, id, values, primaryKeyColumnName).ConfigureAwait(false);
+                List<object>? columns =  await _service.GetColumnsAsync(tableName).ConfigureAwait(false);
+                await _service.UpdateAsync(tableName, id, values, columns, primaryKeyColumnName).ConfigureAwait(false);
                 dynamic? updatedItem = await _service.GetByIdAsync(tableName, id, primaryKeyColumnName).ConfigureAwait(false);
                 if (updatedItem == null)
                 {
