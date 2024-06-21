@@ -217,7 +217,7 @@ public class DapperRepository
 
         using DatabaseHandler connectionHandler = new(_connectionString);
         connectionHandler.Open();
-        string query = SyntaxService.ReplaceQuery(tableName, _schemaName, primaryKey, values, _connectionString, columnName, setClauses);
+        string query = SyntaxService.MergeQuery(tableName, _schemaName, primaryKey, values, _connectionString, columnName, setClauses);
 
         try
         {

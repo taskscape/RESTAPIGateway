@@ -212,7 +212,7 @@ namespace GenericTableAPI.Services
         }
         
         /// <summary>
-        /// Constructs a SQL REPLACE query to replace a record in a table.
+        /// Constructs a SQL MERGE query to replace a record in a table.
         /// </summary>
         /// <param name="tableName">The name of the table.</param>
         /// <param name="schemaName">The name of the schema (optional).</param>
@@ -220,8 +220,8 @@ namespace GenericTableAPI.Services
         /// <param name="values">A dictionary containing column names and their corresponding values to update.</param>
         /// <param name="primaryKeyColumn">The name of the primary key column.</param>
         /// <param name="setClauses">A comma-separated list of column name = value pairs for the SET clause.</param>
-        /// <returns>The SQL REPLACE query.</returns>
-        public static string ReplaceQuery(string tableName, string? schemaName, string id, IDictionary<string, object> values, string connectionString, string? primaryKeyColumn = null, string? setClauses = null)
+        /// <returns>The SQL MERGE query.</returns>
+        public static string MergeQuery(string tableName, string? schemaName, string id, IDictionary<string, object> values, string connectionString, string? primaryKeyColumn = null, string? setClauses = null)
         {
             ValidateTableName(tableName);
             if (string.IsNullOrEmpty(id) || !TableNameRegex.IsMatch(id))
@@ -245,7 +245,7 @@ namespace GenericTableAPI.Services
                     break;
 
                 case DatabaseType.Oracle:
-                    sql = $""; //TODO implement
+                    sql = $"MERGE INTO {tableName} target USING (SELECT {keys} FROM {tableName} WHERE {primaryKeyColumn} = {id}) source ON (target.id = source.id) WHEN MATCHED THEN UPDATE SET {setClauses};";
                     break;
                 case DatabaseType.Unknown:
                 default:

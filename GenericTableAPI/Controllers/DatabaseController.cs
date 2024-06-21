@@ -66,7 +66,7 @@ namespace GenericTableAPI.Controllers
             return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while processing your request");
         }
 
-        [Route("tables/{tableName}/{id}")]
+        [Route("tables/{tableName}/{id}", Name = "GetById")]
         [HttpGet]
         public async Task<ActionResult<dynamic>> GetById(string tableName, [FromRoute] string id, string? primaryKeyColumnName)
         {
@@ -144,7 +144,7 @@ namespace GenericTableAPI.Controllers
                 else
                 {
                     _logger.LogInformation("Added a new entity for table: {TableName} with identifier: {ID}. Timestamp: {TimeStamp}", tableName, id, timestamp);
-                    return responseObj = CreatedAtRoute(nameof(GetById), new { tableName, id = id.ToString(), primaryKeyColumnName }, newItem);
+                    return responseObj = CreatedAtRoute(nameof(GetById), new { tableName, id, primaryKeyColumnName }, newItem);
                 }
         
             }
