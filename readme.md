@@ -1,6 +1,6 @@
 # REST API Gateway
 
-This is the universal REST API Server, primarly used for bridging RESTful clients with any MSSQL or Oracle database.
+This is the universal REST API Server, primarily used for bridging RESTful clients with any MSSQL or Oracle database.
 
 ## Description
 
@@ -19,13 +19,13 @@ Please install Internet Information Services, following installation of the .NET
 
 The service must be installed by extracting the installation package (ZIP) into a folder mapped to any IIS website.
 
-You need to manually configure a new website by poiting it to the root directory where the files have been extracted.
+You need to manually configure a new website by pointing it to the root directory where the files have been extracted.
 
 You need to manually configure the new website bindings by exposing service endpoints via HTTP or HTTP(s) interfaces.
 
 ## Basic usage
 
-The service can be used by querrying configured endpoints by providing database table name(s) with appropiate parameters and HTTP verbs, for example:
+The service can be used by querying configured endpoints by providing database table name(s) with appropriate parameters and HTTP verbs, for example:
 
 ### `GET` `http://localhost/api/tables/{tablename}`
 - Returns 200 HTTP code and JSON object in response body with all rows from the table `tablename`.
@@ -33,12 +33,14 @@ The service can be used by querrying configured endpoints by providing database 
 - Returns 200 HTTP code and JSON object in response body for a given `id` from a table `tablename` representing the row specified by the primary key.
 ### `POST` `http://localhost/api/tables/{tablename}` 
 - Accepts JSON object as a parameter of request body and returns 201 HTTP code for a newly created primary key identifying created database row.
-### `UPDATE` `http://localhost/api/tables/{tablename}/{id}`
-- Accepts JSON object as a parameter of request body and returns 200 HTTP code along an updated JSON object for a given `id` from a table `tablename`.
+### `PUT` `http://localhost/api/tables/{tablename}/{id}`
+- Accepts JSON object as a parameter of request body and returns 200 HTTP code along an updated JSON object for a given `id` from a table `tablename`. It completely replaces the record, setting all unspecified columns to blank.
+### `PATCH` `http://localhost/api/tables/{tablename}/{id}`
+- Accepts JSON object as a parameter of request body and returns 200 HTTP code along an updated JSON object for a given `id` from a table `tablename`. It updates only the specified columns, keeping the rest untouched.
 ### `DELETE` `http://localhost/api/tables/{tablename}/{id}`
 - Returns 200 HTTP code and empty response body for a given `id` of a table `tablename` representing deletion of a specific row from a database.
 ### `POST` `http://localhost/api/procedures/{procedureName}`
-- Accepts JSON object as a parameter of request body and returns 200 HTTP code for a succesful procedure execution along with JSON object in response body. The request body must be a valid json object, for example:
+- Accepts JSON object as a parameter of request body and returns 200 HTTP code for a successful procedure execution along with JSON object in response body. The request body must be a valid json object, for example:
 
 ```json
 [
@@ -63,7 +65,7 @@ The service can be used to specify more complex composition requests that allow 
 example of a composite of three API methods:
 
 - First is a `GET` method, obtaining `name` variable from the `FullName` property of the last element of the returned JSON object, as well as the `number` parameter from the "PhoneNumber" of the 16th element of the returned JSON object.
-- Second is a `POST` method creating new record using the `number` and `name` variables to create a new record in the `tablename` table and returning the new record object, as well as `Id` value of a new record and assinging it to `newId` variable.
+- Second is a `POST` method creating new record using the `number` and `name` variables to create a new record in the `tablename` table and returning the new record object, as well as `Id` value of a new record and assigning it to `newId` variable.
 - Third is a `DELETE` method removing newly created record using the `newId` variable as an input parameter used in the method path in order to perform delete operation on the underlying table for the newly created record. 
 
 ```json
@@ -142,7 +144,7 @@ Alternatively the connection parameter can be adjusted to support Oracle databas
   },
 ```
 
-You need to subsitute tokens denoted by square brackets with actual values (without square brackets). In case of doubts, please follow the official instructions for alternative connection string syntax, if needed.
+You need to substitute tokens denoted by square brackets with actual values (without square brackets). In case of doubts, please follow the official instructions for alternative connection string syntax, if needed.
 
 ### Security
 
@@ -174,7 +176,7 @@ If above section is configured, only users with a valid combination of username 
 
 If none of the sections (`JwtSettings` or `BasicAuthSettings`) are provided, the exposed endpoints will require no authentication.
 
-You need to subsitute tokens denoted by square brackets with actual values (without square brackets).
+You need to substitute tokens denoted by square brackets with actual values (without square brackets).
 
 ### Auditing
 
@@ -209,7 +211,7 @@ The auditing capabilities provided by a event listener can be configured. The fo
   }
 ```
 
-Please consult [https://github.com/serilog/serilog-settings-configuration](documentation) for alternative configuration in order to support persitence of logs in a database or other data sinks.
+Please consult [https://github.com/serilog/serilog-settings-configuration](documentation) for alternative configuration in order to support persistence of logs in a database or other data sinks.
 
 ## Maintenance
 
@@ -222,4 +224,4 @@ The owner of the service is responsible for maintaining the service.
 
 ## Ownership
 
-The service is owned by the "Pentagon" Team, please refer to [https://restapigateway.com](RESTAPIGateway.com) website for more detials.
+The service is owned by the "Pentagon" Team, please refer to [https://restapigateway.com](RESTAPIGateway.com) website for more details.
