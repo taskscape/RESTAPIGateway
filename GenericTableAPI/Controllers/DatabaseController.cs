@@ -1,4 +1,4 @@
-﻿using GenericTableAPI.Models;
+using GenericTableAPI.Models;
 using GenericTableAPI.Services;
 using GenericTableAPI.Utilities;
 using Microsoft.AspNetCore.Authorization;
@@ -66,7 +66,7 @@ namespace GenericTableAPI.Controllers
             return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while processing your request");
         }
 
-        [Route("tables/{tableName}/{id}")]
+        [Route("tables/{tableName}/{id}", Name = "GetById")]
         [HttpGet]
         public async Task<ActionResult<dynamic>> GetById(string tableName, [FromRoute] string id, string? primaryKeyColumnName)
         {
@@ -144,9 +144,53 @@ namespace GenericTableAPI.Controllers
                 else
                 {
                     _logger.LogInformation("Added a new entity for table: {TableName} with identifier: {ID}. Timestamp: {TimeStamp}", tableName, id, timestamp);
-                    return responseObj = CreatedAtRoute(nameof(GetById), new { tableName, id = id.ToString(), primaryKeyColumnName }, newItem);
+                    return responseObj = CreatedAtRoute(nameof(GetById), new { tableName, id, primaryKeyColumnName }, newItem);
                 }
         
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(exception, "Error while processing request: {Request} - {Exception}. Timestamp: {TimeStamp}", requestInfo, exception.Message, timestamp);
+                return responseObj = StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while processing your request");
+            }
+            finally
+            {
+                string responseInfo = $"Response returned from \"{HttpContext.Request.Path}{HttpContext.Request.QueryString}\" with status code {responseObj?.StatusCode}. Timestamp: {timestamp}";
+                _logger.LogInformation("{ResponseInfo}", responseInfo);
+            }
+        }
+        
+        [Route("tables/{tableName}/{id}")]
+        [HttpPatch]
+        public async Task<ActionResult> Patch(string tableName, [FromRoute] string id, [FromBody] IDictionary<string, object?> values, string? primaryKeyColumnName)
+        {
+            DateTimeOffset timestamp = DateTimeOffset.UtcNow;
+            Dictionary<string, string?> valuesDict = values.ToDictionary(pair => pair.Key, pair => pair.Value?.ToString());
+            string requestInfo = $"PATCH request to \"{HttpContext.Request.Path}{HttpContext.Request.QueryString}\" from \"{HttpContext.Connection.RemoteIpAddress}\" by user \"{User.Identity?.Name ?? "unknown"}\". Timestamp: {timestamp}";
+            dynamic? responseObj = null;
+            _logger.LogInformation("{RequestInfo}", requestInfo);
+        
+            if (!TableValidationUtility.ValidTablePermission(_configuration, tableName, "update"))
+            {
+                _logger.LogWarning("User {UserName} attempted to access table {TableName} with PATCH command and without permission. Timestamp: {TimeStamp}", User.Identity?.Name ?? "unknown", tableName, timestamp);
+                return Forbid();
+            }
+        
+            _logger.LogInformation("Updating entity in a table: {TableName} with identifier: {ID} using values: {Values}. Timestamp: {TimeStamp}", tableName, id, JsonConvert.SerializeObject(valuesDict), timestamp);
+        
+            try
+            {
+                _logger.LogInformation("Updating entity with identifier={ID} in {TableName}: {Values}. Timestamp: {TimeStamp}", id, tableName, JsonConvert.SerializeObject(valuesDict), timestamp);
+                await _service.PatchAsync(tableName, id, values, primaryKeyColumnName).ConfigureAwait(false);
+                dynamic? updatedItem = await _service.GetByIdAsync(tableName, id, primaryKeyColumnName).ConfigureAwait(false);
+                if (updatedItem == null)
+                {
+                    _logger.LogInformation("No entity found with identifier={ID} in {TableName}. Request: {Request}. Timestamp: {TimeStamp}", id, tableName, requestInfo, timestamp);
+                    return responseObj = NotFound();
+                }
+        
+                _logger.LogInformation("Updated entity with identifier={ID} in {TableName}. Timestamp: {TimeStamp}", id, tableName, timestamp);
+                return responseObj = Ok(updatedItem);
             }
             catch (Exception exception)
             {
@@ -181,7 +225,8 @@ namespace GenericTableAPI.Controllers
             try
             {
                 _logger.LogInformation("Updating entity with identifier={ID} in {TableName}: {Values}. Timestamp: {TimeStamp}", id, tableName, JsonConvert.SerializeObject(valuesDict), timestamp);
-                await _service.UpdateAsync(tableName, id, values, primaryKeyColumnName).ConfigureAwait(false);
+                List<object>? columns =  await _service.GetColumnsAsync(tableName).ConfigureAwait(false);
+                await _service.UpdateAsync(tableName, id, values, columns, primaryKeyColumnName).ConfigureAwait(false);
                 dynamic? updatedItem = await _service.GetByIdAsync(tableName, id, primaryKeyColumnName).ConfigureAwait(false);
                 if (updatedItem == null)
                 {
