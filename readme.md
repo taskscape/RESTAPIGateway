@@ -6,6 +6,10 @@ This is the universal REST API Server, primarily used for bridging RESTful clien
 
 REST API Gateway is a service that sits in front of a database and provides a REST API interface. It acts as an intermediary between clients, such as web or mobile applications, and your database (SQL Server, Oracle, or Sybase). The service includes additional features for security, scaling, and management. Its goal is to make the integration of different systems easier and more straightforward by offering an innovative bridging service that can be quickly deployed.
 
+## Architecture
+
+![[diagram.png]]
+
 ## Requirements
 
 The services requires:
