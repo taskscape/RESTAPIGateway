@@ -226,6 +226,24 @@ The logs are rotating automatically.
 
 The owner of the service is responsible for maintaining the service.
 
-## Ownership
+## Licence
 
-The service is owned by the "Pentagon" Team, please refer to [https://restapigateway.com](RESTAPIGateway.com) website for more details.
+This software is available under dual licensing options:
+
+- Open Source License: GNU Affero General Public License (AGPL)
+You can use, modify, and distribute the software for free under the terms of the GNU Affero General Public License (AGPL), which is included in the LICENSE file of this repository. This option is ideal for developers who wish to use the software in other open source projects or for personal use.
+
+- Commercial License:
+If you want to use this software in a commercial application or require additional features and support not available under the open source license, you must obtain a commercial license. The commercial license allows for private modifications and grants you access to premium features and support services.
+
+### Obtaining a Commercial License
+
+To obtain a commercial license or to inquire about pricing and terms, please contact us at [RESTAPIGateway.com](https://restapigateway.com).
+
+### Why Dual Licensing?
+
+Dual licensing allows us to support the open source community while also providing a commercial offering that meets the needs of businesses requiring advanced features and dedicated support. This model helps fund the continued development and maintenance of the software.
+
+### Contributions
+
+Contributions to this project are welcome under the open source license terms. By contributing, you agree to your code being licensed under the same open source license. If you're contributing under a commercial agreement, different terms may apply as agreed upon.
