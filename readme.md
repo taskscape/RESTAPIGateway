@@ -32,18 +32,31 @@ You need to manually configure the new website bindings by exposing service endp
 The service can be used by querying configured endpoints by providing database table name(s) with appropriate parameters and HTTP verbs, for example:
 
 ### `GET` `http://localhost/api/tables/{tablename}`
+
 - Returns 200 HTTP code and JSON object in response body with all rows from the table `tablename`.
+
 ### `GET` `http://localhost/api/tables/{tablename}/{id}`
+
 - Returns 200 HTTP code and JSON object in response body for a given `id` from a table `tablename` representing the row specified by the primary key.
+
 ### `POST` `http://localhost/api/tables/{tablename}` 
+
 - Accepts JSON object as a parameter of request body and returns 201 HTTP code for a newly created primary key identifying created database row.
+
 ### `PUT` `http://localhost/api/tables/{tablename}/{id}`
+
 - Accepts JSON object as a parameter of request body and returns 200 HTTP code along an updated JSON object for a given `id` from a table `tablename`. It completely replaces the record, setting all unspecified columns to blank.
+
 ### `PATCH` `http://localhost/api/tables/{tablename}/{id}`
+
 - Accepts JSON object as a parameter of request body and returns 200 HTTP code along an updated JSON object for a given `id` from a table `tablename`. It updates only the specified columns, keeping the rest untouched.
+
 ### `DELETE` `http://localhost/api/tables/{tablename}/{id}`
+
 - Returns 200 HTTP code and empty response body for a given `id` of a table `tablename` representing deletion of a specific row from a database.
+
 ### `POST` `http://localhost/api/procedures/{procedureName}`
+
 - Accepts JSON object as a parameter of request body and returns 200 HTTP code for a successful procedure execution along with JSON object in response body. The request body must be a valid json object, for example:
 
 ```json
@@ -60,6 +73,7 @@ The service can be used by querying configured endpoints by providing database t
   }
 ]
  ```
+
 - The only allowed types are `string`, `int`, `float` and `null`. For type `null`, `value` is not taken into account. For a parameterless procedure, leave empty brackets `[]`.
 
 ## Composition
