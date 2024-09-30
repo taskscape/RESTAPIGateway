@@ -8,7 +8,7 @@ REST API Gateway is a service that sits in front of a database and provides a RE
 
 ## Architecture
 
-![[diagram.png]]
+![Diagram](./diagram.png)
 
 ## Requirements
 
