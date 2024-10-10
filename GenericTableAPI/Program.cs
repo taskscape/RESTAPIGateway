@@ -82,6 +82,7 @@ namespace GenericTableAPI
             if (!string.IsNullOrEmpty(jwtKey))
             {
                 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                Log.Logger.Information("[AUTH] Using Bearer Authentication");
                     .AddJwtBearer(options =>
                     {
                         options.TokenValidationParameters = new TokenValidationParameters
@@ -95,11 +96,13 @@ namespace GenericTableAPI
             }
             else if (!string.IsNullOrEmpty(basicAuthUser))
             {
+                Log.Logger.Information("[AUTH] Using BasicAuthentication");
                 builder.Services.AddAuthentication("BasicAuthentication")
                     .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("BasicAuthentication", null);
             }
             else
             {
+                Log.Logger.Warning("[AUTH] Using No Authentication");
                 builder.Services.AddAuthentication("NoAuthentication")
                     .AddScheme<AuthenticationSchemeOptions, NoAuthenticationHandler>("NoAuthentication", null);
             }
