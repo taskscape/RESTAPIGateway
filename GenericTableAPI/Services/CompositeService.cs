@@ -149,10 +149,9 @@ namespace GenericTableAPI.Services
         private void AddAuthorizationHeader(HttpRequestMessage httpRequest)
         {
             if (!AuthorizationHeader.HasValue || string.IsNullOrEmpty(AuthorizationHeader.Value)) return;
-            if (AuthorizationHeader.Value == 2)
             {
-                httpRequest.Headers.Authorization =
-                    new AuthenticationHeaderValue(AuthorizationHeader.Value[0], AuthorizationHeader.Value[1]);
+                string[] authHeaderString = AuthorizationHeader.Value[0].Split(' ');
+                httpRequest.Headers.Authorization = new AuthenticationHeaderValue(authHeaderString[0], authHeaderString[1]);
             }
         }
 
