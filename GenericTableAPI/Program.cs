@@ -24,7 +24,15 @@ namespace GenericTableAPI
                 .ReadFrom.Configuration(configuration)
                 .CreateLogger();
 
-            builder.Configuration.AddJsonFile("tablesettings.json", optional: true, reloadOnChange: true);
+            try
+            {
+                builder.Configuration.AddJsonFile("tablesettings.json", optional: true, reloadOnChange: true);
+            }
+            catch (Exception)
+            {
+                Log.Logger.Warning("[AUTH] No tablesettings.json. Granting access to every table");
+            }
+            
 
             // Add services to the container.
 
@@ -81,8 +89,8 @@ namespace GenericTableAPI
 
             if (!string.IsNullOrEmpty(jwtKey))
             {
-                builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 Log.Logger.Information("[AUTH] Using Bearer Authentication");
+                builder.Services.AddAuthentication(x => { x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme; x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme; })
                     .AddJwtBearer(options =>
                     {
                         options.TokenValidationParameters = new TokenValidationParameters
