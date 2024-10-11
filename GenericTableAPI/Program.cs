@@ -45,7 +45,6 @@ namespace GenericTableAPI
             builder.Services.AddSingleton(new DapperRepository(builder.Configuration.GetConnectionString("DefaultConnection"), builder.Configuration.GetValue<string>("SchemaName"), Log.Logger));
             builder.Services.AddScoped<DatabaseService>();
             builder.Services.AddHttpClient();
-            builder.Services.AddHttpContextAccessor();
 
             builder.Services.AddScoped<CompositeService>();
 
@@ -114,16 +113,7 @@ namespace GenericTableAPI
                 builder.Services.AddAuthentication("NoAuthentication")
                     .AddScheme<AuthenticationSchemeOptions, NoAuthenticationHandler>("NoAuthentication", null);
             }
-            
-            builder.Services.AddAuthorization(options =>
-            {
-                // Define a custom policy that allows authenticated or anonymous access based on configuration
-                options.AddPolicy("DynamicAuthentication", policyBuilder =>
-                {
-                    policyBuilder.RequireAssertion(context => context.User.Identity.IsAuthenticated);
-                });
-            });
-            
+
             builder.Logging.ClearProviders();
             builder.Logging.AddSerilog();
 

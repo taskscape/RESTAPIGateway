@@ -8,7 +8,7 @@ using Newtonsoft.Json;
 
 namespace GenericTableAPI.Controllers
 {
-    [Authorize(Policy = "DynamicAuthentication")]
+    [Authorize]
     [ApiController]
     [Route("api")]
     public class DatabaseController : ControllerBase
