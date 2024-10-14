@@ -51,8 +51,8 @@ namespace GenericTableAPI.Services
                     {
                         logger.LogInformation(
                             $"Response returned from \"{httpRequest.RequestUri}\" with status code {response.StatusCode}. Timestamp: {timestamp}");
-                        JObject? content =
-                            JsonConvert.DeserializeObject<JObject>(await response.Content.ReadAsStringAsync());
+                        dynamic? content =
+                            JsonConvert.DeserializeObject<dynamic>(await response.Content.ReadAsStringAsync());
                         allResponses.AppendLine(
                             $"[SUCCESS] \"{httpRequest.Method}\" \"{httpRequest.RequestUri}\" ended up with {(int)response.StatusCode} {response.StatusCode}");
 
