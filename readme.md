@@ -231,6 +231,29 @@ The auditing capabilities provided by a event listener can be configured. The fo
 
 Please consult [https://github.com/serilog/serilog-settings-configuration](documentation) for alternative configuration in order to support persistence of logs in a database or other data sinks.
 
+### Tables
+
+The database tables need to be specified inside the file `tablesettings.json`. There, you can pick what action is permitted for each table separately. 
+Additionally, you can also specify which Active Directory roles have access to each action.
+
+Here is an example:
+```json
+{
+  "Database": {
+    "Tables": {
+      "TestTable": [ "select", "insert" ],
+      "TestTableAD": {
+        "select": [ "*" ],
+        "update": [ "Role1", "Role2" ],
+        "delete": [ "Role1" ],
+        "insert": [ "Role1", "Role2", "Role3" ]
+      }
+    }
+  }
+}
+```
+The asterisk `*` means that every role is permitted for that action.
+
 ## Maintenance
 
 The service produces rolling logs in the \logs folder, recording every external and internal operation(s).
