@@ -18,7 +18,7 @@ public class IntegrationTests : BaseTestClass
     public void Test_Get_BasicAuth_Success()
     {
         // Arrange
-        RestRequest request = new("api/test");
+        RestRequest request = new("/api/tables/test");
         new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(_client, request);
         // Act
         RestResponse response = _client.Execute(request);
@@ -30,7 +30,7 @@ public class IntegrationTests : BaseTestClass
     public void Test_Get_BasicAuth_WrongCredentials()
     {
         // Arrange
-        RestRequest request = new("api/test");
+        RestRequest request = new("/api/tables/test");
         new HttpBasicAuthenticator("foo", "123").Authenticate(_client, request);
         // Act
         RestResponse response = _client.Execute(request);
@@ -42,7 +42,7 @@ public class IntegrationTests : BaseTestClass
     public void Test_Get_ReturnsUnauthorized()
     {
         // Arrange
-        RestRequest request = new("api/test");
+        RestRequest request = new("/api/tables/test");
 
         // Act
         RestResponse response = _client.Execute(request);
@@ -54,7 +54,7 @@ public class IntegrationTests : BaseTestClass
     public void Test_Get_ReturnsSuccess()
     {
         // Arrange
-        RestRequest request = new("api/test");
+        RestRequest request = new("/api/tables/test");
         request.AddHeader("Authorization", "Bearer " + _bearerToken);
         // Act
         RestResponse response = _client.Execute(request);
@@ -67,7 +67,7 @@ public class IntegrationTests : BaseTestClass
     public void Test_GetWhere_ReturnsSuccess()
     {
         // Arrange                          WHERE Phone = '123' ORDER BY FULLNAME   LIMIT=10
-        RestRequest request = new("api/test?where=Phone%3D%27123%27&orderBy=Fullname&limit=10");
+        RestRequest request = new("/api/tables/test?where=Phone%3D%27123%27&orderBy=Fullname&limit=10");
         request.AddHeader("Authorization", "Bearer " + _bearerToken);
         // Act
         RestResponse response = _client.Execute(request);
@@ -80,7 +80,7 @@ public class IntegrationTests : BaseTestClass
     {
         int id = GetFirstId();
         // Arrange
-        RestRequest request = new("api/test/{id}", Method.Get)
+        RestRequest request = new("/api/tables/test/{id}", Method.Get)
         {
             RequestFormat = DataFormat.Json
         };
@@ -97,7 +97,7 @@ public class IntegrationTests : BaseTestClass
     {
         int id = GetFirstId();
         // Arrange
-        RestRequest request = new("api/test/{id}?primaryKeyColumnName=id", Method.Get)
+        RestRequest request = new("/api/tables/test/{id}?primaryKeyColumnName=id", Method.Get)
         {
             RequestFormat = DataFormat.Json
         };
@@ -114,7 +114,7 @@ public class IntegrationTests : BaseTestClass
     {
         int id = GetFirstId();
         // Arrange
-        RestRequest request = new("api/test/{id}?primaryKeyColumnName=abc", Method.Get)
+        RestRequest request = new("/api/tables/test/{id}?primaryKeyColumnName=abc", Method.Get)
         {
             RequestFormat = DataFormat.Json
         };
@@ -130,7 +130,7 @@ public class IntegrationTests : BaseTestClass
     public void Test_Get_TablePermissions_ReturnsNoContent()
     {
         // Arrange
-        RestRequest request = new("api/test2");
+        RestRequest request = new("/api/tables/test2");
         request.AddHeader("Authorization", "Bearer " + _bearerToken);
         // Act
         RestResponse response = _client.Execute(request);
@@ -177,7 +177,7 @@ public class IntegrationTests : BaseTestClass
     public void Test_Post_ReturnsSuccess()
     {
         // Arrange
-        RestRequest request = new("api/test", Method.Post)
+        RestRequest request = new("/api/tables/test", Method.Post)
         {
             RequestFormat = DataFormat.Json
         };
@@ -193,7 +193,7 @@ public class IntegrationTests : BaseTestClass
     public void Test_Post_TablePermissions_ReturnsForbidden()
     {
         // Arrange
-        RestRequest request = new("api/test2", Method.Post);
+        RestRequest request = new("/api/tables/test2", Method.Post);
         request.AddJsonBody(new { FullName = "foo", Phone = "123" });
         request.AddHeader("Authorization", "Bearer " + _bearerToken);
         // Act
@@ -210,7 +210,7 @@ public class IntegrationTests : BaseTestClass
     {
         var id = GetFirstId();
         // Arrange
-        RestRequest request = new("api/test/{id}", Method.Put)
+        RestRequest request = new("/api/tables/test/{id}", Method.Put)
         {
             RequestFormat = DataFormat.Json
         };
@@ -228,7 +228,7 @@ public class IntegrationTests : BaseTestClass
     {
         var id = GetFirstId();
         // Arrange
-        RestRequest request = new("api/test/{id}?primaryKeyColumnName=id", Method.Put)
+        RestRequest request = new("/api/tables/test/{id}?primaryKeyColumnName=id", Method.Put)
         {
             RequestFormat = DataFormat.Json
         };
@@ -246,7 +246,7 @@ public class IntegrationTests : BaseTestClass
     {
         var id = GetFirstId();
         // Arrange
-        RestRequest request = new("api/test/{id}?primaryKeyColumnName=abc", Method.Put)
+        RestRequest request = new("/api/tables/test/{id}?primaryKeyColumnName=abc", Method.Put)
         {
             RequestFormat = DataFormat.Json
         };
@@ -267,7 +267,7 @@ public class IntegrationTests : BaseTestClass
     {
         var id = GetFirstId();
         // Arrange
-        RestRequest request = new("api/test/{id}", Method.Delete)
+        RestRequest request = new("/api/tables/test/{id}", Method.Delete)
         {
             RequestFormat = DataFormat.Json
         };
@@ -284,7 +284,7 @@ public class IntegrationTests : BaseTestClass
     {
         var id = GetFirstId();
         // Arrange
-        RestRequest request = new("api/test/{id}?primaryKeyColumnName=id", Method.Delete)
+        RestRequest request = new("/api/tables/test/{id}?primaryKeyColumnName=id", Method.Delete)
         {
             RequestFormat = DataFormat.Json
         };
@@ -301,7 +301,7 @@ public class IntegrationTests : BaseTestClass
     {
         var id = GetFirstId();
         // Arrange
-        RestRequest request = new("api/test/{id}?primaryKeyColumnName=abc", Method.Delete)
+        RestRequest request = new("/api/tables/test/{id}?primaryKeyColumnName=abc", Method.Delete)
         {
             RequestFormat = DataFormat.Json
         };

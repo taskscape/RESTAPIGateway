@@ -39,7 +39,7 @@ public class BaseTestClass
     protected int GetFirstId()
     {
         //Get the ID of first element
-        RestRequest request = new("api/test");
+        RestRequest request = new("api/tables/test");
         request.AddHeader("Authorization", "Bearer " + _bearerToken);
         RestResponse response = _client.Execute(request);
         if (HttpStatusCode.OK != response.StatusCode)

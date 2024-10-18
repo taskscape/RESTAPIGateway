@@ -20,7 +20,7 @@ public class CompositeTests : BaseTestClass
             RequestFormat = DataFormat.Json
         };
         request.AddHeader("Authorization", "Bearer " + _bearerToken);
-        string body = "{\r\n  \"requests\": [\r\n    {\r\n      \"method\": \"get\",\r\n      \"endpoint\": \"https://localhost:7104/api/test\"\r\n    }\r\n  ]\r\n}";
+        string body = "{\r\n  \"requests\": [\r\n    {\r\n      \"method\": \"get\",\r\n      \"endpoint\": \"https://localhost:7104/api/tables/test\"\r\n    }\r\n  ]\r\n}";
         request.AddBody(body, ContentType.Json);
         // Act
         RestResponse response = _client.Execute(request);
@@ -38,7 +38,7 @@ public class CompositeTests : BaseTestClass
             RequestFormat = DataFormat.Json
         };
         request.AddHeader("Authorization", "Bearer " + _bearerToken);
-        string body = "{\r\n  \"requests\": [\r\n    {\r\n      \"method\": \"get\",\r\n      \"endpoint\": \"https://localhost:7104/api/test/"+firstId+"\"\r\n    }\r\n  ]\r\n}";
+        string body = "{\r\n  \"requests\": [\r\n    {\r\n      \"method\": \"get\",\r\n      \"endpoint\": \"https://localhost:7104/api/tables/test/"+firstId+"\"\r\n    }\r\n  ]\r\n}";
         request.AddBody(body, ContentType.Json);
         // Act
         RestResponse response = _client.Execute(request);
@@ -56,7 +56,7 @@ public class CompositeTests : BaseTestClass
             RequestFormat = DataFormat.Json
         };
         request.AddHeader("Authorization", "Bearer " + _bearerToken);
-        string body = "{\r\n  \"requests\": [\r\n    {\r\n      \"method\": \"get\",\r\n      \"endpoint\": \"https://localhost:7104/api/test/{ID}\",\r\n      \"parameters\": {\r\n        \"ID\": \""+firstId+"\"\r\n      }\r\n    }\r\n  ]\r\n}";
+        string body = "{\r\n  \"requests\": [\r\n    {\r\n      \"method\": \"get\",\r\n      \"endpoint\": \"https://localhost:7104/api/tables/test/{ID}\",\r\n      \"parameters\": {\r\n        \"ID\": \""+firstId+"\"\r\n      }\r\n    }\r\n  ]\r\n}";
         request.AddBody(body, ContentType.Json);
         // Act
         RestResponse response = _client.Execute(request);
@@ -73,7 +73,7 @@ public class CompositeTests : BaseTestClass
             RequestFormat = DataFormat.Json
         };
         request.AddHeader("Authorization", "Bearer " + _bearerToken);
-        string body = "{\r\n  \"requests\": [\r\n    {\r\n      \"method\": \"post\",\r\n      \"endpoint\": \"https://localhost:7104/api/test\",\r\n      \"parameters\": {\r\n        \"phone\": \"109080\",\r\n        \"fullname\": \"composite-test\"\r\n      }\r\n    }\r\n  ]\r\n}";
+        string body = "{\r\n  \"requests\": [\r\n    {\r\n      \"method\": \"post\",\r\n      \"endpoint\": \"https://localhost:7104/api/tables/test\",\r\n      \"parameters\": {\r\n        \"phone\": \"109080\",\r\n        \"fullname\": \"composite-test\"\r\n      }\r\n    }\r\n  ]\r\n}";
         request.AddBody(body, ContentType.Json);
         // Act
         RestResponse response = _client.Execute(request);
@@ -91,7 +91,7 @@ public class CompositeTests : BaseTestClass
             RequestFormat = DataFormat.Json
         };
         request.AddHeader("Authorization", "Bearer " + _bearerToken);
-        string body = "{\r\n  \"requests\": [\r\n    {\r\n      \"method\": \"put\",\r\n      \"endpoint\": \"https://localhost:7104/api/test/"+firstId+"\",\r\n      \"parameters\": {\r\n        \"phone\": \"109080\",\r\n        \"fullname\": \"composite-test-edit\"\r\n      }\r\n    }\r\n  ]\r\n}";
+        string body = "{\r\n  \"requests\": [\r\n    {\r\n      \"method\": \"put\",\r\n      \"endpoint\": \"https://localhost:7104/api/tables/test/"+firstId+"\",\r\n      \"parameters\": {\r\n        \"phone\": \"109080\",\r\n        \"fullname\": \"composite-test-edit\"\r\n      }\r\n    }\r\n  ]\r\n}";
         request.AddBody(body, ContentType.Json);
         // Act
         RestResponse response = _client.Execute(request);
@@ -109,7 +109,7 @@ public class CompositeTests : BaseTestClass
             RequestFormat = DataFormat.Json
         };
         request.AddHeader("Authorization", "Bearer " + _bearerToken);
-        string body = "{\r\n  \"requests\": [\r\n    {\r\n      \"method\": \"delete\",\r\n      \"endpoint\": \"https://localhost:7104/api/test/" + firstId + "\",\r\n      \"parameters\": {\r\n        \"phone\": \"109080\",\r\n        \"fullname\": \"composite-test-edit\"\r\n      }\r\n    }\r\n  ]\r\n}";
+        string body = "{\r\n  \"requests\": [\r\n    {\r\n      \"method\": \"delete\",\r\n      \"endpoint\": \"https://localhost:7104/api/tables/test/" + firstId + "\",\r\n      \"parameters\": {\r\n        \"phone\": \"109080\",\r\n        \"fullname\": \"composite-test-edit\"\r\n      }\r\n    }\r\n  ]\r\n}";
         request.AddBody(body, ContentType.Json);
         // Act
         RestResponse response = _client.Execute(request);
@@ -128,7 +128,7 @@ public class CompositeTests : BaseTestClass
             RequestFormat = DataFormat.Json
         };
         request.AddHeader("Authorization", "Bearer " + _bearerToken);
-        string body = "{\r\n  \"requests\": [\r\n    {\r\n      \"method\": \"get\",\r\n      \"endpoint\": \"https://localhost:7104/api/test\",\r\n      \"returns\": {\r\n        \"aaa\": \"[11].Id\"\r\n      }\r\n    },\r\n    {\r\n      \"method\": \"get\",\r\n      \"endpoint\": \"https://localhost:7104/api/test/{aaa}\",\r\n      \"returns\": {\r\n        \"name\": \"FullName\",\r\n        \"phonenumber\": \"Phone\"\r\n      }\r\n    },\r\n    {\r\n      \"method\": \"post\",\r\n      \"endpoint\": \"https://localhost:7104/api/test\",\r\n      \"parameters\": {\r\n        \"fullname\": \"{name}\",\r\n        \"phone\": \"{phonenumber}\"\r\n      },\r\n      \"returns\": {\r\n        \"newID\": \"Id\"\r\n      }\r\n    },\r\n    {\r\n      \"method\": \"delete\",\r\n      \"endpoint\": \"https://localhost:7104/api/test/{newID}\"\r\n    }\r\n  ]\r\n}";
+        string body = "{\r\n  \"requests\": [\r\n    {\r\n      \"method\": \"get\",\r\n      \"endpoint\": \"https://localhost:7104/api/tables/test\",\r\n      \"returns\": {\r\n        \"aaa\": \"[2].Id\"\r\n      }\r\n    },\r\n    {\r\n      \"method\": \"get\",\r\n      \"endpoint\": \"https://localhost:7104/api/tables/test/{aaa}\",\r\n      \"returns\": {\r\n        \"name\": \"FullName\",\r\n        \"phonenumber\": \"Phone\"\r\n      }\r\n    },\r\n    {\r\n      \"method\": \"post\",\r\n      \"endpoint\": \"https://localhost:7104/api/tables/test\",\r\n      \"parameters\": {\r\n        \"fullname\": \"{name}\",\r\n        \"phone\": \"{phonenumber}\"\r\n      },\r\n      \"returns\": {\r\n        \"newID\": \"Id\"\r\n      }\r\n    },\r\n    {\r\n      \"method\": \"delete\",\r\n      \"endpoint\": \"https://localhost:7104/api/tables/test/{newID}\"\r\n    }\r\n  ]\r\n}";
         request.AddBody(body, ContentType.Json);
         // Act
         RestResponse response = _client.Execute(request);
