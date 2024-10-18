@@ -206,7 +206,7 @@ public class DapperRepository
         
         foreach (var column in columns)
         {
-            if (!values.ContainsKey(column.ToString()) && (string)column != columnName)
+            if (!values.Keys.Any(k => k.ToLower() == column.ToString().ToLower()) && !string.Equals((string)column, columnName, StringComparison.OrdinalIgnoreCase))
             { 
                 values.Add(column.ToString(), null);   
             }
