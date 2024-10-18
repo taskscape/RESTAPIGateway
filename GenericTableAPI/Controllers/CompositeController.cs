@@ -1,5 +1,4 @@
 ﻿using GenericTableAPI.Models;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
@@ -7,7 +6,7 @@ using GenericTableAPI.Services;
 
 namespace GenericTableAPI.Controllers
 {
-    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme + ",BasicAuthentication")]
+    [Authorize]
     [Route("api/composite")]
     [ApiController]
     public class CompositeController : ControllerBase

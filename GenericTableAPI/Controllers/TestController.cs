@@ -17,7 +17,7 @@ namespace GenericTableAPI.Controllers
 
         [HttpGet]
         [Route("dynamic-authentication")]
-        [Authorize(Policy = "DynamicAuthentication")]
+        [Authorize]
         public Task<ActionResult> TestBasicAuth()
         {
             return Task.FromResult<ActionResult>(new OkResult());
