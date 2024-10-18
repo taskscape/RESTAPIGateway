@@ -80,37 +80,181 @@ The service can be used by querying configured endpoints by providing database t
 
 The service can be used to specify more complex composition requests that allow calling inner API methods in a sequential manner that allows accessing  return values using JSON Path and use as parameters for calling subsequent API methods. In this usage scenario user may want to perform multiple operations on multiple tables in a single API call.
 
-example of a composite of three API methods:
+### Structure Overview
 
-- First is a `GET` method, obtaining `name` variable from the `FullName` property of the last element of the returned JSON object, as well as the `number` parameter from the "PhoneNumber" of the 16th element of the returned JSON object.
-- Second is a `POST` method creating new record using the `number` and `name` variables to create a new record in the `tablename` table and returning the new record object, as well as `Id` value of a new record and assigning it to `newId` variable.
-- Third is a `DELETE` method removing newly created record using the `newId` variable as an input parameter used in the method path in order to perform delete operation on the underlying table for the newly created record. 
+The `/api/composite` endpoint follows this structure:
+
+```json
+{
+  "requests": [ 
+    {
+      "method": "...",
+      "endpoint": "...",
+      "parameters": { 
+        // Optional
+      },
+      "returns": { 
+        // Optional
+      }
+    },
+    {
+      // Subsequent requests follow the same structure
+    }
+  ]
+}
+```
+
+### Explanation of Each Field
+
+**1. `requests` (Array)**
+
+  The top-level array named `requests` contains all the individual requests you wish to execute. The requests will be processed sequentially, from the first item to the last.
+
+**2. Request Object**
+
+  Each request in the "requests" array contains the following fields:
+
+  - `method` (String):
+
+    Specifies the HTTP method for the request. Supported methods include:
+
+      - `GET`
+      - `POST`
+      - `PATCH`
+      - `PUT`
+      - `DELETE`
+  
+    **Example**
+    
+    ```json
+    "method": "POST"
+    ```
+
+  - `endpoint` (String):
+
+    The API endpoint to which the request will be sent. You can include variables (defined earlier in the sequence) within curly brackets `{}`.
+
+    **Example**
+    
+    ```json
+    "endpoint": "/api/users/{example-var}"
+    ```
+
+  - `parameters` (Object, Optional):
+
+    Specifies the body parameters for the request. The parameters should be key-value pairs, where the key is the parameter name and the value is its corresponding value. If the value should come from a variable defined in a previous request, enclose the variable name in curly brackets `{}`.
+
+    **Example**
+    
+    ```json
+    "parameters": {
+      "username": "johndoe",
+      "password": "securepassword123",
+      "userId": "{example-var}"
+    }
+    ```
+  
+  - `returns` (Object, Optional):
+
+    Defines variables that will be stored from the response of this request, for use in subsequent requests. The keys are the variable names, and the values are the JSON paths or specific response fields to be saved.
+
+    ```json
+    "returns": {
+      "userId": "Id",
+      "lastUserName": "[-1:].FullName"
+    }
+    ```
+
+### Example usage
+
+Here’s an example configuration that demonstrates the syntax and how variables can be used across multiple requests.
 
 ```json
 {
   "requests": [
     {
-      "method": "get",
-      "endpoint": "https://localhost/api/tables/tablename",
+      "method": "POST",
+      "endpoint": "/api/users",
+      "parameters": {
+        "firstName": "John",
+        "lastName": "Doe",
+        "email": "john.doe@example.com"
+      },
       "returns": {
-        "name": "[-1:].FullName",
-        "number": "[16].PhoneNumber"
-      },
-      {
-        "method": "post",
-        "endpoint": "https://localhost/api/tables/tablename",
-        "parameters": {
-          "phone": "{number}",
-          "fullname": "{name} - edited"
-        },
-        "returns": {
-          "new": "$",
-          "newId": "Id"
-        }
-      },
-      {
-        "method": "delete",
-        "endpoint": "https://localhost/api/tables/tablename/{newId}"
+        "userId": "Id"
+      }
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/users/{userId}",
+      "parameters": {
+        "expand": "details"
+      }
+    },
+    {
+      "method": "DELETE",
+      "endpoint": "/api/users/{userId}"
+    }
+  ]
+}
+```
+
+### How Variables Work
+
+Variables defined in the `"returns"` section can be used in subsequent requests:
+
+1. **Defining Variables:**
+
+    In the first request, the `"returns"` section saves the value returned under the `"Id"` field as `"userId"`.
+
+2. **Using Variables:**
+
+    In the second request, `{userId}` is used within the endpoint and can also be used in the parameters. The value is replaced with the `"Id"` obtained from the first request.
+
+### JSONPath Syntax for `returns`
+
+- You can use JSONPath to specify which part of the response should be stored.
+
+- For example, `"JSON-Path-var": "[-1:].FullName"` would select the `FullName` of the last item in a list.
+
+- You can read more about JSONPAth [here](https://support.smartbear.com/alertsite/docs/monitors/api/endpoint/jsonpath.html)
+
+### Notes
+
+- Requests will be executed in the order provided.
+
+- If a request fails, subsequent requests may not execute
+
+- Variables are accessible in all following requests after they have been defined.
+
+### Practical Example - Data Aggregation and Reporting
+  
+This example retrieves data from multiple endpoints, aggregates it, and then sends a report to an administrator.
+
+```json
+{
+  "requests": [
+    {
+      "method": "GET",
+      "endpoint": "/api/users",
+      "returns": {
+        "userCount": "$.length"
+      }
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/orders",
+      "returns": {
+        "orderCount": "$.length"
+      }
+    },
+    {
+      "method": "POST",
+      "endpoint": "/api/reports",
+      "parameters": {
+        "title": "Daily Summary",
+        "body": "Users: {userCount}, Orders: {orderCount}",
+        "recipient": "admin@example.com"
       }
     }
   ]
