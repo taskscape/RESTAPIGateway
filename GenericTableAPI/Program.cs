@@ -108,7 +108,7 @@ namespace GenericTableAPI
                 builder.Services.AddAuthentication("BasicAuthentication")
                     .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("BasicAuthentication", null);
             }
-            else if (bool.Parse(builder.Configuration["NTLMAuthentication"]))
+            else if (bool.Parse(builder.Configuration["NTLMAuthentication"]??"false"))
             {
                 Log.Logger.Information("[AUTH] Using NTLMAuthentication");
                 builder.Services.AddAuthentication(IISDefaults.AuthenticationScheme);
