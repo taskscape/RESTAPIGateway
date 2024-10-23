@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
+using System.Security.Principal;
 
 namespace GenericTableAPI.Controllers
 {
@@ -337,10 +338,19 @@ namespace GenericTableAPI.Controllers
 
         private string[]? GetUserRoles()
         {
-            return User.Claims
+            WindowsIdentity windowsIdentity = User.Identity as WindowsIdentity;
+            if (windowsIdentity == null)
+            {
+                return User.Claims
                     .Where(c => c.Type == System.Security.Claims.ClaimTypes.Role)
                     .Select(c => c.Value)
                     .ToArray();
+            }
+
+            WindowsPrincipal principal = new(windowsIdentity);
+            return windowsIdentity.Groups
+                .Select(g => g.Translate(typeof(NTAccount)).Value)
+                .ToArray();
         }
     }
 }

@@ -164,9 +164,9 @@ Alternatively the connection parameter can be adjusted to support Oracle databas
 
 You need to substitute tokens denoted by square brackets with actual values (without square brackets). In case of doubts, please follow the official instructions for alternative connection string syntax, if needed.
 
-### Security
+### Authentication
 
-The solution supports authentication using either basic auth or JWT token auth. The exact security model supported depends on whether each of the security models is configured.
+The solution supports authentication using either basic auth, JWT token auth or Windows authentication. The exact security model supported depends on whether each of the security models is configured.
 
 In order to enable JWT token based authentication for API endpoints, the following values need to be configured:
 
@@ -192,7 +192,15 @@ In order to enable BASIC authentication for exposed API endpoints, the following
 
 If above section is configured, only users with a valid combination of username and password will be permitted to use the API endpoints.
 
-If none of the sections (`JwtSettings` or `BasicAuthSettings`) are provided, the exposed endpoints will require no authentication.
+In order to enable WINDOWS authentication, the following value needs to be set to true.
+
+```text
+  "NTLMAuthentication": true,
+```
+
+And the IIS has to be configured to use 'Windows Authentication' as well.
+
+If none of the sections (`JwtSettings` or `BasicAuthSettings` or `NTLMAuthentication`) are provided, the exposed endpoints will require no authentication.
 
 You need to substitute tokens denoted by square brackets with actual values (without square brackets).
 

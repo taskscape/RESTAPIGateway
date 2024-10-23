@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.Filters;
 using Serilog;
+using Microsoft.AspNetCore.Server.IISIntegration;
 
 namespace GenericTableAPI
 {
@@ -107,6 +108,11 @@ namespace GenericTableAPI
                 builder.Services.AddAuthentication("BasicAuthentication")
                     .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("BasicAuthentication", null);
             }
+            else if (bool.Parse(builder.Configuration["NTLMAuthentication"]))
+            {
+                Log.Logger.Information("[AUTH] Using NTLMAuthentication");
+                builder.Services.AddAuthentication(IISDefaults.AuthenticationScheme);
+            }   
             else
             {
                 Log.Logger.Warning("[AUTH] Using No Authentication");
