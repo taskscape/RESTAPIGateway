@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.Filters;
 using Serilog;
+using Microsoft.AspNetCore.Server.IISIntegration;
 
 namespace GenericTableAPI
 {
@@ -24,7 +25,15 @@ namespace GenericTableAPI
                 .ReadFrom.Configuration(configuration)
                 .CreateLogger();
 
-            builder.Configuration.AddJsonFile("tablesettings.json", optional: true, reloadOnChange: true);
+            try
+            {
+                builder.Configuration.AddJsonFile("tablesettings.json", optional: true, reloadOnChange: true);
+            }
+            catch (Exception)
+            {
+                Log.Logger.Warning("[AUTH] No tablesettings.json. Granting access to every table");
+            }
+            
 
             // Add services to the container.
 
@@ -37,7 +46,6 @@ namespace GenericTableAPI
             builder.Services.AddSingleton(new DapperRepository(builder.Configuration.GetConnectionString("DefaultConnection"), builder.Configuration.GetValue<string>("SchemaName"), Log.Logger));
             builder.Services.AddScoped<DatabaseService>();
             builder.Services.AddHttpClient();
-            builder.Services.AddHttpContextAccessor();
 
             builder.Services.AddScoped<CompositeService>();
 
@@ -81,7 +89,8 @@ namespace GenericTableAPI
 
             if (!string.IsNullOrEmpty(jwtKey))
             {
-                builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                Log.Logger.Information("[AUTH] Using Bearer Authentication");
+                builder.Services.AddAuthentication(x => { x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme; x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme; })
                     .AddJwtBearer(options =>
                     {
                         options.TokenValidationParameters = new TokenValidationParameters
@@ -95,24 +104,22 @@ namespace GenericTableAPI
             }
             else if (!string.IsNullOrEmpty(basicAuthUser))
             {
+                Log.Logger.Information("[AUTH] Using BasicAuthentication");
                 builder.Services.AddAuthentication("BasicAuthentication")
                     .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("BasicAuthentication", null);
             }
+            else if (bool.Parse(builder.Configuration["NTLMAuthentication"]))
+            {
+                Log.Logger.Information("[AUTH] Using NTLMAuthentication");
+                builder.Services.AddAuthentication(IISDefaults.AuthenticationScheme);
+            }   
             else
             {
+                Log.Logger.Warning("[AUTH] Using No Authentication");
                 builder.Services.AddAuthentication("NoAuthentication")
                     .AddScheme<AuthenticationSchemeOptions, NoAuthenticationHandler>("NoAuthentication", null);
             }
-            
-            builder.Services.AddAuthorization(options =>
-            {
-                // Define a custom policy that allows authenticated or anonymous access based on configuration
-                options.AddPolicy("DynamicAuthentication", policyBuilder =>
-                {
-                    policyBuilder.RequireAssertion(context => context.User.Identity.IsAuthenticated);
-                });
-            });
-            
+
             builder.Logging.ClearProviders();
             builder.Logging.AddSerilog();
 

@@ -308,9 +308,9 @@ Alternatively the connection parameter can be adjusted to support Oracle databas
 
 You need to substitute tokens denoted by square brackets with actual values (without square brackets). In case of doubts, please follow the official instructions for alternative connection string syntax, if needed.
 
-### Security
+### Authentication
 
-The solution supports authentication using either basic auth or JWT token auth. The exact security model supported depends on whether each of the security models is configured.
+The solution supports authentication using either basic auth, JWT token auth or Windows authentication. The exact security model supported depends on whether each of the security models is configured.
 
 In order to enable JWT token based authentication for API endpoints, the following values need to be configured:
 
@@ -336,7 +336,15 @@ In order to enable BASIC authentication for exposed API endpoints, the following
 
 If above section is configured, only users with a valid combination of username and password will be permitted to use the API endpoints.
 
-If none of the sections (`JwtSettings` or `BasicAuthSettings`) are provided, the exposed endpoints will require no authentication.
+In order to enable WINDOWS authentication, the following value needs to be set to true.
+
+```text
+  "NTLMAuthentication": true,
+```
+
+And the IIS has to be configured to use 'Windows Authentication' as well.
+
+If none of the sections (`JwtSettings` or `BasicAuthSettings` or `NTLMAuthentication`) are provided, the exposed endpoints will require no authentication.
 
 You need to substitute tokens denoted by square brackets with actual values (without square brackets).
 
@@ -374,6 +382,29 @@ The auditing capabilities provided by a event listener can be configured. The fo
 ```
 
 Please consult [https://github.com/serilog/serilog-settings-configuration](documentation) for alternative configuration in order to support persistence of logs in a database or other data sinks.
+
+### Tables
+
+The database tables need to be specified inside the file `tablesettings.json`. There, you can pick what action is permitted for each table separately. 
+Additionally, you can also specify which Active Directory roles have access to each action.
+
+Here is an example:
+```json
+{
+  "Database": {
+    "Tables": {
+      "TestTable": [ "select", "insert" ],
+      "TestTableAD": {
+        "select": [ "*" ],
+        "update": [ "Role1", "Role2" ],
+        "delete": [ "Role1" ],
+        "insert": [ "Role1", "Role2", "Role3" ]
+      }
+    }
+  }
+}
+```
+The asterisk `*` means that every role is permitted for that action.
 
 ## Maintenance
 

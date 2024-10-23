@@ -51,8 +51,8 @@ namespace GenericTableAPI.Services
                     {
                         logger.LogInformation(
                             $"Response returned from \"{httpRequest.RequestUri}\" with status code {response.StatusCode}. Timestamp: {timestamp}");
-                        JObject? content =
-                            JsonConvert.DeserializeObject<JObject>(await response.Content.ReadAsStringAsync());
+                        dynamic? content =
+                            JsonConvert.DeserializeObject<dynamic>(await response.Content.ReadAsStringAsync());
                         allResponses.AppendLine(
                             $"[SUCCESS] \"{httpRequest.Method}\" \"{httpRequest.RequestUri}\" ended up with {(int)response.StatusCode} {response.StatusCode}");
 
@@ -149,10 +149,9 @@ namespace GenericTableAPI.Services
         private void AddAuthorizationHeader(HttpRequestMessage httpRequest)
         {
             if (!AuthorizationHeader.HasValue || string.IsNullOrEmpty(AuthorizationHeader.Value)) return;
-            if (AuthorizationHeader.Value == 2)
             {
-                httpRequest.Headers.Authorization =
-                    new AuthenticationHeaderValue(AuthorizationHeader.Value[0], AuthorizationHeader.Value[1]);
+                string[] authHeaderString = AuthorizationHeader.Value[0].Split(' ');
+                httpRequest.Headers.Authorization = new AuthenticationHeaderValue(authHeaderString[0], authHeaderString[1]);
             }
         }
 
