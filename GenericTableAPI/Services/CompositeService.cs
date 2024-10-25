@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 using System.Net.Http.Headers;
 using System.Text;
 using Microsoft.Extensions.Primitives;
+using GenericTableAPI.Exceptions;
 
 namespace GenericTableAPI.Services
 {
@@ -57,7 +58,14 @@ namespace GenericTableAPI.Services
                         {
                             _returnedParameters[request.Foreach] = currentParameter;
                             httpRequest = PrepareHttpRequest(request);
-                            await SendHttpRequest(httpRequest, request, allResponses);
+                            try
+                            {
+                                await SendHttpRequest(httpRequest, request, allResponses);
+                            }
+                            catch (ResponseException ex)
+                            {
+                                return new StringResponse(ex.StatusCode, allResponses.ToString());
+                            }
                         }
 
                         _returnedParameters[request.Foreach] = originalValue;
@@ -66,7 +74,14 @@ namespace GenericTableAPI.Services
                     {
                         //Standard request. No 'foreach' variable
                         httpRequest = PrepareHttpRequest(request);
-                        await SendHttpRequest(httpRequest, request, allResponses);
+                        try
+                        {
+                            await SendHttpRequest(httpRequest, request, allResponses);
+                        }
+                        catch (ResponseException ex)
+                        {
+                            return new StringResponse(ex.StatusCode, allResponses.ToString());
+                        }
                     }
                 }
 
@@ -127,22 +142,13 @@ namespace GenericTableAPI.Services
 
                         if (!string.IsNullOrWhiteSpace(request.Foreach) && _returnedParameters.TryGetValue(requestReturn.Key, out string? val) && val != null)
                         {
-                            //TODO: Add [" ... "] as an array. Currently the output looks like this:
-                            //{ object1 }, { object2 }...
-                            //Should look like this:
-                            //["{ object1 }, { object2 }... "]
-                            //Fixed probably?
                             allResponses.AppendLine(
-                            //$"[INFO] Returned parameter: {requestReturn.Key} = {val},\n{contentPathValue}");//Agragated. for Debug.
                             $"[INFO] Returned parameter: {requestReturn.Key} = {contentPathValue}");
 
-                            // Check if 'val' is already in the format ["..."]
                             if (val.StartsWith("[\"") && val.EndsWith("\"]"))
-                                //TODO: Test this solution
-                                _returnedParameters[requestReturn.Key] = val.TrimEnd(']').TrimEnd() + $", \"{contentPathValue}\"]";
+                                _returnedParameters[requestReturn.Key] = val.TrimEnd('\"').TrimEnd(']') + $", \"{contentPathValue}\"]";
                             else
-                                _returnedParameters[requestReturn.Key] = $"[\"{val},\n{contentPathValue}\"]";
-                            //_returnedParameters[requestReturn.Key] = $"{val},\n{contentPathValue}";
+                                _returnedParameters[requestReturn.Key] = $"[\"{val}\", \"{contentPathValue}\"]";
                         } 
                         else
                         {
@@ -156,8 +162,7 @@ namespace GenericTableAPI.Services
                         logger.LogError($"Returned parameter: {requestReturn.Value} not found!");
                         allResponses.AppendLine(
                         $"[ERROR] \"{httpRequest.Method}\" \"{httpRequest.RequestUri}\" Could not find {ReplaceUrlParameters(requestReturn.Value, request.Parameters)} Reason: {ex.Message}");
-                        throw new Exception(allResponses.ToString());
-                        //return new StringResponse(StatusCodes.Status400BadRequest, allResponses.ToString());//TODO: Handle this commented line
+                        throw new ResponseException(StatusCodes.Status400BadRequest, allResponses.ToString());
                     }
                 }
             }
@@ -167,7 +172,7 @@ namespace GenericTableAPI.Services
                     $"Response returned from \"{httpRequest.RequestUri}\" with status code {response.StatusCode}. Timestamp: {timestamp}");
                 allResponses.AppendLine(
                     $"[ERROR] \"{httpRequest.Method}\" \"{httpRequest.RequestUri}\" ended up with {(int)response.StatusCode} {response.StatusCode}!");
-                //return new StringResponse(StatusCodes.Status500InternalServerError, allResponses.ToString());//TODO: Handle this commented line
+                throw new ResponseException(StatusCodes.Status500InternalServerError, allResponses.ToString());
             }
         }
 
