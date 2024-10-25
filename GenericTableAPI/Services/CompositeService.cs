@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 using System.Net.Http.Headers;
 using System.Text;
 using Microsoft.Extensions.Primitives;
+using GenericTableAPI.Exceptions;
 
 namespace GenericTableAPI.Services
 {
@@ -34,75 +35,53 @@ namespace GenericTableAPI.Services
                         return new StringResponse(StatusCodes.Status400BadRequest, allResponses.ToString());
                     }
 
-                    DateTimeOffset timestamp = DateTimeOffset.UtcNow;
                     if (logger.IsEnabled(LogLevel.Information))
                     {
                         logger.LogInformation(
-                            $"{request.Method?.ToUpper() ?? "UNKNOWN"} request to \"{request.Endpoint}\" with parameters: {(request.Parameters != null ? JsonConvert.SerializeObject(request.Parameters) : "null")}. Timestamp: {timestamp}");
+                            $"{request.Method?.ToUpper() ?? "UNKNOWN"} request to \"{request.Endpoint}\" with parameters: {(request.Parameters != null ? JsonConvert.SerializeObject(request.Parameters) : "null")}. Timestamp: {DateTimeOffset.UtcNow}");
                     }
 
-                    httpRequest = PrepareHttpRequest(request);
-
-                    //Getting the response
-                    HttpClient client = httpClientFactory.CreateClient();
-                    HttpResponseMessage response = await client.SendAsync(httpRequest);
-
-                    if (response.IsSuccessStatusCode)
+                    if(!string.IsNullOrWhiteSpace(request.Foreach) && _returnedParameters.TryGetValue(request.Foreach, out string? originalValue))
                     {
-                        logger.LogInformation(
-                            $"Response returned from \"{httpRequest.RequestUri}\" with status code {response.StatusCode}. Timestamp: {timestamp}");
-                        dynamic? content =
-                            JsonConvert.DeserializeObject<dynamic>(await response.Content.ReadAsStringAsync());
-                        allResponses.AppendLine(
-                            $"[SUCCESS] \"{httpRequest.Method}\" \"{httpRequest.RequestUri}\" ended up with {(int)response.StatusCode} {response.StatusCode}");
-
-                        if (request.Returns == null) continue;
-                        foreach (KeyValuePair<string, string> requestReturn in request.Returns)
+                        //Handle 'foreach' request
+                        string[] returnedParameterArray;
+                        try
                         {
+                            returnedParameterArray = JsonConvert.DeserializeObject<string[]>(originalValue);
+                        }
+                        catch (JsonSerializationException)
+                        {
+                            returnedParameterArray = [originalValue];
+                        }
+                        
+                        foreach (string currentParameter in returnedParameterArray)
+                        {
+                            _returnedParameters[request.Foreach] = currentParameter;
+                            httpRequest = PrepareHttpRequest(request);
                             try
                             {
-                                string? contentPathValue = null;
-                                IEnumerable<JToken>? obj =
-                                    content?.SelectTokens(ReplaceUrlParameters(requestReturn.Value,
-                                        request.Parameters));
-
-                                if (obj != null)
-                                {
-                                    if (obj.Count() > 1)
-                                    {
-                                        contentPathValue = obj.Aggregate("[",
-                                            (current, item) => current + ("\"" + item + "\", "));
-                                        contentPathValue = contentPathValue.Remove(contentPathValue.Length - 2, 2) +
-                                                           "]";
-                                    }
-                                    else
-                                    {
-                                        contentPathValue = obj.FirstOrDefault()?.ToString();
-                                    }
-                                }
-
-                                if (contentPathValue == null) continue;
-                                _returnedParameters.Add(requestReturn.Key, contentPathValue);
-                                allResponses.AppendLine(
-                                    $"[INFO] Returned parameter: {requestReturn.Key} = {contentPathValue}");
+                                await SendHttpRequest(httpRequest, request, allResponses);
                             }
-                            catch (Exception ex)
+                            catch (ResponseException ex)
                             {
-                                logger.LogError($"Returned parameter: {requestReturn.Value} not found!");
-                                allResponses.AppendLine(
-                                    $"[ERROR] \"{httpRequest.Method}\" \"{httpRequest.RequestUri}\" Could not find {ReplaceUrlParameters(requestReturn.Value, request.Parameters)} Reason: {ex.Message}");
-                                return new StringResponse(StatusCodes.Status400BadRequest, allResponses.ToString());
+                                return new StringResponse(ex.StatusCode, allResponses.ToString());
                             }
-
                         }
+
+                        _returnedParameters[request.Foreach] = originalValue;
                     }
                     else
                     {
-                        logger.LogError(
-                            $"Response returned from \"{httpRequest.RequestUri}\" with status code {response.StatusCode}. Timestamp: {timestamp}");
-                        allResponses.AppendLine(
-                            $"[ERROR] \"{httpRequest.Method}\" \"{httpRequest.RequestUri}\" ended up with {(int)response.StatusCode} {response.StatusCode}!");
-                        return new StringResponse(StatusCodes.Status500InternalServerError, allResponses.ToString());
+                        //Standard request. No 'foreach' variable
+                        httpRequest = PrepareHttpRequest(request);
+                        try
+                        {
+                            await SendHttpRequest(httpRequest, request, allResponses);
+                        }
+                        catch (ResponseException ex)
+                        {
+                            return new StringResponse(ex.StatusCode, allResponses.ToString());
+                        }
                     }
                 }
 
@@ -115,6 +94,85 @@ namespace GenericTableAPI.Services
                 allResponses.AppendLine(
                     $"[FATAL ERROR] \"{httpRequest.Method}\" \"{httpRequest.RequestUri}\" thrown an exception: {exception.Message}");
                 return new StringResponse(StatusCodes.Status500InternalServerError, allResponses.ToString());
+            }
+        }
+
+
+        private async Task SendHttpRequest(HttpRequestMessage httpRequest, ApiRequest request, StringBuilder allResponses)
+        {
+            DateTimeOffset timestamp = DateTimeOffset.UtcNow;
+            HttpClient client = httpClientFactory.CreateClient();
+            HttpResponseMessage response = await client.SendAsync(httpRequest);
+
+            if (response.IsSuccessStatusCode)
+            {
+                logger.LogInformation(
+                    $"Response returned from \"{httpRequest.RequestUri}\" with status code {response.StatusCode}. Timestamp: {timestamp}");
+                dynamic? content =
+                    JsonConvert.DeserializeObject<dynamic>(await response.Content.ReadAsStringAsync());
+                allResponses.AppendLine(
+                $"[SUCCESS] \"{httpRequest.Method}\" \"{httpRequest.RequestUri}\" ended up with {(int)response.StatusCode} {response.StatusCode}");
+
+                if (request.Returns == null) return;
+                foreach (KeyValuePair<string, string> requestReturn in request.Returns)
+                {
+                    try
+                    {
+                        string? contentPathValue = null;
+                        IEnumerable<JToken>? obj =
+                            content?.SelectTokens(ReplaceUrlParameters(requestReturn.Value,
+                                request.Parameters));
+
+                        if (obj != null)
+                        {
+                            if (obj.Count() > 1)
+                            {
+                                contentPathValue = obj.Aggregate("[",
+                                    (current, item) => current + ("\"" + item + "\", "));
+                                contentPathValue = contentPathValue.Remove(contentPathValue.Length - 2, 2) +
+                                                   "]";
+                            }
+                            else
+                            {
+                                contentPathValue = obj.FirstOrDefault()?.ToString();
+                            }
+                        }
+
+                        if (contentPathValue == null) continue;
+
+                        if (!string.IsNullOrWhiteSpace(request.Foreach) && _returnedParameters.TryGetValue(requestReturn.Key, out string? val) && val != null)
+                        {
+                            allResponses.AppendLine(
+                            $"[INFO] Returned parameter: {requestReturn.Key} = {contentPathValue}");
+
+                            if (val.StartsWith("[\"") && val.EndsWith("\"]"))
+                                _returnedParameters[requestReturn.Key] = val.TrimEnd('\"').TrimEnd(']') + $", \"{contentPathValue}\"]";
+                            else
+                                _returnedParameters[requestReturn.Key] = $"[\"{val}\", \"{contentPathValue}\"]";
+                        } 
+                        else
+                        {
+                            allResponses.AppendLine(
+                            $"[INFO] Returned parameter: {requestReturn.Key} = {contentPathValue}");
+                            _returnedParameters.Add(requestReturn.Key, contentPathValue);
+                        }  
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError($"Returned parameter: {requestReturn.Value} not found!");
+                        allResponses.AppendLine(
+                        $"[ERROR] \"{httpRequest.Method}\" \"{httpRequest.RequestUri}\" Could not find {ReplaceUrlParameters(requestReturn.Value, request.Parameters)} Reason: {ex.Message}");
+                        throw new ResponseException(StatusCodes.Status400BadRequest, allResponses.ToString());
+                    }
+                }
+            }
+            else
+            {
+                logger.LogError(
+                    $"Response returned from \"{httpRequest.RequestUri}\" with status code {response.StatusCode}. Timestamp: {timestamp}");
+                allResponses.AppendLine(
+                    $"[ERROR] \"{httpRequest.Method}\" \"{httpRequest.RequestUri}\" ended up with {(int)response.StatusCode} {response.StatusCode}!");
+                throw new ResponseException(StatusCodes.Status500InternalServerError, allResponses.ToString());
             }
         }
 
