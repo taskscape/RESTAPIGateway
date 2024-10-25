@@ -90,6 +90,7 @@ The `/api/composite` endpoint follows this structure:
     {
       "method": "...",
       "endpoint": "...",
+      "foreach": "...", // Optional
       "parameters": { 
         // Optional
       },
@@ -139,6 +140,18 @@ The `/api/composite` endpoint follows this structure:
     ```json
     "endpoint": "/api/users/{example-var}"
     ```
+
+  - `foreach` (String, Optional):
+
+    If provided, the request will be executed for each element in the specified variable. The variable should reference a list, and the current element in the iteration will replace any placeholders in the `"endpoint"` or `"parameters"`.
+
+    **Example**
+    
+    ```json
+    "foreach": "{userList}"
+    ```
+
+    - In this case, the request will execute for each element in `userList`.
 
   - `parameters` (Object, Optional):
 
@@ -217,7 +230,7 @@ Variables defined in the `"returns"` section can be used in subsequent requests:
 
 - For example, `"JSON-Path-var": "[-1:].FullName"` would select the `FullName` of the last item in a list.
 
-- You can read more about JSONPAth [here](https://support.smartbear.com/alertsite/docs/monitors/api/endpoint/jsonpath.html)
+- You can read more about JSONPath [here](https://support.smartbear.com/alertsite/docs/monitors/api/endpoint/jsonpath.html)
 
 ### Notes
 
