@@ -136,5 +136,61 @@ public class CompositeTests : BaseTestClass
         // Assert
         Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
     }
+
+    [TestMethod]
+    public void Test_Foreach_Get_ReturnsSuccess()
+    {
+        // Arrange
+        RestRequest request = new("api/composite", Method.Post)
+        {
+            RequestFormat = DataFormat.Json
+        };
+        request.AddHeader("Authorization", "Bearer " + _bearerToken);
+        string body = "{\r\n  \"requests\": [\r\n    {\r\n      \"method\": \"GET\",\r\n      \"endpoint\": \"https://localhost:7104/api/tables/test\",\r\n      \"returns\": {\r\n        \"testId\": \"[:].Id\"\r\n      }\r\n    },\r\n    {\r\n      \"method\": \"GET\",\r\n      \"foreach\": \"{testId}\",\r\n      \"endpoint\": \"https://localhost:7104/api/tables/test/{testId}\",\r\n      \"returns\": {\r\n        \"alltask\": \"$\"\r\n      }\r\n    }\r\n  ]\r\n}";
+        request.AddBody(body, ContentType.Json);
+        // Act
+        RestResponse response = _client.Execute(request);
+
+        // Assert
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+    }
+    
+    [TestMethod]
+    //This Complex request contains 2 GET methods to gather data. (Second one is to simulate some foregin key gather). Then one POST request to create new data and DELETE to delete created data. All while using foreach feature
+    public void Test_Foreach_Complex_ReturnsSuccess()
+    {
+        // Arrange
+        RestRequest request = new("api/composite", Method.Post)
+        {
+            RequestFormat = DataFormat.Json
+        };
+        request.AddHeader("Authorization", "Bearer " + _bearerToken);
+        string body = "{\r\n  \"requests\": [\r\n    {\r\n      \"method\": \"GET\",\r\n      \"endpoint\": \"https://localhost:7104/api/tables/test\",\r\n      \"returns\": {\r\n        \"testId\": \"[-5:].Id\"\r\n      }\r\n    },\r\n    {\r\n      \"method\": \"GET\",\r\n      \"foreach\": \"{testId}\",\r\n      \"endpoint\": \"https://localhost:7104/api/tables/test/{testId}\",\r\n      \"returns\": {\r\n        \"phones\": \"Phone\",\r\n        \"names\": \"Fullname\",\r\n        \"Ids\": \"Id\"\r\n      }\r\n    },\r\n    {\r\n      \"method\": \"POST\",\r\n      \"foreach\": \"{phones}\",\r\n      \"endpoint\": \"https://localhost:7104/api/tables/test\",\r\n      \"parameters\": {\r\n        \"Fullname\": \"{phones}\",\r\n        \"Phone\": \"{phones}\"\r\n      },\r\n      \"returns\": {\r\n        \"createdIds\": \"Id\"\r\n      }\r\n    },\r\n    {\r\n      \"method\": \"DELETE\",\r\n      \"foreach\": \"{createdIds}\",\r\n      \"endpoint\": \"https://localhost:7104/api/tables/test/{createdIds}\"\r\n    }\r\n  ]\r\n}";
+        request.AddBody(body, ContentType.Json);
+        // Act
+        RestResponse response = _client.Execute(request);
+
+        // Assert
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [TestMethod]
+    //The first request returns an int value. But the foreach normally expects an array. However even then it should work just fine.
+    public void Test_Foreach_NotArray_ReturnsSuccess()
+    {
+        // Arrange
+        RestRequest request = new("api/composite", Method.Post)
+        {
+            RequestFormat = DataFormat.Json
+        };
+        request.AddHeader("Authorization", "Bearer " + _bearerToken);
+        string body = "{\r\n  \"requests\": [\r\n    {\r\n      \"method\": \"GET\",\r\n      \"endpoint\": \"https://localhost:7104/api/tables/test\",\r\n      \"returns\": {\r\n        \"testId\": \"[-1:].Id\"\r\n      }\r\n    },\r\n    {\r\n      \"method\": \"GET\",\r\n      \"foreach\": \"{testId}\",\r\n      \"endpoint\": \"https://localhost:7104/api/tables/test/{testId}\",\r\n      \"returns\": {\r\n        \"names\": \"Fullname\"\r\n      }\r\n    }\r\n  ]\r\n}";
+        request.AddBody(body, ContentType.Json);
+        // Act
+        RestResponse response = _client.Execute(request);
+
+        // Assert
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+    }
 }
 
