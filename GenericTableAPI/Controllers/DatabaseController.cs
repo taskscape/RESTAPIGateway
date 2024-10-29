@@ -44,8 +44,13 @@ namespace GenericTableAPI.Controllers
             {
                 _logger.LogInformation("Getting all entities from {TableName}. Timestamp: {TimeStamp}", tableName, timestamp);
                 IEnumerable<dynamic>? entities = await _service.GetAllAsync(tableName, where, orderBy, limit).ConfigureAwait(false);
-        
-                if (entities.IsNullOrEmpty())
+
+                if (entities == null)
+                {
+                    _logger.LogInformation("Table {TableName} not found. Timestamp: {TimeStamp}", tableName, timestamp);
+                    return responseObj = NotFound();
+                }
+                if (!entities.Any())
                 {
                     _logger.LogInformation("No entities found for {TableName}. Timestamp: {TimeStamp}", tableName, timestamp);
                     return responseObj = NoContent();
@@ -133,14 +138,14 @@ namespace GenericTableAPI.Controllers
                 if (id == null)
                 {
                     _logger.LogInformation("Failed to establish new entity for table: {TableName}. Timestamp: {TimeStamp}", tableName, timestamp);
-                    return responseObj = Ok();
+                    return responseObj = StatusCode(StatusCodes.Status500InternalServerError, $"Failed to establish new entity for table: {tableName}");
                 }
         
                 dynamic? newItem = await _service.GetByIdAsync(tableName, id.ToString() ?? string.Empty, primaryKeyColumnName).ConfigureAwait(false);
                 if (newItem == null)
                 {
                     _logger.LogInformation("Failed to establish new entity for table: {TableName}. Timestamp: {TimeStamp}", tableName, timestamp);
-                    return responseObj = Ok();
+                    return responseObj = StatusCode(StatusCodes.Status500InternalServerError, $"Failed to establish new entity for table: {tableName}");
                 }
                 else
                 {
@@ -319,7 +324,7 @@ namespace GenericTableAPI.Controllers
                 _logger.LogInformation("Executed stored procedure {ProcedureName}. Timestamp: {TimeStamp}", procedureName, timestamp);
                 if (result.Count == 0)
                 {
-                    return responseObj = Ok();
+                    return responseObj = NoContent();
                 }
                 
                 return responseObj = Ok(result);
