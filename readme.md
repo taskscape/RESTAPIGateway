@@ -325,31 +325,51 @@ You need to substitute tokens denoted by square brackets with actual values (wit
 
 The solution supports authentication using either basic auth, JWT token auth or Windows authentication. The exact security model supported depends on whether each of the security models is configured.
 
-In order to enable JWT token based authentication for API endpoints, the following values need to be configured:
+**In order to enable JWT token based authentication for API endpoints, the following values need to be configured:**
 
 ```text
   "JwtSettings": {
     "Key": "[secret_key]",
     "Issuer": "[host_name]",
     "Audience": "[host_name]",
-    "Subject": "JWTServiceAccessToken"
+    "Subject": "JWTServiceAccessToken",
+    "Users": [
+      {
+        "Username": "[user_name]",
+        "Password": "[password]",
+        "Role": "[role]"
+      }
+      // Subsequent users follow the same structure
+    ]
   },
 ```
+- You can specify as many users as needed (at least one), with each user assigned a single role for authorization purposes, as the system supports only one role per user at this time.
 
-If above section is configured, only users with a valid JWT token will be permitted to use the API endpoints.
+- Each username must be unique to ensure proper authentication and authorization for each user.
 
-In order to enable BASIC authentication for exposed API endpoints, the following values need to be configured:
+- If above section is configured, only users with a valid JWT token will be permitted to use the API endpoints.
+
+**In order to enable BASIC authentication for exposed API endpoints, the following values need to be configured:**
 
 ```text
-  "BasicAuthSettings": {
+"BasicAuthSettings": [
+  {
     "Username": "[user_name]",
-    "Password": "[password]"
-  },
+    "Password": "[password]",
+    "Role": "[role]"
+  }
+  // Subsequent users follow the same structure
+],
+
 ```
 
-If above section is configured, only users with a valid combination of username and password will be permitted to use the API endpoints.
+- You can specify as many users as needed (at least one), with each user assigned a single role for authorization purposes, as the system supports only one role per user at this time.
 
-In order to enable WINDOWS authentication, the following value needs to be set to true.
+- Each username must be unique to ensure proper authentication and authorization for each user.
+
+- If above section is configured, only users with a valid combination of username and password will be permitted to use the API endpoints.
+
+**In order to enable WINDOWS authentication, the following value needs to be set to true.**
 
 ```text
   "NTLMAuthentication": true,
