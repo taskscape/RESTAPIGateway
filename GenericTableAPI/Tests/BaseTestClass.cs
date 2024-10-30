@@ -36,7 +36,7 @@ public class BaseTestClass
         return JsonConvert.DeserializeObject<string>(response.Content);
     }
     //Returns the ID of the first element from Table 'test'
-    protected int GetFirstId()
+    protected virtual int GetFirstId()
     {
         //Get the ID of first element
         RestRequest request = new("api/tables/test");
