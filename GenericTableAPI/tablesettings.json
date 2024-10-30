@@ -64,7 +64,7 @@
       "AD-example": {
         "select": [ "*" ], //Everyone has the permison
         "update": [ "Role1", "Role2" ], //Given Roles has the permissions
-        "delete": [ "Role1" ],
+        "delete": [ "Role3" ],
         "insert": [ "Role1", "Role2", "Role3" ]
       },
       "test2": [
