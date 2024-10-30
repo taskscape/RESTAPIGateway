@@ -85,7 +85,7 @@ namespace GenericTableAPI
 
             // Authentication Configuration
             string? jwtKey = builder.Configuration["JwtSettings:Key"];
-            string? basicAuthUser = builder.Configuration["BasicAuthSettings:Username"];
+            string? basicAuthUser = builder.Configuration["BasicAuthSettings:0:Username"];
 
             if (!string.IsNullOrEmpty(jwtKey))
             {

@@ -2,6 +2,7 @@
 using System.Security.Claims;
 using System.Text;
 using System.Text.Encodings.Web;
+using GenericTableAPI.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
 
@@ -10,6 +11,8 @@ namespace GenericTableAPI
     public class BasicAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
     {
         private readonly IConfiguration _configuration;
+        private readonly List<AuthUser>? _users = [];
+
         public BasicAuthenticationHandler(
             IOptionsMonitor<AuthenticationSchemeOptions> options,
             ILoggerFactory logger,
@@ -19,6 +22,7 @@ namespace GenericTableAPI
             : base(options, logger, encoder, clock)
         {
             _configuration = config;
+            _configuration.GetSection("BasicAuthSettings").Bind(_users);
         }
 
         protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
@@ -46,7 +50,11 @@ namespace GenericTableAPI
                     return AuthenticateResult.Fail("Invalid username or password.");
                 }
 
-                Claim[] claims = { new(ClaimTypes.Name, username) };
+                string role = _users.Where(x => x.Username == username).FirstOrDefault().Role;
+                List<Claim> claims = [new Claim(ClaimTypes.Name, username)];
+                if (!string.IsNullOrEmpty(role))
+                    claims.Add(new Claim(ClaimTypes.Role, role));
+
                 ClaimsIdentity identity = new(claims, Scheme.Name);
                 ClaimsPrincipal principal = new(identity);
                 AuthenticationTicket ticket = new(principal, Scheme.Name);
@@ -63,10 +71,7 @@ namespace GenericTableAPI
 
         private bool ValidateCredentials(string username, string password)
         {
-            string? confUsername = _configuration.GetSection("BasicAuthSettings:Username").Value;
-            string? confPassword = _configuration.GetSection("BasicAuthSettings:Password").Value;
-
-            return confUsername == username && confPassword == password;
+            return _users.Any(user => user.Username == username && user.Password == password);
         }
     }
 }

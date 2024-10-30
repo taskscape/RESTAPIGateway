@@ -11,10 +11,11 @@ namespace GenericTableAPI.Controllers
     public class TokenController : ControllerBase
     {
         private readonly IConfiguration _configuration;
-
+        private readonly List<AuthUser>? _users = [];
         public TokenController(IConfiguration config)
         {
             _configuration = config;
+            _configuration.GetSection("JwtSettings:Users").Bind(_users);
         }
 
         [HttpPost]
@@ -24,7 +25,7 @@ namespace GenericTableAPI.Controllers
 
             if (ValidateCredentials(userData.UserName, userData.Password))
             {
-                return Ok(CreateToken(userData));
+                return Ok(CreateToken(_users.Where(x => x.Username == userData.UserName).FirstOrDefault()));
             }
 
             return BadRequest("Invalid credentials");
@@ -32,18 +33,14 @@ namespace GenericTableAPI.Controllers
 
         private bool ValidateCredentials(string userName, string password)
         {
-            string? confUsername = _configuration.GetSection("JwtSettings:Username").Value;
-            string? confPassword = _configuration.GetSection("JwtSettings:Password").Value;
-
-            return confUsername == userName && confPassword == password;
+            return _users.Any(user => user.Username == userName && user.Password == password);
         }
-        private string CreateToken(User user)
+        private string CreateToken(AuthUser user)
         {
-            List<Claim> claims =
-            [
-                new Claim(ClaimTypes.Name, user.UserName),
-                new Claim(ClaimTypes.Role, "Admin")
-            ];
+            List<Claim> claims = [new Claim(ClaimTypes.Name, user.Username)];
+
+            if (!string.IsNullOrEmpty(user.Role))
+                claims.Add(new Claim(ClaimTypes.Role, user.Role));
 
             SymmetricSecurityKey key = new(System.Text.Encoding.UTF8.GetBytes(_configuration.GetSection("JwtSettings:Key").Value));
 
