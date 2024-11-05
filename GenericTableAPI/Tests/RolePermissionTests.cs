@@ -30,9 +30,12 @@ public class RolePermissionTests : BaseTestClass
     TABLE CONFIGURATION:
     "test": {
         "select": [ "*" ],
-        "update": [ "Role1", "Role2" ],
-        "delete": [ "Role3" ],
-        "insert": [ "Role1", "Role2", "Role3" ]
+        "update": [ "Role1", "rolename:Role2" ],
+        "delete": [ "username:user3" ],
+        "insert": [ "rolename:Role1", "Role2", "rolename:Role3" ]
+      },
+    "testnotfound": {
+        "select": [ "username:user1", "Role3", "rolename:Role2" ]
       },
      */
 
@@ -44,6 +47,23 @@ public class RolePermissionTests : BaseTestClass
     {
         Setup();
     }
+    [TestMethod]
+    public void Test_NotFound_Success()
+    {
+        foreach (var user in _users)
+        {
+            // Arrange
+            RestRequest request = new("/api/tables/testnotfound");
+            new HttpBasicAuthenticator(user, _password).Authenticate(_client, request);
+            // Act
+            RestResponse response = _client.Execute(request);
+
+            // Assert
+            Assert.AreEqual(HttpStatusCode.NotFound, response.StatusCode, $"{user} got response: {response.StatusCode} ");
+            Console.WriteLine($"[SUCCESS] {user} not found!");
+        }
+    }
+
     [TestMethod]
     public void Test_GetAll_Success()
     {

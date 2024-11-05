@@ -55,7 +55,7 @@
       "timelog": [
         "select"
       ],
-      "test": [
+      "test-BASIC": [
         "select",
         "update",
         "delete",
@@ -66,6 +66,15 @@
         "update": [ "Role1", "Role2" ], //Given Roles has the permissions
         "delete": [ "Role3" ],
         "insert": [ "Role1", "Role2", "Role3" ]
+      },
+      "test": {
+        "select": [ "*" ],
+        "update": [ "Role1", "rolename:Role2" ],
+        "delete": [ "username:user3" ],
+        "insert": [ "rolename:Role1", "Role2", "rolename:Role3" ]
+      },
+      "testnotfound": {
+        "select": [ "username:user1", "Role3", "rolename:Role2" ]
       },
       "test2": [
         "select"

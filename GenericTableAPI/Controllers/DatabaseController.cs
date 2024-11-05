@@ -34,7 +34,7 @@ namespace GenericTableAPI.Controllers
             dynamic? responseObj = null;
             _logger.LogInformation("{RequestInfo}", requestInfo);
         
-            if (!TableValidationUtility.ValidTablePermission(_configuration, tableName, "select", GetUserRoles()))
+            if (!TableValidationUtility.ValidTablePermission(_configuration, tableName, "select", User))
             {
                 _logger.LogWarning("User {UserName} attempted to access table {TableName} with GET-all and without permission. Timestamp: {TimeStamp}", User.Identity?.Name ?? "unknown", tableName, timestamp);
                 return Forbid();
@@ -81,7 +81,7 @@ namespace GenericTableAPI.Controllers
             dynamic? responseObj = null;
             _logger.LogInformation("{RequestInfo}", requestInfo);
         
-            if (!TableValidationUtility.ValidTablePermission(_configuration, tableName, "select", GetUserRoles()))
+            if (!TableValidationUtility.ValidTablePermission(_configuration, tableName, "select", User))
             {
                 _logger.LogWarning("User {UserName} attempted to access table {TableName} with GET-ID command and without permission. Timestamp: {TimeStamp}", User.Identity?.Name ?? "unknown", tableName, timestamp);
                 return Forbid();
@@ -123,7 +123,7 @@ namespace GenericTableAPI.Controllers
             dynamic? responseObj = null;
             _logger.LogInformation("{RequestInfo}", requestInfo);
         
-            if (!TableValidationUtility.ValidTablePermission(_configuration, tableName, "insert", GetUserRoles()))
+            if (!TableValidationUtility.ValidTablePermission(_configuration, tableName, "insert", User))
             {
                 _logger.LogWarning("User {UserName} attempted to access table {TableName} with POST command and without permission. Timestamp: {TimeStamp}", User.Identity?.Name ?? "unknown", tableName, timestamp);
                 return Forbid();
@@ -176,7 +176,7 @@ namespace GenericTableAPI.Controllers
             dynamic? responseObj = null;
             _logger.LogInformation("{RequestInfo}", requestInfo);
         
-            if (!TableValidationUtility.ValidTablePermission(_configuration, tableName, "update", GetUserRoles()))
+            if (!TableValidationUtility.ValidTablePermission(_configuration, tableName, "update", User))
             {
                 _logger.LogWarning("User {UserName} attempted to access table {TableName} with PATCH command and without permission. Timestamp: {TimeStamp}", User.Identity?.Name ?? "unknown", tableName, timestamp);
                 return Forbid();
@@ -220,7 +220,7 @@ namespace GenericTableAPI.Controllers
             dynamic? responseObj = null;
             _logger.LogInformation("{RequestInfo}", requestInfo);
         
-            if (!TableValidationUtility.ValidTablePermission(_configuration, tableName, "update", GetUserRoles()))
+            if (!TableValidationUtility.ValidTablePermission(_configuration, tableName, "update", User))
             {
                 _logger.LogWarning("User {UserName} attempted to access table {TableName} with PUT command and without permission. Timestamp: {TimeStamp}", User.Identity?.Name ?? "unknown", tableName, timestamp);
                 return Forbid();
@@ -264,7 +264,7 @@ namespace GenericTableAPI.Controllers
             dynamic? responseObj = null;
             _logger.LogInformation("{RequestInfo}", requestInfo);
         
-            if (!TableValidationUtility.ValidTablePermission(_configuration, tableName, "delete", GetUserRoles()))
+            if (!TableValidationUtility.ValidTablePermission(_configuration, tableName, "delete", User))
             {
                 _logger.LogWarning("User {UserName} attempted to access table {TableName} with DELETE command and without permission. Timestamp: {TimeStamp}", User.Identity?.Name ?? "unknown", tableName, timestamp);
                 return Forbid();
@@ -339,23 +339,6 @@ namespace GenericTableAPI.Controllers
                 string responseInfo = $"Response returned from \"{HttpContext.Request.Path}{HttpContext.Request.QueryString}\" with status code {responseObj?.StatusCode}. Timestamp: {timestamp}";
                  _logger.LogInformation("{ResponseInfo}", responseInfo);
             }
-        }
-
-        private string[]? GetUserRoles()
-        {
-            WindowsIdentity windowsIdentity = User.Identity as WindowsIdentity;
-            if (windowsIdentity == null)
-            {
-                return User.Claims
-                    .Where(c => c.Type == System.Security.Claims.ClaimTypes.Role)
-                    .Select(c => c.Value)
-                    .ToArray();
-            }
-
-            WindowsPrincipal principal = new(windowsIdentity);
-            return windowsIdentity.Groups
-                .Select(g => g.Translate(typeof(NTAccount)).Value)
-                .ToArray();
         }
     }
 }
