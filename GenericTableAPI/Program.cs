@@ -40,7 +40,6 @@ namespace GenericTableAPI
             builder.Services.AddControllers();
 
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
 
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSingleton(new DapperRepository(builder.Configuration.GetConnectionString("DefaultConnection"), builder.Configuration.GetValue<string>("SchemaName"), Log.Logger));
@@ -69,18 +68,6 @@ namespace GenericTableAPI
                 );
                 string filePath = Path.Combine(AppContext.BaseDirectory, "GenericTableAPI.xml");
                 options.IncludeXmlComments(filePath);
-            });
-
-            builder.Services.AddSwaggerGen(options =>
-            {
-                options.AddSecurityDefinition("basic", new OpenApiSecurityScheme
-                {
-                    In = ParameterLocation.Header,
-                    Description = "Standard Authorization header using basic authentication scheme",
-                    Name = "Authorization",
-                    Type = SecuritySchemeType.Http,
-                    Scheme = "basic"
-                });
             });
 
             // Authentication Configuration
@@ -127,8 +114,11 @@ namespace GenericTableAPI
             
             app.UseRouting();
 
-            app.UseSwagger();
-            app.UseSwaggerUI();
+            if(bool.Parse(builder.Configuration["EnableSwagger"] ?? "false"))
+            {
+                app.UseSwagger();
+                app.UseSwaggerUI();
+            }
 
             app.UseHttpsRedirection();
             
