@@ -418,26 +418,113 @@ Please consult [https://github.com/serilog/serilog-settings-configuration](docum
 
 ### Tables
 
-The database tables need to be specified inside the file `tablesettings.json`. There, you can pick what action is permitted for each table separately. 
-Additionally, you can also specify which Active Directory roles have access to each action.
+The `tablesettings.json` file defines permissions for database tables, specifying which actions are allowed for each table and who has access based on user roles and individual users. This setup allows for granular control over data access at the table level.
 
-Here is an example:
+#### Structure of `tablesettings.json`
+
+The configuration is organized under the `Database` key, which contains `Tables`, where each table's access settings are defined. 
+
+Each table entry supports defining actions: `select`, `insert`, `update`, and `delete`, along with access specifications for each action.
+
+#### Simple Access
+
+Simple permissions can be assigned by listing the allowed actions as an array. Any authenticated user will have those permissions
+
 ```json
 {
   "Database": {
     "Tables": {
-      "TestTable": [ "select", "insert" ],
-      "TestTableAD": {
-        "select": [ "*" ],
-        "update": [ "Role1", "Role2" ],
-        "delete": [ "Role1" ],
-        "insert": [ "Role1", "Role2", "Role3" ]
+      "TableName": [ PERMISSIONS in string array ]
       }
     }
   }
 }
 ```
-The asterisk `*` means that every role is permitted for that action.
+
+**Example**
+
+```json
+{
+  "Database": {
+    "Tables": {
+      "MyTable1": [ "select", "insert" ]
+      }
+    }
+  }
+}
+```
+In this example, any user can `select` and `insert` records in `MyTable1`.
+
+#### Role-Based and User-Based Access
+
+Roles or Usernames can be specified for each action to limit access to users with specific roles or usernames.
+
+```json
+{
+  "Database": {
+    "Tables": {
+      "TableName":
+        {
+          "select": [ PERMISSIONS ],
+          "update": [ PERMISSIONS ],
+          "delete": [ PERMISSIONS ],
+          "insert": [ PERMISSIONS ]
+        }
+      }
+    }
+  }
+}
+```
+
+**Roles**
+
+Roles can be specified for each action to limit access to users with specific roles.
+
+Although roles can be specified without any prefix, using `rolename:` allows for clear differentiation in cases where naming conventions could be ambiguous.
+
+```json
+"select": [ "rolename:Role1", "Role2" ]
+```
+Here, only users with Role1 or Role2 can perform select actions
+
+**Usernames**
+
+Specific users can be granted access by specifying their usernames with the prefix `username:`.
+
+```json
+"select": [ "username:User1", "username:User2" ]
+```
+Here, only users with User1 or User2 can perform select actions
+
+**Wildcard Access**
+
+Using `*` allows all users to access a specific action.
+
+```json
+"select": [ "*" ]
+```
+This grants `select` permission to all authenticated users.
+
+**Example**
+
+```json
+{
+  "Database": {
+    "Table1": {
+        "select": [ "*" ],
+        "update": [ "Role1", "rolename:Role2" ],
+        "delete": [ "username:user3" ],
+        "insert": ["username:user1", "Role2", "rolename:Role3", "username:user3"]
+      }
+    }
+  }
+}
+```
+In this example to `Table1`:
+- Everyone can `select`.
+- Only users with `Role1` or `Role2` can `update`.
+- Only `user3` can `delete`.
+- `insert` is allowed for `user1`, `user3`, and roles `Role2` and `Role3`.
 
 ## Maintenance
 
