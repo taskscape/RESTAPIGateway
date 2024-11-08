@@ -321,6 +321,16 @@ Alternatively the connection parameter can be adjusted to support Oracle databas
 
 You need to substitute tokens denoted by square brackets with actual values (without square brackets). In case of doubts, please follow the official instructions for alternative connection string syntax, if needed.
 
+### Enable Swagger
+
+In this section, you can enable Swagger by setting the following option:
+
+```text
+  "EnableSwagger": true,
+```
+
+**Note**: For production environments, it is recommended to disable Swagger to enhance security.
+
 ### Authentication
 
 The solution supports authentication using either basic auth, JWT token auth or Windows authentication. The exact security model supported depends on whether each of the security models is configured.
