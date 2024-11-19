@@ -16,5 +16,5 @@ public class ApiRequest
     }
     private string? _foreach;
     public Dictionary<string, string>? Parameters { get; set; }
-    public Dictionary<string, string>? Returns { get; set; }
+    public Dictionary<string, string>? Variables { get; set; }
 }
