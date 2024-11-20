@@ -8,7 +8,7 @@ REST API Gateway is a service that sits in front of a database and provides a RE
 
 ## Architecture
 
-![[diagram.png]]
+![[diagram.png]](diagram.png)
 
 ## Requirements
 
@@ -86,6 +86,8 @@ The `/api/composite` endpoint follows this structure:
 
 ```json
 {
+  "debug": true, // Optional
+  "response": "...",  // Optional
   "requests": [ 
     {
       "method": "...",
@@ -94,7 +96,7 @@ The `/api/composite` endpoint follows this structure:
       "parameters": { 
         // Optional
       },
-      "returns": { 
+      "variables": { 
         // Optional
       }
     },
@@ -106,6 +108,31 @@ The `/api/composite` endpoint follows this structure:
 ```
 
 ### Explanation of Each Field
+
+**1. `debug` (Boolean, Optional)**
+
+  Enables or disables debug information in the response. When set to `true`, the endpoint returns additional debug information in the response body. This can help in troubleshooting issues or understanding request behavior.
+
+**2. `response` (Object, Optional)**
+
+  Defines the structure of the response. You can use placeholders `{variables}` within the object that will be dynamically replaced with corresponding data.
+
+  If no `response` object is provided, then all variables will be included in the response automatically.
+
+  **Example**
+
+  ```json
+  "response": {
+    "user": "{username}",
+    "password": "{userPassword}",
+    "userId": "{example-var}"
+  }
+  ```
+
+  In this example:
+  - `{username}` will be replaced with the user's name.
+  - `{userPassword}` will be replaced with the user's password.
+  - `{example-var}` will be replaced with the value of a variable named example-var.
 
 **1. `requests` (Array)**
 
@@ -167,12 +194,12 @@ The `/api/composite` endpoint follows this structure:
     }
     ```
   
-  - `returns` (Object, Optional):
+  - `variables` (Object, Optional):
 
     Defines variables that will be stored from the response of this request, for use in subsequent requests. The keys are the variable names, and the values are the JSON paths or specific response fields to be saved.
 
     ```json
-    "returns": {
+    "variables": {
       "userId": "Id",
       "lastUserName": "[-1:].FullName"
     }
@@ -193,7 +220,7 @@ Here’s an example configuration that demonstrates the syntax and how variables
         "lastName": "Doe",
         "email": "john.doe@example.com"
       },
-      "returns": {
+      "variables": {
         "userId": "Id"
       }
     },
@@ -214,17 +241,17 @@ Here’s an example configuration that demonstrates the syntax and how variables
 
 ### How Variables Work
 
-Variables defined in the `"returns"` section can be used in subsequent requests:
+Variables defined in the `"variables"` section can be used in subsequent requests:
 
 1. **Defining Variables:**
 
-    In the first request, the `"returns"` section saves the value returned under the `"Id"` field as `"userId"`.
+    In the first request, the `"variables"` section saves the value returned under the `"Id"` field as `"userId"`.
 
 2. **Using Variables:**
 
     In the second request, `{userId}` is used within the endpoint and can also be used in the parameters. The value is replaced with the `"Id"` obtained from the first request.
 
-### JSONPath Syntax for `returns`
+### JSONPath Syntax for `variables`
 
 - You can use JSONPath to specify which part of the response should be stored.
 
@@ -250,14 +277,14 @@ This example retrieves data from multiple endpoints, aggregates it, and then sen
     {
       "method": "GET",
       "endpoint": "/api/users",
-      "returns": {
+      "variables": {
         "userCount": "$.length"
       }
     },
     {
       "method": "GET",
       "endpoint": "/api/orders",
-      "returns": {
+      "variables": {
         "orderCount": "$.length"
       }
     },
