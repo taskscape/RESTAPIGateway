@@ -233,7 +233,7 @@ namespace GenericTableAPI.Services
             tableName = GetTableName(tableName, schemaName);
             
             string keys = primaryKeyColumn;
-            if (!values.IsNullOrEmpty())
+            if (values?.Count > 0)
             {
                 keys = $"{primaryKeyColumn}, {string.Join(", ", values.Keys)}";
             }
