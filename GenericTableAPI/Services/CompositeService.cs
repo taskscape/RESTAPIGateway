@@ -132,13 +132,24 @@ namespace GenericTableAPI.Services
                             if (obj.Count() > 1)
                             {
                                 contentPathValue = obj.Aggregate("[",
-                                    (current, item) => current + ("\"" + item + "\", "));
-                                contentPathValue = contentPathValue.Remove(contentPathValue.Length - 2, 2) +
-                                                   "]";
+                                    (current, item) =>
+                                    {
+                                        if (item.Type == JTokenType.String)
+                                        {
+                                            return current + ("\"" + item + "\", ");
+                                        }
+                                        return current + (item + ", ");
+                                    });
+                                contentPathValue = contentPathValue.Remove(contentPathValue.Length - 2, 2) + "]";
                             }
                             else
                             {
-                                contentPathValue = obj.FirstOrDefault()?.ToString();
+                                contentPathValue = obj.FirstOrDefault() switch
+                                {
+                                    JToken token when token.Type == JTokenType.String => $"\"{token}\"", // Add quotes if string
+                                    JToken token => token.ToString(), // Use the token as is if not a string
+                                    _ => string.Empty // In case obj is empty or doesn't have a valid element
+                                };
                             }
                         }
 
@@ -149,10 +160,10 @@ namespace GenericTableAPI.Services
                             allResponses.AppendDebugLine(
                             $"[INFO] Returned parameter: {requestVariable.Key} = {contentPathValue}");
 
-                            if (val.StartsWith("[\"") && val.EndsWith("\"]"))
-                                _variables[requestVariable.Key] = val.TrimEnd('\"').TrimEnd(']') + $", \"{contentPathValue}\"]";
+                            if (val.StartsWith("[") && val.EndsWith("]"))
+                                _variables[requestVariable.Key] = val.TrimEnd('\"').TrimEnd(']') + $", {contentPathValue}]";
                             else
-                                _variables[requestVariable.Key] = $"[\"{val}\", \"{contentPathValue}\"]";
+                                _variables[requestVariable.Key] = $"[{val}, {contentPathValue}]";
                         } 
                         else
                         {
