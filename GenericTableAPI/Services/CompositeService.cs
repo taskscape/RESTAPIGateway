@@ -5,12 +5,13 @@ using System.Net.Http.Headers;
 using System.Text;
 using Microsoft.Extensions.Primitives;
 using GenericTableAPI.Exceptions;
+using GenericTableAPI.Utilities;
 
 namespace GenericTableAPI.Services
 {
     public class CompositeService(IHttpClientFactory httpClientFactory, ILogger<CompositeService> logger)
     {
-        private readonly Dictionary<string, string> _returnedParameters = new();
+        private readonly Dictionary<string, string> _variables = new();
 
         public StringValues? AuthorizationHeader { get; set; }
 
@@ -21,7 +22,7 @@ namespace GenericTableAPI.Services
                 return new StringResponse(StatusCodes.Status400BadRequest, "Invalid input for composite request.");
             }
 
-            StringBuilder allResponses = new();
+            CompositeResponseBuilder allResponses = new(compositeRequest.Debug);
             HttpRequestMessage httpRequest = new();
             try
             {
@@ -31,7 +32,7 @@ namespace GenericTableAPI.Services
                         string.IsNullOrEmpty(request.Endpoint))
                     {
                         logger.LogError("Invalid input for composite request.");
-                        allResponses.AppendLine("[ERROR] Invalid input for composite request.");
+                        allResponses.AppendDebugLine("[ERROR] Invalid input for composite request.");
                         return new StringResponse(StatusCodes.Status400BadRequest, allResponses.ToString());
                     }
 
@@ -41,22 +42,22 @@ namespace GenericTableAPI.Services
                             $"{request.Method?.ToUpper() ?? "UNKNOWN"} request to \"{request.Endpoint}\" with parameters: {(request.Parameters != null ? JsonConvert.SerializeObject(request.Parameters) : "null")}. Timestamp: {DateTimeOffset.UtcNow}");
                     }
 
-                    if(!string.IsNullOrWhiteSpace(request.Foreach) && _returnedParameters.TryGetValue(request.Foreach, out string? originalValue))
+                    if(!string.IsNullOrWhiteSpace(request.Foreach) && _variables.TryGetValue(request.Foreach, out string? originalValue))
                     {
                         //Handle 'foreach' request
-                        string[] returnedParameterArray;
+                        string[] returnedVariablesArray;
                         try
                         {
-                            returnedParameterArray = JsonConvert.DeserializeObject<string[]>(originalValue);
+                            returnedVariablesArray = JsonConvert.DeserializeObject<string[]>(originalValue);
                         }
                         catch (JsonSerializationException)
                         {
-                            returnedParameterArray = [originalValue];
+                            returnedVariablesArray = [originalValue];
                         }
-                        
-                        foreach (string currentParameter in returnedParameterArray)
+
+                        for (int i = 0; i < returnedVariablesArray?.Length; i++)
                         {
-                            _returnedParameters[request.Foreach] = currentParameter;
+                            _variables[request.Foreach] = returnedVariablesArray[i];
                             httpRequest = PrepareHttpRequest(request);
                             try
                             {
@@ -64,11 +65,12 @@ namespace GenericTableAPI.Services
                             }
                             catch (ResponseException ex)
                             {
+                                allResponses.AppendResponseObject(compositeRequest.Response, _variables);
                                 return new StringResponse(ex.StatusCode, allResponses.ToString());
                             }
                         }
 
-                        _returnedParameters[request.Foreach] = originalValue;
+                        _variables[request.Foreach] = originalValue;
                     }
                     else
                     {
@@ -80,25 +82,27 @@ namespace GenericTableAPI.Services
                         }
                         catch (ResponseException ex)
                         {
+                            allResponses.AppendResponseObject(compositeRequest.Response, _variables);
                             return new StringResponse(ex.StatusCode, allResponses.ToString());
                         }
                     }
                 }
-
+                allResponses.AppendResponseObject(compositeRequest.Response, _variables);
                 return new StringResponse(StatusCodes.Status200OK, allResponses.ToString());
             }
             catch (Exception exception)
             {
                 logger.LogError(exception,
                     $"Error while processing request: {httpRequest.Method} {httpRequest.RequestUri} thrown an exception: {exception.Message}");
-                allResponses.AppendLine(
+                allResponses.AppendDebugLine(
                     $"[FATAL ERROR] \"{httpRequest.Method}\" \"{httpRequest.RequestUri}\" thrown an exception: {exception.Message}");
+                allResponses.AppendResponseObject(compositeRequest.Response, _variables);
                 return new StringResponse(StatusCodes.Status500InternalServerError, allResponses.ToString());
             }
         }
 
 
-        private async Task SendHttpRequest(HttpRequestMessage httpRequest, ApiRequest request, StringBuilder allResponses)
+        private async Task SendHttpRequest(HttpRequestMessage httpRequest, ApiRequest request, CompositeResponseBuilder allResponses)
         {
             DateTimeOffset timestamp = DateTimeOffset.UtcNow;
             HttpClient client = httpClientFactory.CreateClient();
@@ -110,17 +114,17 @@ namespace GenericTableAPI.Services
                     $"Response returned from \"{httpRequest.RequestUri}\" with status code {response.StatusCode}. Timestamp: {timestamp}");
                 dynamic? content =
                     JsonConvert.DeserializeObject<dynamic>(await response.Content.ReadAsStringAsync());
-                allResponses.AppendLine(
+                allResponses.AppendDebugLine(
                 $"[SUCCESS] \"{httpRequest.Method}\" \"{httpRequest.RequestUri}\" ended up with {(int)response.StatusCode} {response.StatusCode}");
 
-                if (request.Returns == null) return;
-                foreach (KeyValuePair<string, string> requestReturn in request.Returns)
+                if (request.Variables == null) return;
+                foreach (KeyValuePair<string, string> requestVariable in request.Variables)
                 {
                     try
                     {
                         string? contentPathValue = null;
                         IEnumerable<JToken>? obj =
-                            content?.SelectTokens(ReplaceUrlParameters(requestReturn.Value,
+                            content?.SelectTokens(ReplaceUrlParameters(requestVariable.Value,
                                 request.Parameters));
 
                         if (obj != null)
@@ -128,40 +132,51 @@ namespace GenericTableAPI.Services
                             if (obj.Count() > 1)
                             {
                                 contentPathValue = obj.Aggregate("[",
-                                    (current, item) => current + ("\"" + item + "\", "));
-                                contentPathValue = contentPathValue.Remove(contentPathValue.Length - 2, 2) +
-                                                   "]";
+                                    (current, item) =>
+                                    {
+                                        if (item.Type == JTokenType.String)
+                                        {
+                                            return current + ("\"" + item + "\", ");
+                                        }
+                                        return current + (item + ", ");
+                                    });
+                                contentPathValue = contentPathValue.Remove(contentPathValue.Length - 2, 2) + "]";
                             }
                             else
                             {
-                                contentPathValue = obj.FirstOrDefault()?.ToString();
+                                contentPathValue = obj.FirstOrDefault() switch
+                                {
+                                    JToken token when token.Type == JTokenType.String => $"\"{token}\"", // Add quotes if string
+                                    JToken token => token.ToString(), // Use the token as is if not a string
+                                    _ => string.Empty // In case obj is empty or doesn't have a valid element
+                                };
                             }
                         }
 
                         if (contentPathValue == null) continue;
 
-                        if (!string.IsNullOrWhiteSpace(request.Foreach) && _returnedParameters.TryGetValue(requestReturn.Key, out string? val) && val != null)
+                        if (!string.IsNullOrWhiteSpace(request.Foreach) && _variables.TryGetValue(requestVariable.Key, out string? val) && val != null)
                         {
-                            allResponses.AppendLine(
-                            $"[INFO] Returned parameter: {requestReturn.Key} = {contentPathValue}");
+                            allResponses.AppendDebugLine(
+                            $"[INFO] Returned parameter: {requestVariable.Key} = {contentPathValue}");
 
-                            if (val.StartsWith("[\"") && val.EndsWith("\"]"))
-                                _returnedParameters[requestReturn.Key] = val.TrimEnd('\"').TrimEnd(']') + $", \"{contentPathValue}\"]";
+                            if (val.StartsWith("[") && val.EndsWith("]"))
+                                _variables[requestVariable.Key] = val.TrimEnd('\"').TrimEnd(']') + $", {contentPathValue}]";
                             else
-                                _returnedParameters[requestReturn.Key] = $"[\"{val}\", \"{contentPathValue}\"]";
+                                _variables[requestVariable.Key] = $"[{val}, {contentPathValue}]";
                         } 
                         else
                         {
-                            allResponses.AppendLine(
-                            $"[INFO] Returned parameter: {requestReturn.Key} = {contentPathValue}");
-                            _returnedParameters.Add(requestReturn.Key, contentPathValue);
+                            allResponses.AppendDebugLine(
+                            $"[INFO] Returned parameter: {requestVariable.Key} = {contentPathValue}");
+                            _variables.Add(requestVariable.Key, contentPathValue);
                         }  
                     }
                     catch (Exception ex)
                     {
-                        logger.LogError($"Returned parameter: {requestReturn.Value} not found!");
-                        allResponses.AppendLine(
-                        $"[ERROR] \"{httpRequest.Method}\" \"{httpRequest.RequestUri}\" Could not find {ReplaceUrlParameters(requestReturn.Value, request.Parameters)} Reason: {ex.Message}");
+                        logger.LogError($"Returned parameter: {requestVariable.Value} not found!");
+                        allResponses.AppendDebugLine(
+                        $"[ERROR] \"{httpRequest.Method}\" \"{httpRequest.RequestUri}\" Could not find {ReplaceUrlParameters(requestVariable.Value, request.Parameters)} Reason: {ex.Message}");
                         throw new ResponseException(StatusCodes.Status400BadRequest, allResponses.ToString());
                     }
                 }
@@ -170,7 +185,7 @@ namespace GenericTableAPI.Services
             {
                 logger.LogError(
                     $"Response returned from \"{httpRequest.RequestUri}\" with status code {response.StatusCode}. Timestamp: {timestamp}");
-                allResponses.AppendLine(
+                allResponses.AppendDebugLine(
                     $"[ERROR] \"{httpRequest.Method}\" \"{httpRequest.RequestUri}\" ended up with {(int)response.StatusCode} {response.StatusCode}!");
                 throw new ResponseException(StatusCodes.Status500InternalServerError, allResponses.ToString());
             }
@@ -229,7 +244,7 @@ namespace GenericTableAPI.Services
 
         private string ReplaceUrlParameters(string template, Dictionary<string, string>? parameters = null)
         {
-            template = _returnedParameters.Aggregate(template,
+            template = _variables.Aggregate(template,
                 (current, parameter) => current.Replace("{" + parameter.Key + "}", parameter.Value));
 
             return parameters == null
