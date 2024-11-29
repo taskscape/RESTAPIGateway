@@ -7,9 +7,14 @@ namespace GenericTableAPI.Utilities
     {
         public static bool ValidTablePermission(IConfiguration configuration, string tableName, string permission, ClaimsPrincipal? User = null)
         {
-            if (!configuration.GetSection("Database").Exists()) return true;
+            if (!configuration.GetSection("Database").Exists()) return false;
             IConfigurationSection tableSection = configuration.GetSection("Database:Tables:" + tableName);
-            if (!tableSection.Exists()) return false;
+            if (!tableSection.Exists())
+            {
+                tableSection = configuration.GetSection("Database:DefaultPermissions");//Check default permission
+                if (!tableSection.Exists())
+                    return false;
+            }
             List<string>? configPermissions = tableSection.Get<List<string>>();
             if(configPermissions.Contains(permission))
                 return true;

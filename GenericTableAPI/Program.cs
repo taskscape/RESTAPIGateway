@@ -27,11 +27,13 @@ namespace GenericTableAPI
 
             try
             {
-                builder.Configuration.AddJsonFile("tablesettings.json", optional: true, reloadOnChange: true);
+                builder.Configuration.AddJsonFile("tablesettings.json", optional: false, reloadOnChange: true);
             }
             catch (Exception)
             {
-                Log.Logger.Warning("[AUTH] No tablesettings.json. Granting access to every table");
+                Log.Logger.Error("[AUTH] Missing configuration file: tablesettings.json ");
+                Log.Logger.Information("Please refer to ### Table Authorization ### section in the documentation to create a valid tablesettings.json file!");
+                throw new InvalidOperationException("tablesettings.json is missing. Add tablesettings.json in order to run the service!");
             }
             
 

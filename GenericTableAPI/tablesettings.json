@@ -1,5 +1,11 @@
 {
   "Database": {
+    "DefaultPermissions": {
+      "select": [],
+      "insert": [],
+      "update": [],
+      "delete": []
+    },
     "Tables": {
       "SharedTasks": [
         "select"

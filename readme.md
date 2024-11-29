@@ -134,11 +134,11 @@ The `/api/composite` endpoint follows this structure:
   - `{userPassword}` will be replaced with the user's password.
   - `{example-var}` will be replaced with the value of a variable named example-var.
 
-**1. `requests` (Array)**
+**3. `requests` (Array)**
 
   The top-level array named `requests` contains all the individual requests you wish to execute. The requests will be processed sequentially, from the first item to the last.
 
-**2. Request Object**
+**4. Request Object**
 
   Each request in the "requests" array contains the following fields:
 
@@ -453,15 +453,40 @@ The auditing capabilities provided by a event listener can be configured. The fo
 
 Please consult [https://github.com/serilog/serilog-settings-configuration](documentation) for alternative configuration in order to support persistence of logs in a database or other data sinks.
 
-### Tables
+### Table Authorization
 
 The `tablesettings.json` file defines permissions for database tables, specifying which actions are allowed for each table and who has access based on user roles and individual users. This setup allows for granular control over data access at the table level.
 
+**Note** This file is required to run the service.
+
 #### Structure of `tablesettings.json`
 
-The configuration is organized under the `Database` key, which contains `Tables`, where each table's access settings are defined. 
+The configuration file is structured under the `Database` key, containing `DefaultPermissions` (optional) and `Tables`. Each table's access settings can be defined in detail, overriding default permissions when needed.
 
 Each table entry supports defining actions: `select`, `insert`, `update`, and `delete`, along with access specifications for each action.
+
+#### **Default Permissions**
+
+The `DefaultPermissions` key defines global permissions that apply to all tables unless explicitly overridden in the `Tables` section. Permissions are specified for the actions `select`, `insert`, `update`, and `delete`.
+
+**Example:**
+
+```json
+{
+  "Database": {
+    "DefaultPermissions": {
+      "select": ["*"], // Default: All users can select.
+      "insert": ["rolename:AdminRole"],    // Default: AdminRole can insert.
+      "update": [],    // Default: No update access.
+      "delete": []     // Default: No delete access.
+    }
+  }
+}
+```
+
+If a table does not explicitly define permissions in the `Tables` section, it inherits these defaults.
+
+The `DefaultPermissions` support both **Simple Access** and **Role-Based and User-Based Access**
 
 #### Simple Access
 
@@ -562,6 +587,8 @@ In this example to `Table1`:
 - Only users with `Role1` or `Role2` can `update`.
 - Only `user3` can `delete`.
 - `insert` is allowed for `user1`, `user3`, and roles `Role2` and `Role3`.
+
+**Note** The configuration allows a mix of simple and detailed permissions within the same file.
 
 ## Maintenance
 
