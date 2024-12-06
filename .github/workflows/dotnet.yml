@@ -35,6 +35,7 @@ jobs:
         # SQL commands to create the tables
         sqlcmd -S localhost,1555 -U SA -P "YourStrongPassword123" -Q "
           CREATE DATABASE TestDB;
+        "
     - name: Setup Database (SQL Server)
       run: |
         # SQL commands to create the tables
