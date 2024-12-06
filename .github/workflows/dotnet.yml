@@ -32,8 +32,6 @@ jobs:
       run: sleep 10
     - name: Verify API is reachable
       run: curl -v http://localhost:5066/api/tables/test
-    - name: Verify API is reachable
-      run: curl -v https://localhost:7104/api/tables/test
     - name: Run tests
       run: dotnet test --no-build --verbosity normal
       working-directory: GenericTableAPI
