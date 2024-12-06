@@ -11,7 +11,7 @@ namespace GenericTableAPI.Utilities
             IConfigurationSection tableSection = configuration.GetSection("Database:Tables:" + tableName);
             if (!tableSection.Exists())
             {
-                tableSection = configuration.GetSection("Database:DefaultPermissions");//Check default permission
+                tableSection = configuration.GetSection("Database:Tables:*");//Check default permission
                 if (!tableSection.Exists())
                     return false;
             }
