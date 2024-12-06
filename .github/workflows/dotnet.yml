@@ -27,11 +27,13 @@ jobs:
       working-directory: GenericTableAPI
     - name: Run application in the background
       run: |
-        dotnet run --project GenericTableAPI/GenericTableAPI.csproj &
-        echo "Waiting for application to start..."
-        sleep 10 # Adjust the sleep time as needed
+        nohup dotnet run --project GenericTableAPI/GenericTableAPI.csproj &
+    - name: Wait for API server to start
+      run: sleep 10
     - name: Verify API is reachable
       run: curl -v http://localhost:5066/api/tables/test
+    - name: Verify API is reachable
+      run: curl -v https://localhost:7104/api/tables/test
     - name: Run tests
       run: dotnet test --no-build --verbosity normal
       working-directory: GenericTableAPI
