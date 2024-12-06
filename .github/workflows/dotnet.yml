@@ -13,6 +13,13 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        options: --health-cmd="exit 0" --health-interval=10s --health-retries=5 --health-timeout=2s -e 'ACCEPT_EULA=Y' -e 'MSSQL_SA_PASSWORD=YourStrongPassword123' -p 1433:1433
+        ports:
+          - 1433:1433
+
     steps:
     - uses: actions/checkout@v4
     - name: Setup .NET
@@ -25,14 +32,32 @@ jobs:
     - name: Build
       run: dotnet build --no-restore
       working-directory: GenericTableAPI
+    - name: Setup Database (SQL Server)
+      run: |
+        # SQL commands to create the tables
+        sqlcmd -S localhost,1433 -U SA -P "YourStrongPassword123" -Q "
+          CREATE DATABASE TestDB;
+          USE TestDB;
+          CREATE TABLE Test (
+            ID INT PRIMARY KEY IDENTITY(1,1),
+            Fullname VARCHAR(20),
+            Phone VARCHAR(20)
+          );
+          CREATE TABLE Test2 (
+            ID INT PRIMARY KEY IDENTITY(1,1),
+            Fullname VARCHAR(20),
+            Phone VARCHAR(20)
+          );
+        "
     - name: Run application in the background
       run: |
         nohup dotnet run --project GenericTableAPI/GenericTableAPI.csproj &
-    - name: Wait for API server to start
-      run: sleep 10
-    - name: Verify API is reachable
-      run: curl -v http://localhost:5066/api/tables/test
+    #- name: Wait for API server to start
+    #  run: sleep 10
     - name: Run tests
       run: dotnet test --no-build --verbosity normal
       working-directory: GenericTableAPI
+    - name: Cleanup Database
+      run: |
+        sqlcmd -S localhost,1433 -U SA -P "YourStrongPassword123" -Q "DROP DATABASE TestDB;"
 
