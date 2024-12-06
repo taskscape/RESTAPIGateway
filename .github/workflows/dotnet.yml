@@ -11,7 +11,6 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -26,6 +25,12 @@ jobs:
     - name: Build
       run: dotnet build --no-restore
       working-directory: GenericTableAPI
-    - name: Test
+    - name: Run application in the background
+      run: |
+        dotnet run --project GenericTableAPI/GenericTableAPI.csproj &
+        echo "Waiting for application to start..."
+        sleep 10 # Adjust the sleep time as needed
+    - name: Run tests
       run: dotnet test --no-build --verbosity normal
       working-directory: GenericTableAPI
+
