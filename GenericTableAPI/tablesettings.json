@@ -1,77 +1,28 @@
 {
   "Database": {
-    "DefaultPermissions": {
-      "select": [],
-      "insert": [],
-      "update": [],
-      "delete": []
-    },
     "Tables": {
-      "SharedTasks": [
-        "select"
-      ],
-      "tags": [
-        "select"
-      ],
-      "TagsOfTask": [
-        "select"
-      ],
-      "task": [
-        "select"
-      ],
-      "Activities": [
-        "select"
-      ],
-      "categories": [
-        "select"
-      ],
-      "task_subscriptions": [
-        "select"
-      ],
-      "comments": [
-        "select"
-      ],
-      "TaskInvoices": [
-        "select"
-      ],
-      "Context": [
-        "select"
-      ],
-      "TaskStates": [
-        "select"
-      ],
-      "ContextActions": [
-        "select"
-      ],
-      "TaskStats": [
-        "select"
-      ],
-      "ContextBalances": [
-        "select"
-      ],
-      "Templates": [
-        "select"
-      ],
-      "ContextContracts": [
-        "select"
-      ],
-      "ContextDiscounts": [
-        "select"
-      ],
-      "timelog": [
-        "select"
-      ],
-      "test-BASIC": [
+      "*": { //"*" HERE MEANS THE DEFAULT PERMISSION. THOSE PERMISSIONS WILL BE USED FOR TABLES THAT ARE NOT SPECIFIED BELOW (example: 'testnotfound' table will override the select: "*")
+        "select": [ "*" ], //EVERYONE HAS THE PERMISSION TO SELECT TO EVERY TABLE (EVERY TABLE SPECIFIED BELOW OVERRIDES THIS PERMISSION COMPLETELY)
+        "insert": [],
+        "update": [],
+        "delete": []
+      },
+      "SimpleAccess": [
         "select",
         "update",
         "delete",
         "insert"
       ],
-      "AD-example": {
+      "RoleBasedAccess": {
         "select": [ "*" ], //Everyone has the permison
         "update": [ "Role1", "Role2" ], //Given Roles has the permissions
         "delete": [ "Role3" ],
         "insert": [ "Role1", "Role2", "Role3" ]
+      },
+      "UsernameBasedAccess": {
+        "select": [ "username:user1", "username:user3" ],
+        "update": [ "username:user1" ],
+        "delete": [ "username:user3" ]
       },
       "test": {
         "select": [ "*" ],
@@ -81,10 +32,7 @@
       },
       "testnotfound": {
         "select": [ "username:user1", "Role3", "rolename:Role2" ]
-      },
-      "test2": [
-        "select"
-      ]
+      }
     }
   }
 }

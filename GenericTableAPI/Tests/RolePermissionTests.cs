@@ -28,6 +28,11 @@ public class RolePermissionTests : BaseTestClass
     }
 
     TABLE CONFIGURATION:
+    "*": {
+        "select": [ "*" ],
+        "insert": [ "rolename:Role2" ],
+        "update": []
+      },
     "test": {
         "select": [ "*" ],
         "update": [ "Role1", "rolename:Role2" ],
@@ -198,6 +203,103 @@ public class RolePermissionTests : BaseTestClass
         {
             // Arrange
             RestRequest request = new($"/api/tables/test/{firstId}", Method.Delete);
+            new HttpBasicAuthenticator(user, _password).Authenticate(_client, request);
+            // Act
+            RestResponse response = _client.Execute(request);
+            // Assert
+            Assert.AreEqual(HttpStatusCode.Forbidden, response.StatusCode, $"{user} got response: {response.StatusCode} ");
+            Console.WriteLine($"[SUCCESS] {user} forbidden!");
+        }
+    }
+
+    [TestMethod]
+    public void Test_Get_Default_Success()
+    {
+        foreach (var user in _users)
+        {
+            // Arrange
+            RestRequest request = new($"/api/tables/test2", Method.Get);
+            new HttpBasicAuthenticator(user, _password).Authenticate(_client, request);
+            // Act
+            RestResponse response = _client.Execute(request);
+            // Assert
+            Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, $"{user} got response: {response.StatusCode} ");
+            Console.WriteLine($"[SUCCESS] {user} success!");
+        }
+    }
+
+    [TestMethod]
+    public void Test_Post_Default_Success()
+    {
+        string[] users = [_users[1]];
+        foreach (var user in users)
+        {
+            // Arrange
+            RestRequest request = new($"/api/tables/test2", Method.Post)
+            {
+                RequestFormat = DataFormat.Json
+            };
+            request.AddJsonBody(new { FullName = user, Phone = "123" });
+            new HttpBasicAuthenticator(user, _password).Authenticate(_client, request);
+
+            // Act
+            RestResponse response = _client.Execute(request);
+            // Assert
+            Assert.AreEqual(HttpStatusCode.Created, response.StatusCode, $"{user} got response: {response.StatusCode} ");
+            Console.WriteLine($"[SUCCESS] {user} created!");
+        }
+    }
+
+    [TestMethod]
+    public void Test_Post_Default_Forbidden()
+    {
+        string[] users = [_users[0], _users[2]];
+        foreach (var user in users)
+        {
+            // Arrange
+            RestRequest request = new($"/api/tables/test2", Method.Post)
+            {
+                RequestFormat = DataFormat.Json
+            };
+            request.AddJsonBody(new { FullName = user, Phone = "123" });
+            new HttpBasicAuthenticator(user, _password).Authenticate(_client, request);
+
+            // Act
+            RestResponse response = _client.Execute(request);
+            // Assert
+            Assert.AreEqual(HttpStatusCode.Forbidden, response.StatusCode, $"{user} got response: {response.StatusCode} ");
+            Console.WriteLine($"[SUCCESS] {user} forbidden!");
+        }
+    }
+    [TestMethod]
+    public void Test_Put_Default_Forbidden()
+    {
+        int firstId = GetFirstId();
+        foreach (var user in _users)
+        {
+            // Arrange
+            RestRequest request = new($"/api/tables/test2/{firstId}", Method.Put)
+            {
+                RequestFormat = DataFormat.Json
+            };
+            request.AddJsonBody(new { FullName = user, Phone = "123" });
+            new HttpBasicAuthenticator(user, _password).Authenticate(_client, request);
+
+            // Act
+            RestResponse response = _client.Execute(request);
+            // Assert
+            Assert.AreEqual(HttpStatusCode.Forbidden, response.StatusCode, $"{user} got response: {response.StatusCode} ");
+            Console.WriteLine($"[SUCCESS] {user} forbidden!");
+        }
+    }
+    [TestMethod]
+    public void Test_Delete_Default_Forbidden()
+    {
+        int firstId = GetFirstId();
+        foreach (var user in _users)
+        {
+            // Arrange
+            RestRequest request = new($"/api/tables/test2/{firstId}", Method.Delete);
             new HttpBasicAuthenticator(user, _password).Authenticate(_client, request);
             // Act
             RestResponse response = _client.Execute(request);
