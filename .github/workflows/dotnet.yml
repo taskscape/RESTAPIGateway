@@ -27,7 +27,7 @@ jobs:
       working-directory: GenericTableAPI
     - name: Run application in the background
       run: |
-        dotnet run --project GenericTableAPI/GenericTableAPI.csproj &
+        ASPNETCORE_URLS=http://localhost:7104 dotnet run --project GenericTableAPI/GenericTableAPI.csproj &
         echo "Waiting for application to start..."
         sleep 10 # Adjust the sleep time as needed
     - name: Run tests
