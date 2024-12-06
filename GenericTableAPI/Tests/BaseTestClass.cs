@@ -33,7 +33,7 @@ public class BaseTestClass
 
         RestResponse response = _client.Execute(request);
 
-        return JsonConvert.DeserializeObject<string>(response.Content);
+        return JsonConvert.DeserializeObject<string>(response.Content??"")??"";
     }
     //Returns the ID of the first element from Table 'test'
     protected virtual int GetFirstId()
