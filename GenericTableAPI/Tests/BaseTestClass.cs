@@ -8,7 +8,7 @@ public class BaseTestClass
     protected RestClient _client;
     protected static string _bearerToken;
 
-    private const string BaseUrl = "https://localhost:7104/";
+    private const string BaseUrl = "http://localhost:5066/";
     
 
     protected string JWTAuthUsername = "your_jwt_auth_username";
