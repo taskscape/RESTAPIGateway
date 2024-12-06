@@ -30,6 +30,8 @@ jobs:
         dotnet run --project GenericTableAPI/GenericTableAPI.csproj &
         echo "Waiting for application to start..."
         sleep 10 # Adjust the sleep time as needed
+    - name: Verify API is reachable
+      run: curl -v http://localhost:5066/api/tables/test
     - name: Run tests
       run: dotnet test --no-build --verbosity normal
       working-directory: GenericTableAPI
