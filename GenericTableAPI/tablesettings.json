@@ -25,12 +25,12 @@
       },
       "test": {
         "select": [ "*" ],
-        "update": [ "Role1", "rolename:Role2" ],
-        "delete": [ "username:user3" ],
-        "insert": [ "rolename:Role1", "Role2", "rolename:Role3" ]
+        "update": [ "Role1", "rolename:Role2", "Admin" ],
+        "delete": [ "username:user3", "Admin" ],
+        "insert": [ "rolename:Role1", "Role2", "rolename:Role3", "Admin" ]
       },
       "testnotfound": {
-        "select": [ "username:user1", "Role3", "rolename:Role2" ]
+        "select": [ "username:user1", "Role3", "rolename:Role2", "Admin" ]
       }
     }
   }
