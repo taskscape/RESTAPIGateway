@@ -3,9 +3,8 @@
     "Tables": {
       "*": { //"*" HERE MEANS THE DEFAULT PERMISSION. THOSE PERMISSIONS WILL BE USED FOR TABLES THAT ARE NOT SPECIFIED BELOW (example: 'testnotfound' table will override the select: "*")
         "select": [ "*" ], //EVERYONE HAS THE PERMISSION TO SELECT TO EVERY TABLE (EVERY TABLE SPECIFIED BELOW OVERRIDES THIS PERMISSION COMPLETELY)
-        "insert": [],
-        "update": [],
-        "delete": []
+        "insert": [ "rolename:Role2" ],
+        "update": []
       },
       "SimpleAccess": [
         "select",
