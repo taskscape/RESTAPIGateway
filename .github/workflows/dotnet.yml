@@ -30,7 +30,7 @@ jobs:
     - name: Build
       run: dotnet build --no-restore
       working-directory: GenericTableAPI
-    - name: Setup Database (SQL Server)
+    - name: Create Database (SQL Server)
       run: |
         # SQL commands to create the tables
         sqlcmd -S localhost,1555 -U SA -P "YourStrongPassword123" -Q "
@@ -40,17 +40,20 @@ jobs:
       run: |
         # SQL commands to create the tables
         sqlcmd -S localhost,1555 -U SA -P "YourStrongPassword123" -Q "
-          USE TestDB;
+          USE TestDB
+          GO
           CREATE TABLE Test (
             ID INT PRIMARY KEY IDENTITY(1,1),
             Fullname VARCHAR(20),
             Phone VARCHAR(20)
-          );
+          )
+          GO
           CREATE TABLE Test2 (
             ID INT PRIMARY KEY IDENTITY(1,1),
             Fullname VARCHAR(20),
             Phone VARCHAR(20)
-          );
+          )
+          GO
         "
     - name: Run application in the background
       run: |
