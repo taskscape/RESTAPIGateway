@@ -39,22 +39,7 @@ jobs:
     - name: Setup Database (SQL Server)
       run: |
         # SQL commands to create the tables
-        sqlcmd -S localhost,1555 -U SA -P "YourStrongPassword123" -Q "
-          USE TestDB
-          GO
-          CREATE TABLE Test (
-            ID INT PRIMARY KEY IDENTITY(1,1),
-            Fullname VARCHAR(20),
-            Phone VARCHAR(20)
-          )
-          GO
-          CREATE TABLE Test2 (
-            ID INT PRIMARY KEY IDENTITY(1,1),
-            Fullname VARCHAR(20),
-            Phone VARCHAR(20)
-          )
-          GO
-        "
+        sqlcmd -S localhost,1555 -U SA -P "YourStrongPassword123" -Q "USE TestDB; CREATE TABLE Test (ID INT PRIMARY KEY IDENTITY(1,1), Fullname VARCHAR(20), Phone VARCHAR(20)); CREATE TABLE Test2 (ID INT PRIMARY KEY IDENTITY(1,1), Fullname VARCHAR(20), Phone VARCHAR(20)); INSERT INTO Test (Fullname, Phone) VALUES ('John Doe', '1234567890'), ('Jane Smith', '0987654321'); INSERT INTO Test2 (Fullname, Phone) VALUES ('Alice Johnson', '5551234567'), ('Bob Brown', '5559876543');"
     - name: Run application in the background
       run: |
         nohup dotnet run --project GenericTableAPI/GenericTableAPI.csproj &
