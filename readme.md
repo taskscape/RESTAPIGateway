@@ -461,32 +461,33 @@ The `tablesettings.json` file defines permissions for database tables, specifyin
 
 #### Structure of `tablesettings.json`
 
-The configuration file is structured under the `Database` key, containing `DefaultPermissions` (optional) and `Tables`. Each table's access settings can be defined in detail, overriding default permissions when needed.
+The configuration file is structured under the `Database` key, containing `Tables` section where each table's access settings can be defined in detail.
 
 Each table entry supports defining actions: `select`, `insert`, `update`, and `delete`, along with access specifications for each action.
 
 #### **Default Permissions**
 
-The `DefaultPermissions` key defines global permissions that apply to all tables unless explicitly overridden in the `Tables` section. Permissions are specified for the actions `select`, `insert`, `update`, and `delete`.
+The **Default Permissions** can be specified by using `*` (asterisk) instead of a tablename. This will define global permissions that apply to all tables that are **not** explicitly specified in the `Tables` section. Permissions are specified for the actions `select`, `insert`, `update`, and `delete`.
 
 **Example:**
 
 ```json
 {
   "Database": {
-    "DefaultPermissions": {
-      "select": ["*"], // Default: All users can select.
-      "insert": ["rolename:AdminRole"],    // Default: AdminRole can insert.
-      "update": [],    // Default: No update access.
-      "delete": []     // Default: No delete access.
+    "Tables": {
+      "*": {
+        "select": ["*"], // Default: All users can select.
+        "insert": ["rolename:AdminRole"],    // Default: AdminRole can insert.
+        "update": [],    // Default: No update access.
+        "delete": []     // Default: No delete access.
+      }
+      //Every explicitly specified table will NOT use the default permissions
     }
   }
 }
 ```
 
-If a table does not explicitly define permissions in the `Tables` section, it inherits these defaults.
-
-The `DefaultPermissions` support both **Simple Access** and **Role-Based and User-Based Access**
+The **Default Permissions** support both **Simple Access** and **Role-Based and User-Based Access**
 
 #### Simple Access
 
