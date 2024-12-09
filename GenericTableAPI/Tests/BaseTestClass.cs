@@ -2,20 +2,21 @@
 using Newtonsoft.Json;
 using RestSharp;
 using System.Net;
+using RestSharp.Authenticators;
 
 public class BaseTestClass
 {
     protected RestClient _client;
     protected static string _bearerToken;
 
-    private const string BaseUrl = "https://localhost:7104/";
+    private const string BaseUrl = "http://localhost:5066/";
     
 
-    protected string JWTAuthUsername = "your_jwt_auth_username";
-    protected string JWTAuthPassword = "your_jwt_auth_password";
+    protected string JWTAuthUsername = "admin";
+    protected string JWTAuthPassword = "passwd";
 
-    protected string BasicAuthUsername = "your_basic_auth_username";
-    protected string BasicAuthPassword = "your_basic_auth_password";
+    protected string BasicAuthUsername = "admin";
+    protected string BasicAuthPassword = "passwd";
 
     protected void Setup()
     {
@@ -40,7 +41,7 @@ public class BaseTestClass
     {
         //Get the ID of first element
         RestRequest request = new("api/tables/test");
-        request.AddHeader("Authorization", "Bearer " + _bearerToken);
+        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(_client, request);
         RestResponse response = _client.Execute(request);
         if (HttpStatusCode.OK != response.StatusCode)
             throw new Exception($"Got response code: {response.StatusCode} from GET request!");

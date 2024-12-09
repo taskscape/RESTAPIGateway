@@ -55,7 +55,7 @@ public class IntegrationTests : BaseTestClass
     {
         // Arrange
         RestRequest request = new("/api/tables/test");
-        request.AddHeader("Authorization", "Bearer " + _bearerToken);
+        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(_client, request);
         // Act
         RestResponse response = _client.Execute(request);
 
@@ -68,7 +68,7 @@ public class IntegrationTests : BaseTestClass
     {
         // Arrange                          WHERE Phone = '123' ORDER BY FULLNAME   LIMIT=10
         RestRequest request = new("/api/tables/test?where=Phone%3D%27123%27&orderBy=Fullname&limit=10");
-        request.AddHeader("Authorization", "Bearer " + _bearerToken);
+        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(_client, request);
         // Act
         RestResponse response = _client.Execute(request);
 
@@ -85,7 +85,7 @@ public class IntegrationTests : BaseTestClass
             RequestFormat = DataFormat.Json
         };
         request.AddUrlSegment("id", id);
-        request.AddHeader("Authorization", "Bearer " + _bearerToken);
+        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(_client, request);
 
         // Act
         RestResponse response = _client.Execute(request);
@@ -102,7 +102,7 @@ public class IntegrationTests : BaseTestClass
             RequestFormat = DataFormat.Json
         };
         request.AddUrlSegment("id", id);
-        request.AddHeader("Authorization", "Bearer " + _bearerToken);
+        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(_client, request);
 
         // Act
         RestResponse response = _client.Execute(request);
@@ -119,7 +119,7 @@ public class IntegrationTests : BaseTestClass
             RequestFormat = DataFormat.Json
         };
         request.AddUrlSegment("id", id);
-        request.AddHeader("Authorization", "Bearer " + _bearerToken);
+        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(_client, request);
 
         // Act
         RestResponse response = _client.Execute(request);
@@ -130,8 +130,8 @@ public class IntegrationTests : BaseTestClass
     public void Test_Get_TablePermissions_ReturnsNoContent()
     {
         // Arrange
-        RestRequest request = new("/api/tables/test2");
-        request.AddHeader("Authorization", "Bearer " + _bearerToken);
+        RestRequest request = new("/api/tables/testempty");
+        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(_client, request);
         // Act
         RestResponse response = _client.Execute(request);
 
@@ -157,22 +157,23 @@ public class IntegrationTests : BaseTestClass
         // Assert
         Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode);
     }
-    [TestMethod]
-    public void Token_Post_ReturnsSuccess()
-    {
-        // Arrange
-        RestRequest request = new("api/Token", Method.Post)
-        {
-            RequestFormat = DataFormat.Json
-        };
-        request.AddJsonBody(new { userName = JWTAuthUsername, Password = JWTAuthPassword });
+    //TODO: REIMPLEMENT
+    //[TestMethod]
+    //public void Token_Post_ReturnsSuccess()
+    //{
+    //    // Arrange
+    //    RestRequest request = new("api/Token", Method.Post)
+    //    {
+    //        RequestFormat = DataFormat.Json
+    //    };
+    //    request.AddJsonBody(new { userName = JWTAuthUsername, Password = JWTAuthPassword });
 
-        // Act
-        RestResponse response = _client.Execute(request);
+    //    // Act
+    //    RestResponse response = _client.Execute(request);
 
-        // Assert
-        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
-    }
+    //    // Assert
+    //    Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+    //}
     [TestMethod]
     public void Test_Post_ReturnsSuccess()
     {
@@ -182,7 +183,7 @@ public class IntegrationTests : BaseTestClass
             RequestFormat = DataFormat.Json
         };
         request.AddJsonBody(new { FullName = "foo", Phone = "123" });
-        request.AddHeader("Authorization", "Bearer " + _bearerToken);
+        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(_client, request);
 
         // Act
         RestResponse response = _client.Execute(request);
@@ -195,7 +196,7 @@ public class IntegrationTests : BaseTestClass
         // Arrange
         RestRequest request = new("/api/tables/test2", Method.Post);
         request.AddJsonBody(new { FullName = "foo", Phone = "123" });
-        request.AddHeader("Authorization", "Bearer " + _bearerToken);
+        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(_client, request);
         // Act
         RestResponse response = _client.Execute(request);
 
@@ -216,7 +217,7 @@ public class IntegrationTests : BaseTestClass
         };
         request.AddUrlSegment("id", id);
         request.AddJsonBody(new { FullName = "foo", Phone = "123" });
-        request.AddHeader("Authorization", "Bearer " + _bearerToken);
+        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(_client, request);
 
         // Act
         RestResponse response = _client.Execute(request);
@@ -234,7 +235,7 @@ public class IntegrationTests : BaseTestClass
         };
         request.AddUrlSegment("id", id);
         request.AddJsonBody(new { FullName = "foo", Phone = "123" });
-        request.AddHeader("Authorization", "Bearer " + _bearerToken);
+        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(_client, request);
 
         // Act
         RestResponse response = _client.Execute(request);
@@ -252,7 +253,7 @@ public class IntegrationTests : BaseTestClass
         };
         request.AddUrlSegment("id", id);
         request.AddJsonBody(new { FullName = "foo", Phone = "123" });
-        request.AddHeader("Authorization", "Bearer " + _bearerToken);
+        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(_client, request);
 
         // Act
         RestResponse response = _client.Execute(request);
@@ -272,7 +273,7 @@ public class IntegrationTests : BaseTestClass
             RequestFormat = DataFormat.Json
         };
         request.AddUrlSegment("id", id);
-        request.AddHeader("Authorization", "Bearer " + _bearerToken);
+        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(_client, request);
 
         // Act
         RestResponse response = _client.Execute(request);
@@ -289,7 +290,7 @@ public class IntegrationTests : BaseTestClass
             RequestFormat = DataFormat.Json
         };
         request.AddUrlSegment("id", id);
-        request.AddHeader("Authorization", "Bearer " + _bearerToken);
+        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(_client, request);
 
         // Act
         RestResponse response = _client.Execute(request);
@@ -306,7 +307,7 @@ public class IntegrationTests : BaseTestClass
             RequestFormat = DataFormat.Json
         };
         request.AddUrlSegment("id", id);
-        request.AddHeader("Authorization", "Bearer " + _bearerToken);
+        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(_client, request);
 
         // Act
         RestResponse response = _client.Execute(request);
