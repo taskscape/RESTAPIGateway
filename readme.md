@@ -360,7 +360,9 @@ In this section, you can enable Swagger by setting the following option:
 
 ### Authentication
 
-The solution supports authentication using either basic auth, JWT token auth or Windows authentication. The exact security model supported depends on whether each of the security models is configured.
+The solution supports authentication using Basic Auth, JWT Token Auth (Bearer Authentication), or Windows Authentication. 
+
+**Note**: All of these authentication methods can be configured and used simultaneously. For example, if both Basic Auth and Bearer Authentication (JWT) are enabled, a user can authenticate using either method. Similarly, if Windows Authentication is also configured, it can be used alongside the other methods without conflict. This flexibility allows for seamless integration into various security environments.
 
 **In order to enable JWT token based authentication for API endpoints, the following values need to be configured:**
 
@@ -417,6 +419,14 @@ And the IIS has to be configured to use 'Windows Authentication' as well.
 If none of the sections (`JwtSettings` or `BasicAuthSettings` or `NTLMAuthentication`) are provided, the exposed endpoints will require no authentication.
 
 You need to substitute tokens denoted by square brackets with actual values (without square brackets).
+
+**Configuring Users Across Authentication Methods**
+
+Users configured for Basic Auth are distinct from users configured for JWT Bearer Auth. This means that you can define separate users for each authentication method. For instance:
+- A user defined in the `BasicAuthSettings` section will have access only via Basic Authentication.
+- A user defined in the `JWTSettings` section will have access only via Bearer Authentication.
+
+This separation allows for granular control over authentication and user access, enabling different authentication methods for different users if needed.
 
 ### Auditing
 
