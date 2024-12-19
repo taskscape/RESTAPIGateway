@@ -15,7 +15,7 @@ jobs:
 
     services:
       sqlserver:
-        image: mcr.microsoft.com/mssql/server:2019-latest
+        image: mcr.microsoft.com/mssql/server:2022-CU11-ubuntu-22.04
         options: --health-cmd="exit 0" --health-interval=10s --health-retries=5 --health-timeout=2s -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=YourStrongPassword123" -p 1555:1433
 
     steps:
