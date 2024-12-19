@@ -33,10 +33,10 @@ jobs:
 
     - name: Create Database (SQL Server) inside Docker
       run: |
-        docker exec -i $(docker ps -q -f ancestor=mcr.microsoft.com/mssql/server:2022-latest) /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P "YourStrongPassword123" -Q "CREATE DATABASE TestDB;"
+        docker exec -i $(docker ps -q -f ancestor=mcr.microsoft.com/mssql/server:2022-latest) sqlcmd -S localhost -U SA -P "YourStrongPassword123" -Q "CREATE DATABASE TestDB;"
     - name: Setup Database (SQL Server) inside Docker
       run: |
-        docker exec -i $(docker ps -q -f ancestor=mcr.microsoft.com/mssql/server:2022-latest) /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P "YourStrongPassword123" -Q "
+        docker exec -i $(docker ps -q -f ancestor=mcr.microsoft.com/mssql/server:2022-latest) sqlcmd -S localhost -U SA -P "YourStrongPassword123" -Q "
         USE TestDB;
         CREATE TABLE TestEmpty (Id INT PRIMARY KEY IDENTITY(1,1), FullName VARCHAR(20), Phone VARCHAR(20));
         CREATE TABLE Test (Id INT PRIMARY KEY IDENTITY(1,1), FullName VARCHAR(20), Phone VARCHAR(20));
