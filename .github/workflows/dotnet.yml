@@ -30,12 +30,25 @@ jobs:
     - name: Build
       run: dotnet build --no-restore
       working-directory: GenericTableAPI
-    - name: Create Database (SQL Server)
-      run: sqlcmd -S localhost,1555 -U SA -P "YourStrongPassword123" -Q "CREATE DATABASE TestDB;"
     - name: Setup Database (SQL Server)
       run: |
-        # SQL commands to create the tables
-        sqlcmd -S localhost,1555 -U SA -P "YourStrongPassword123" -Q "USE TestDB; CREATE TABLE TestEmpty (Id INT PRIMARY KEY IDENTITY(1,1), FullName VARCHAR(20), Phone VARCHAR(20)); CREATE TABLE Test (Id INT PRIMARY KEY IDENTITY(1,1), FullName VARCHAR(20), Phone VARCHAR(20)); CREATE TABLE Test2 (Id INT PRIMARY KEY IDENTITY(1,1), FullName VARCHAR(20), Phone VARCHAR(20)); INSERT INTO Test (Fullname, Phone) VALUES ('foo', '123'), ('foo', '123'), ('John Doe', '123'), ('Jane Smith', '123'); INSERT INTO Test2 (Fullname, Phone) VALUES ('Alice Johnson', '123'), ('Bob Brown', '123');"
+        docker exec -i $(docker ps -q -f ancestor=mcr.microsoft.com/mssql/server:2022-latest) /opt/mssql-tools18/bin/sqlcmd -S localhost -U SA -P "YourStrongPassword123" -C -Q "CREATE DATABASE TestDB"
+    - name: Setup Database (SQL Server)
+      run: |
+        docker exec -i $(docker ps -q -f ancestor=mcr.microsoft.com/mssql/server:2022-latest) /opt/mssql-tools18/bin/sqlcmd -S localhost -U SA -P "YourStrongPassword123" -C -Q "
+        USE TestDB;
+        CREATE TABLE TestEmpty (Id INT PRIMARY KEY IDENTITY(1,1), FullName VARCHAR(20), Phone VARCHAR(20));
+        CREATE TABLE Test (Id INT PRIMARY KEY IDENTITY(1,1), FullName VARCHAR(20), Phone VARCHAR(20));
+        CREATE TABLE Test2 (Id INT PRIMARY KEY IDENTITY(1,1), FullName VARCHAR(20), Phone VARCHAR(20));
+        INSERT INTO Test (Fullname, Phone) VALUES 
+          ('foo', '123'), 
+          ('foo', '123'), 
+          ('John Doe', '123'), 
+          ('Jane Smith', '123');
+        INSERT INTO Test2 (Fullname, Phone) VALUES 
+          ('Alice Johnson', '123'), 
+          ('Bob Brown', '123');
+        "
     - name: Run application in the background
       run: |
         nohup dotnet run --project GenericTableAPI/GenericTableAPI.csproj &

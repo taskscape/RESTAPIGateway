@@ -8,6 +8,7 @@ using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.Filters;
 using Serilog;
 using Microsoft.AspNetCore.Server.IISIntegration;
+using Microsoft.AspNetCore.Authorization;
 
 namespace GenericTableAPI
 {
@@ -76,10 +77,11 @@ namespace GenericTableAPI
             string? jwtKey = builder.Configuration["JwtSettings:Key"];
             string? basicAuthUser = builder.Configuration["BasicAuthSettings:0:Username"];
 
+            List<string> allowedAuthSchemes = [];
             if (!string.IsNullOrEmpty(jwtKey))
             {
                 Log.Logger.Information("[AUTH] Using Bearer Authentication");
-                builder.Services.AddAuthentication(x => { x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme; x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme; })
+                builder.Services.AddAuthentication()
                     .AddJwtBearer(options =>
                     {
                         options.TokenValidationParameters = new TokenValidationParameters
@@ -90,27 +92,40 @@ namespace GenericTableAPI
                             ValidateAudience = false
                         };
                     });
+                allowedAuthSchemes.Add(JwtBearerDefaults.AuthenticationScheme);
             }
-            else if (!string.IsNullOrEmpty(basicAuthUser))
+            if (!string.IsNullOrEmpty(basicAuthUser))
             {
                 Log.Logger.Information("[AUTH] Using BasicAuthentication");
                 builder.Services.AddAuthentication("BasicAuthentication")
                     .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("BasicAuthentication", null);
+                allowedAuthSchemes.Add("BasicAuthentication");
             }
-            else if (bool.Parse(builder.Configuration["NTLMAuthentication"]??"false"))
+            if (bool.Parse(builder.Configuration["NTLMAuthentication"]??"false"))
             {
                 Log.Logger.Information("[AUTH] Using NTLMAuthentication");
                 builder.Services.AddAuthentication(IISDefaults.AuthenticationScheme);
+                allowedAuthSchemes.Add(IISDefaults.AuthenticationScheme);
             }   
-            else
+            if (allowedAuthSchemes.Count == 0)
             {
                 Log.Logger.Warning("[AUTH] Using No Authentication");
                 builder.Services.AddAuthentication("NoAuthentication")
                     .AddScheme<AuthenticationSchemeOptions, NoAuthenticationHandler>("NoAuthentication", null);
+                allowedAuthSchemes.Add("NoAuthentication");
             }
 
             builder.Logging.ClearProviders();
             builder.Logging.AddSerilog();
+
+            // Add Authorization
+            builder.Services.AddAuthorization(options =>
+            {
+                options.DefaultPolicy = new AuthorizationPolicyBuilder()
+                    .AddAuthenticationSchemes(allowedAuthSchemes.ToArray())
+                    .RequireAuthenticatedUser()
+                    .Build();
+            });
 
             WebApplication app = builder.Build();
             
