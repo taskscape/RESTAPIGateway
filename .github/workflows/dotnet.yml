@@ -30,12 +30,10 @@ jobs:
     - name: Build
       run: dotnet build --no-restore
       working-directory: GenericTableAPI
-    - name: Create Database (SQL Server)
-      run: sqlcmd -S localhost,1555 -U SA -P "YourStrongPassword123" -Q "CREATE DATABASE TestDB;"
     - name: Setup Database (SQL Server)
       run: |
         docker exec -i $(docker ps -q -f ancestor=mcr.microsoft.com/mssql/server:2022-latest) /opt/mssql-tools18/bin/sqlcmd -S localhost -U SA -P "YourStrongPassword123" -C -Q "CREATE DATABASE TestDB"
-    - name: Setup Database (SQL Server) inside Docker
+    - name: Setup Database (SQL Server)
       run: |
         docker exec -i $(docker ps -q -f ancestor=mcr.microsoft.com/mssql/server:2022-latest) /opt/mssql-tools18/bin/sqlcmd -S localhost -U SA -P "YourStrongPassword123" -C -Q "
         USE TestDB;
