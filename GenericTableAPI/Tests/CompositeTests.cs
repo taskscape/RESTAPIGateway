@@ -96,8 +96,12 @@ public class CompositeTests : BaseTestClass
         {
             RequestFormat = DataFormat.Json
         };
+        if (Client == null) return;
         new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(Client, request);
-        string body = "{\r\n  \"requests\": [\r\n    {\r\n      \"method\": \"put\",\r\n      \"endpoint\": \"http://localhost:5066/api/tables/test/"+firstId+"\",\r\n      \"parameters\": {\r\n        \"phone\": \"109080\",\r\n        \"fullname\": \"composite-test-edit\"\r\n      }\r\n    }\r\n  ]\r\n}";
+        string body =
+            "{\r\n  \"requests\": [\r\n    {\r\n      \"method\": \"put\",\r\n      \"endpoint\": \"http://localhost:5066/api/tables/test/" +
+            firstId +
+            "\",\r\n      \"parameters\": {\r\n        \"phone\": \"109080\",\r\n        \"fullname\": \"composite-test-edit\"\r\n      }\r\n    }\r\n  ]\r\n}";
         request.AddBody(body, ContentType.Json);
         // Act
         RestResponse response = Client.Execute(request);
@@ -115,8 +119,12 @@ public class CompositeTests : BaseTestClass
         {
             RequestFormat = DataFormat.Json
         };
+        if (Client == null) return;
         new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(Client, request);
-        string body = "{\r\n  \"requests\": [\r\n    {\r\n      \"method\": \"delete\",\r\n      \"endpoint\": \"http://localhost:5066/api/tables/test/" + firstId + "\",\r\n      \"parameters\": {\r\n        \"phone\": \"109080\",\r\n        \"fullname\": \"composite-test-edit\"\r\n      }\r\n    }\r\n  ]\r\n}";
+        string body =
+            "{\r\n  \"requests\": [\r\n    {\r\n      \"method\": \"delete\",\r\n      \"endpoint\": \"http://localhost:5066/api/tables/test/" +
+            firstId +
+            "\",\r\n      \"parameters\": {\r\n        \"phone\": \"109080\",\r\n        \"fullname\": \"composite-test-edit\"\r\n      }\r\n    }\r\n  ]\r\n}";
         request.AddBody(body, ContentType.Json);
         // Act
         RestResponse response = Client.Execute(request);
@@ -135,8 +143,10 @@ public class CompositeTests : BaseTestClass
         {
             RequestFormat = DataFormat.Json
         };
+        if (Client == null) return;
         new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(Client, request);
-        const string body = "{\r\n  \"debug\": true, \r\n  \"requests\": [\r\n    {\r\n      \"method\": \"get\",\r\n      \"endpoint\": \"http://localhost:5066/api/tables/test\",\r\n      \"variables\": {\r\n        \"aaa\": \"[2].Id\"\r\n      }\r\n    },\r\n    {\r\n      \"method\": \"get\",\r\n      \"endpoint\": \"http://localhost:5066/api/tables/test/{aaa}\",\r\n      \"variables\": {\r\n        \"name\": \"FullName\",\r\n        \"phonenumber\": \"Phone\"\r\n      }\r\n    },\r\n    {\r\n      \"method\": \"post\",\r\n      \"endpoint\": \"http://localhost:5066/api/tables/test\",\r\n      \"parameters\": {\r\n        \"fullname\": \"{name}\",\r\n        \"phone\": \"{phonenumber}\"\r\n      },\r\n      \"variables\": {\r\n        \"newID\": \"Id\"\r\n      }\r\n    },\r\n    {\r\n      \"method\": \"delete\",\r\n      \"endpoint\": \"http://localhost:5066/api/tables/test/{newID}\"\r\n    }\r\n  ]\r\n}";
+        const string body =
+            "{\r\n  \"debug\": true, \r\n  \"requests\": [\r\n    {\r\n      \"method\": \"get\",\r\n      \"endpoint\": \"http://localhost:5066/api/tables/test\",\r\n      \"variables\": {\r\n        \"aaa\": \"[2].Id\"\r\n      }\r\n    },\r\n    {\r\n      \"method\": \"get\",\r\n      \"endpoint\": \"http://localhost:5066/api/tables/test/{aaa}\",\r\n      \"variables\": {\r\n        \"name\": \"FullName\",\r\n        \"phonenumber\": \"Phone\"\r\n      }\r\n    },\r\n    {\r\n      \"method\": \"post\",\r\n      \"endpoint\": \"http://localhost:5066/api/tables/test\",\r\n      \"parameters\": {\r\n        \"fullname\": \"{name}\",\r\n        \"phone\": \"{phonenumber}\"\r\n      },\r\n      \"variables\": {\r\n        \"newID\": \"Id\"\r\n      }\r\n    },\r\n    {\r\n      \"method\": \"delete\",\r\n      \"endpoint\": \"http://localhost:5066/api/tables/test/{newID}\"\r\n    }\r\n  ]\r\n}";
         request.AddBody(body, ContentType.Json);
         // Act
         RestResponse response = Client.Execute(request);
@@ -153,8 +163,10 @@ public class CompositeTests : BaseTestClass
         {
             RequestFormat = DataFormat.Json
         };
+        if (Client == null) return;
         new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(Client, request);
-        const string body = "{\r\n  \"requests\": [\r\n    {\r\n      \"method\": \"GET\",\r\n      \"endpoint\": \"http://localhost:5066/api/tables/test\",\r\n      \"variables\": {\r\n        \"testId\": \"[:].Id\"\r\n      }\r\n    },\r\n    {\r\n      \"method\": \"GET\",\r\n      \"foreach\": \"{testId}\",\r\n      \"endpoint\": \"http://localhost:5066/api/tables/test/{testId}\",\r\n      \"variables\": {\r\n        \"alltask\": \"$\"\r\n      }\r\n    }\r\n  ]\r\n}";
+        const string body =
+            "{\r\n  \"requests\": [\r\n    {\r\n      \"method\": \"GET\",\r\n      \"endpoint\": \"http://localhost:5066/api/tables/test\",\r\n      \"variables\": {\r\n        \"testId\": \"[:].Id\"\r\n      }\r\n    },\r\n    {\r\n      \"method\": \"GET\",\r\n      \"foreach\": \"{testId}\",\r\n      \"endpoint\": \"http://localhost:5066/api/tables/test/{testId}\",\r\n      \"variables\": {\r\n        \"alltask\": \"$\"\r\n      }\r\n    }\r\n  ]\r\n}";
         request.AddBody(body, ContentType.Json);
         // Act
         RestResponse response = Client.Execute(request);
@@ -172,8 +184,10 @@ public class CompositeTests : BaseTestClass
         {
             RequestFormat = DataFormat.Json
         };
+        if (Client == null) return;
         new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(Client, request);
-        const string body = "{\r\n  \"requests\": [\r\n    {\r\n      \"method\": \"GET\",\r\n      \"endpoint\": \"http://localhost:5066/api/tables/test\",\r\n      \"variables\": {\r\n        \"testId\": \"[-5:].Id\"\r\n      }\r\n    },\r\n    {\r\n      \"method\": \"GET\",\r\n      \"foreach\": \"{testId}\",\r\n      \"endpoint\": \"http://localhost:5066/api/tables/test/{testId}\",\r\n      \"variables\": {\r\n        \"phones\": \"Phone\",\r\n        \"names\": \"Fullname\",\r\n        \"Ids\": \"Id\"\r\n      }\r\n    },\r\n    {\r\n      \"method\": \"POST\",\r\n      \"foreach\": \"{phones}\",\r\n      \"endpoint\": \"http://localhost:5066/api/tables/test\",\r\n      \"parameters\": {\r\n        \"Fullname\": \"{phones}\",\r\n        \"Phone\": \"{phones}\"\r\n      },\r\n      \"variables\": {\r\n        \"createdIds\": \"Id\"\r\n      }\r\n    },\r\n    {\r\n      \"method\": \"DELETE\",\r\n      \"foreach\": \"{createdIds}\",\r\n      \"endpoint\": \"http://localhost:5066/api/tables/test/{createdIds}\"\r\n    }\r\n  ]\r\n}";
+        const string body =
+            "{\r\n  \"requests\": [\r\n    {\r\n      \"method\": \"GET\",\r\n      \"endpoint\": \"http://localhost:5066/api/tables/test\",\r\n      \"variables\": {\r\n        \"testId\": \"[-5:].Id\"\r\n      }\r\n    },\r\n    {\r\n      \"method\": \"GET\",\r\n      \"foreach\": \"{testId}\",\r\n      \"endpoint\": \"http://localhost:5066/api/tables/test/{testId}\",\r\n      \"variables\": {\r\n        \"phones\": \"Phone\",\r\n        \"names\": \"Fullname\",\r\n        \"Ids\": \"Id\"\r\n      }\r\n    },\r\n    {\r\n      \"method\": \"POST\",\r\n      \"foreach\": \"{phones}\",\r\n      \"endpoint\": \"http://localhost:5066/api/tables/test\",\r\n      \"parameters\": {\r\n        \"Fullname\": \"{phones}\",\r\n        \"Phone\": \"{phones}\"\r\n      },\r\n      \"variables\": {\r\n        \"createdIds\": \"Id\"\r\n      }\r\n    },\r\n    {\r\n      \"method\": \"DELETE\",\r\n      \"foreach\": \"{createdIds}\",\r\n      \"endpoint\": \"http://localhost:5066/api/tables/test/{createdIds}\"\r\n    }\r\n  ]\r\n}";
         request.AddBody(body, ContentType.Json);
         // Act
         RestResponse response = Client.Execute(request);
@@ -191,8 +205,10 @@ public class CompositeTests : BaseTestClass
         {
             RequestFormat = DataFormat.Json
         };
+        if (Client == null) return;
         new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(Client, request);
-        const string body = "{\r\n  \"requests\": [\r\n    {\r\n      \"method\": \"GET\",\r\n      \"endpoint\": \"http://localhost:5066/api/tables/test\",\r\n      \"variables\": {\r\n        \"testId\": \"[-1:].Id\"\r\n      }\r\n    },\r\n    {\r\n      \"method\": \"GET\",\r\n      \"foreach\": \"{testId}\",\r\n      \"endpoint\": \"http://localhost:5066/api/tables/test/{testId}\",\r\n      \"variables\": {\r\n        \"names\": \"Fullname\"\r\n      }\r\n    }\r\n  ]\r\n}";
+        const string body =
+            "{\r\n  \"requests\": [\r\n    {\r\n      \"method\": \"GET\",\r\n      \"endpoint\": \"http://localhost:5066/api/tables/test\",\r\n      \"variables\": {\r\n        \"testId\": \"[-1:].Id\"\r\n      }\r\n    },\r\n    {\r\n      \"method\": \"GET\",\r\n      \"foreach\": \"{testId}\",\r\n      \"endpoint\": \"http://localhost:5066/api/tables/test/{testId}\",\r\n      \"variables\": {\r\n        \"names\": \"Fullname\"\r\n      }\r\n    }\r\n  ]\r\n}";
         request.AddBody(body, ContentType.Json);
         // Act
         RestResponse response = Client.Execute(request);
