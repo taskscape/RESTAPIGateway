@@ -10,7 +10,6 @@ namespace GenericTableAPI
 {
     public class BasicAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
     {
-        private readonly IConfiguration _configuration;
         private readonly List<AuthUser>? _users = [];
 
         public BasicAuthenticationHandler(
@@ -21,37 +20,41 @@ namespace GenericTableAPI
             IConfiguration config)
             : base(options, logger, encoder, clock)
         {
-            _configuration = config;
-            _configuration.GetSection("BasicAuthSettings").Bind(_users);
+            config.GetSection("BasicAuthSettings").Bind(_users);
         }
 
-        protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
+        protected override Task<AuthenticateResult> HandleAuthenticateAsync()
         {
-            if (!Request.Headers.ContainsKey("Authorization"))
+            if (!Request.Headers.TryGetValue("Authorization", out Microsoft.Extensions.Primitives.StringValues value))
             {
-                return AuthenticateResult.Fail("Authorization header not found.");
+                return Task.FromResult(AuthenticateResult.Fail("Authorization header not found."));
             }
 
             try
             {
                 AuthenticationHeaderValue authenticationHeaderValue =
-                    AuthenticationHeaderValue.Parse(Request.Headers["Authorization"]);
+                    AuthenticationHeaderValue.Parse(value);
 
                 if (!"Basic".Equals(authenticationHeaderValue.Scheme, StringComparison.OrdinalIgnoreCase))
-                    return AuthenticateResult.NoResult();
+                    return Task.FromResult(AuthenticateResult.NoResult());
 
-                string[]? credentials = Encoding.UTF8.GetString(Convert.FromBase64String(authenticationHeaderValue.Parameter)).Split(':', 2);
+                if (authenticationHeaderValue.Parameter == null)
+                    return Task.FromResult(AuthenticateResult.Fail("Invalid authorization header"));
+                
+                string[] credentials = Encoding.UTF8.GetString(Convert.FromBase64String(authenticationHeaderValue.Parameter)).Split(':', 2);
 
                 string? username = credentials.FirstOrDefault();
                 string? password = credentials.LastOrDefault();
 
                 if (password == null || username == null || !ValidateCredentials(username, password))
                 {
-                    return AuthenticateResult.Fail("Invalid username or password.");
+                    return Task.FromResult(AuthenticateResult.Fail("Invalid username or password."));
                 }
 
-                string role = _users.Where(x => x.Username == username).FirstOrDefault().Role;
-                List<Claim> claims = [new Claim(ClaimTypes.Name, username)];
+                if (_users == null) return Task.FromResult(AuthenticateResult.Fail("Invalid authorisation."));
+                    
+                string? role = _users.FirstOrDefault(x => x.Username == username)?.Role;
+                List<Claim> claims = [new(ClaimTypes.Name, username)];
                 if (!string.IsNullOrEmpty(role))
                     claims.Add(new Claim(ClaimTypes.Role, role));
 
@@ -59,19 +62,18 @@ namespace GenericTableAPI
                 ClaimsPrincipal principal = new(identity);
                 AuthenticationTicket ticket = new(principal, Scheme.Name);
 
-                return AuthenticateResult.Success(ticket);
-
+                return Task.FromResult(AuthenticateResult.Success(ticket));
             }
-            catch (FormatException)
+            catch (FormatException exception)
             {
-                return AuthenticateResult.Fail("Invalid authorization header.");
+                return Task.FromResult(AuthenticateResult.Fail("Invalid authorization header: " + exception.Message));
             }
 
         }
 
         private bool ValidateCredentials(string username, string password)
         {
-            return _users.Any(user => user.Username == username && user.Password == password);
+            return _users != null && _users.Any(user => user.Username == username && user.Password == password);
         }
     }
 }

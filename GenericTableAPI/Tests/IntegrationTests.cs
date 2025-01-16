@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using RestSharp;
 using RestSharp.Authenticators;
+using Tests;
 
 [TestClass]
 public class IntegrationTests : BaseTestClass
@@ -19,9 +20,9 @@ public class IntegrationTests : BaseTestClass
     {
         // Arrange
         RestRequest request = new("/api/tables/test");
-        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(_client, request);
+        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(Client, request);
         // Act
-        RestResponse response = _client.Execute(request);
+        RestResponse response = Client.Execute(request);
 
         // Assert
         Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
@@ -31,9 +32,9 @@ public class IntegrationTests : BaseTestClass
     {
         // Arrange
         RestRequest request = new("/api/tables/test");
-        new HttpBasicAuthenticator("foo", "123").Authenticate(_client, request);
+        new HttpBasicAuthenticator("foo", "123").Authenticate(Client, request);
         // Act
-        RestResponse response = _client.Execute(request);
+        RestResponse response = Client.Execute(request);
 
         // Assert
         Assert.AreEqual(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -45,7 +46,7 @@ public class IntegrationTests : BaseTestClass
         RestRequest request = new("/api/tables/test");
 
         // Act
-        RestResponse response = _client.Execute(request);
+        RestResponse response = Client.Execute(request);
 
         // Assert
         Assert.AreEqual(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -55,9 +56,9 @@ public class IntegrationTests : BaseTestClass
     {
         // Arrange
         RestRequest request = new("/api/tables/test");
-        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(_client, request);
+        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(Client, request);
         // Act
-        RestResponse response = _client.Execute(request);
+        RestResponse response = Client.Execute(request);
 
         // Assert
         Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
@@ -68,9 +69,9 @@ public class IntegrationTests : BaseTestClass
     {
         // Arrange                          WHERE Phone = '123' ORDER BY FULLNAME   LIMIT=10
         RestRequest request = new("/api/tables/test?where=Phone%3D%27123%27&orderBy=Fullname&limit=10");
-        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(_client, request);
+        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(Client, request);
         // Act
-        RestResponse response = _client.Execute(request);
+        RestResponse response = Client.Execute(request);
 
         // Assert
         Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
@@ -85,10 +86,10 @@ public class IntegrationTests : BaseTestClass
             RequestFormat = DataFormat.Json
         };
         request.AddUrlSegment("id", id);
-        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(_client, request);
+        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(Client, request);
 
         // Act
-        RestResponse response = _client.Execute(request);
+        RestResponse response = Client.Execute(request);
         // Assert
         Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
     }
@@ -102,10 +103,10 @@ public class IntegrationTests : BaseTestClass
             RequestFormat = DataFormat.Json
         };
         request.AddUrlSegment("id", id);
-        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(_client, request);
+        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(Client, request);
 
         // Act
-        RestResponse response = _client.Execute(request);
+        RestResponse response = Client.Execute(request);
         // Assert
         Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
     }
@@ -119,10 +120,10 @@ public class IntegrationTests : BaseTestClass
             RequestFormat = DataFormat.Json
         };
         request.AddUrlSegment("id", id);
-        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(_client, request);
+        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(Client, request);
 
         // Act
-        RestResponse response = _client.Execute(request);
+        RestResponse response = Client.Execute(request);
         // Assert
         Assert.AreEqual(HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -131,9 +132,9 @@ public class IntegrationTests : BaseTestClass
     {
         // Arrange
         RestRequest request = new("/api/tables/testempty");
-        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(_client, request);
+        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(Client, request);
         // Act
-        RestResponse response = _client.Execute(request);
+        RestResponse response = Client.Execute(request);
 
         // Assert
         Assert.AreEqual(HttpStatusCode.NoContent, response.StatusCode);
@@ -152,7 +153,7 @@ public class IntegrationTests : BaseTestClass
         request.AddJsonBody(new { userName = "foo", Password = "123" });
 
         // Act
-        RestResponse response = _client.Execute(request);
+        RestResponse response = Client.Execute(request);
 
         // Assert
         Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode);
@@ -183,10 +184,10 @@ public class IntegrationTests : BaseTestClass
             RequestFormat = DataFormat.Json
         };
         request.AddJsonBody(new { FullName = "foo", Phone = "123" });
-        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(_client, request);
+        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(Client, request);
 
         // Act
-        RestResponse response = _client.Execute(request);
+        RestResponse response = Client.Execute(request);
         // Assert
         Assert.AreEqual(HttpStatusCode.Created, response.StatusCode);
     }
@@ -196,9 +197,9 @@ public class IntegrationTests : BaseTestClass
         // Arrange
         RestRequest request = new("/api/tables/test2", Method.Post);
         request.AddJsonBody(new { FullName = "foo", Phone = "123" });
-        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(_client, request);
+        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(Client, request);
         // Act
-        RestResponse response = _client.Execute(request);
+        RestResponse response = Client.Execute(request);
 
         // Assert
         Assert.AreEqual(HttpStatusCode.Forbidden, response.StatusCode);
@@ -209,7 +210,7 @@ public class IntegrationTests : BaseTestClass
     [TestMethod]
     public void Test_Put_ReturnsSuccess()
     {
-        var id = GetFirstId();
+        int id = GetFirstId();
         // Arrange
         RestRequest request = new("/api/tables/test/{id}", Method.Put)
         {
@@ -217,17 +218,17 @@ public class IntegrationTests : BaseTestClass
         };
         request.AddUrlSegment("id", id);
         request.AddJsonBody(new { FullName = "foo", Phone = "123" });
-        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(_client, request);
+        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(Client, request);
 
         // Act
-        RestResponse response = _client.Execute(request);
+        RestResponse response = Client.Execute(request);
         // Assert
         Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
     }
     [TestMethod]
     public void Test_Put_ColumnName_ReturnsSuccess()
     {
-        var id = GetFirstId();
+        int id = GetFirstId();
         // Arrange
         RestRequest request = new("/api/tables/test/{id}?primaryKeyColumnName=id", Method.Put)
         {
@@ -235,17 +236,17 @@ public class IntegrationTests : BaseTestClass
         };
         request.AddUrlSegment("id", id);
         request.AddJsonBody(new { FullName = "foo", Phone = "123" });
-        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(_client, request);
+        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(Client, request);
 
         // Act
-        RestResponse response = _client.Execute(request);
+        RestResponse response = Client.Execute(request);
         // Assert
         Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
     }
     [TestMethod]
     public void Test_Put_ColumnName_ReturnsError()
     {
-        var id = GetFirstId();
+        int id = GetFirstId();
         // Arrange
         RestRequest request = new("/api/tables/test/{id}?primaryKeyColumnName=abc", Method.Put)
         {
@@ -253,10 +254,10 @@ public class IntegrationTests : BaseTestClass
         };
         request.AddUrlSegment("id", id);
         request.AddJsonBody(new { FullName = "foo", Phone = "123" });
-        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(_client, request);
+        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(Client, request);
 
         // Act
-        RestResponse response = _client.Execute(request);
+        RestResponse response = Client.Execute(request);
         // Assert
         Assert.AreEqual(HttpStatusCode.InternalServerError, response.StatusCode);
     }
@@ -266,51 +267,51 @@ public class IntegrationTests : BaseTestClass
     [TestMethod]
     public void Test_Delete_ReturnsSuccess()
     {
-        var id = GetFirstId();
+        int id = GetFirstId();
         // Arrange
         RestRequest request = new("/api/tables/test/{id}", Method.Delete)
         {
             RequestFormat = DataFormat.Json
         };
         request.AddUrlSegment("id", id);
-        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(_client, request);
+        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(Client, request);
 
         // Act
-        RestResponse response = _client.Execute(request);
+        RestResponse response = Client.Execute(request);
         // Assert
         Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
     }
     [TestMethod]
     public void Test_Delete_ColumnName_ReturnsSuccess()
     {
-        var id = GetFirstId();
+        int id = GetFirstId();
         // Arrange
         RestRequest request = new("/api/tables/test/{id}?primaryKeyColumnName=id", Method.Delete)
         {
             RequestFormat = DataFormat.Json
         };
         request.AddUrlSegment("id", id);
-        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(_client, request);
+        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(Client, request);
 
         // Act
-        RestResponse response = _client.Execute(request);
+        RestResponse response = Client.Execute(request);
         // Assert
         Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
     }
     [TestMethod]
     public void Test_Delete_ColumnName_ReturnsError()
     {
-        var id = GetFirstId();
+        int id = GetFirstId();
         // Arrange
         RestRequest request = new("/api/tables/test/{id}?primaryKeyColumnName=abc", Method.Delete)
         {
             RequestFormat = DataFormat.Json
         };
         request.AddUrlSegment("id", id);
-        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(_client, request);
+        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(Client, request);
 
         // Act
-        RestResponse response = _client.Execute(request);
+        RestResponse response = Client.Execute(request);
         // Assert
         Assert.AreEqual(HttpStatusCode.InternalServerError, response.StatusCode);
     }

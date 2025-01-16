@@ -56,7 +56,7 @@ public class DatabaseHandler : IDisposable
     private Task<object?> OracleExecuteInsertAsync(string query)
     {
         DbCommand command = _connection.CreateCommand();
-        var dbParam = command.CreateParameter();
+        DbParameter? dbParam = command.CreateParameter();
         dbParam.ParameterName = "ret";
         OracleParameter returnId = new OracleParameter("ret", OracleDbType.Int32);
         returnId.Direction = ParameterDirection.Output;

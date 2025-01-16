@@ -23,7 +23,7 @@ namespace GenericTableAPI.Utilities
             {
                 Dictionary<string, object> parsedVariables = new();
 
-                foreach (var variable in variables)
+                foreach (KeyValuePair<string, string> variable in variables)
                 {
                     try
                     {
@@ -40,8 +40,8 @@ namespace GenericTableAPI.Utilities
             }
                 
 
-            var templateStr = template.ToString();
-            foreach (var variable in variables)
+            string? templateStr = template.ToString();
+            foreach (KeyValuePair<string, string> variable in variables)
             {
                 templateStr = templateStr.Replace($"\"{{{variable.Key}}}\"", variable.Value) // Replace wrapped in quotes
                                          .Replace($"{{{variable.Key}}}", variable.Value);// Replace regular
