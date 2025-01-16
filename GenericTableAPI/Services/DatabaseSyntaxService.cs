@@ -177,7 +177,7 @@ namespace GenericTableAPI.Services
                     break;
 
                 case DatabaseType.Oracle:
-                    sql = $"DECLARE ret VARCHAR(32); BEGIN INSERT INTO {tableName} ({columns}) VALUES ({strValues}) RETURNING ID INTO ret; DBMS_OUTPUT.PUT_LINE(ret); END;";
+                    sql = $"INSERT INTO {tableName} ({columns}) VALUES ({strValues}) RETURNING ID INTO :ret";
                     break;
                 case DatabaseType.Unknown:
                 default:
@@ -245,7 +245,7 @@ namespace GenericTableAPI.Services
                     break;
 
                 case DatabaseType.Oracle:
-                    sql = $"MERGE INTO {tableName} target USING (SELECT {keys} FROM {tableName} WHERE {primaryKeyColumn} = {id}) source ON (target.id = source.id) WHEN MATCHED THEN UPDATE SET {setClauses};";
+                    sql = $"MERGE INTO {tableName} target USING (SELECT {keys} FROM {tableName} WHERE {primaryKeyColumn} = {id}) source ON (target.id = source.id) WHEN MATCHED THEN UPDATE SET {setClauses}";
                     break;
                 case DatabaseType.Unknown:
                 default:

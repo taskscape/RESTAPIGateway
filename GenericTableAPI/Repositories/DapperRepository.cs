@@ -155,7 +155,7 @@ public class DapperRepository
         try
         {
             _logger.Information("Repository.AddAsync: executing: " + query);
-            object? result = await connectionHandler.ExecuteScalarAsync(query);
+            object? result = await connectionHandler.ExecuteInsertAsync(query);
             return result;
         }
         catch (Exception exception)
