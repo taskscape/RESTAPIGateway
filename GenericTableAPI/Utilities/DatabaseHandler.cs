@@ -2,6 +2,7 @@
 using Oracle.ManagedDataAccess.Client;
 using static GenericTableAPI.Utilities.DatabaseUtilities;
 using System.Data.Common;
+using System.Data;
 
 namespace GenericTableAPI.Utilities;
 
@@ -42,6 +43,30 @@ public class DatabaseHandler : IDisposable
         DbCommand command = _connection.CreateCommand();
         command.CommandText = query;
         return command.ExecuteScalarAsync();
+    }
+
+    public Task<object?> ExecuteInsertAsync(string query)
+    {
+        if (_connection is OracleConnection)
+            return OracleExecuteInsertAsync(query);
+        else
+            return ExecuteScalarAsync(query);
+    }
+
+    private Task<object?> OracleExecuteInsertAsync(string query)
+    {
+        DbCommand command = _connection.CreateCommand();
+        var dbParam = command.CreateParameter();
+        dbParam.ParameterName = "ret";
+        OracleParameter returnId = new OracleParameter("ret", OracleDbType.Int32);
+        returnId.Direction = ParameterDirection.Output;
+        command.Parameters.Add(returnId);
+        command.CommandText = query;
+        return Task.Run(async () =>
+        {
+            await command.ExecuteScalarAsync();
+            return returnId.Value;
+        });
     }
 
     public void Dispose()
