@@ -16,9 +16,8 @@ namespace GenericTableAPI
             IOptionsMonitor<AuthenticationSchemeOptions> options,
             ILoggerFactory logger,
             UrlEncoder encoder,
-            ISystemClock clock,
             IConfiguration config)
-            : base(options, logger, encoder, clock)
+            : base(options, logger, encoder)
         {
             config.GetSection("BasicAuthSettings").Bind(_users);
         }

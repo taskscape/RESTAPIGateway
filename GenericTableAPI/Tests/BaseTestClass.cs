@@ -8,7 +8,7 @@ namespace Tests;
 
 public class BaseTestClass
 {
-    protected RestClient? Client;
+    protected RestClient Client = new(BaseUrl);
 
     private const string BaseUrl = "http://localhost:5066/";
 
@@ -21,7 +21,6 @@ public class BaseTestClass
 
     protected void Setup()
     {
-        Client = new RestClient(BaseUrl);
         GetBearerToken();
     }
 

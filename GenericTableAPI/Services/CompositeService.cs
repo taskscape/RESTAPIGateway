@@ -219,9 +219,8 @@ namespace GenericTableAPI.Services
             if (!AuthorizationHeader.HasValue || string.IsNullOrEmpty(AuthorizationHeader.Value)) return;
             {
                 string?[]? authHeaderString = AuthorizationHeader.Value[0]?.Split(' ');
-                string scheme = string.Empty;
                 httpRequest.Headers.Authorization =
-                    new AuthenticationHeaderValue(authHeaderString?[0] ?? scheme, authHeaderString?[1]);
+                    new AuthenticationHeaderValue(authHeaderString?[0] ?? string.Empty, authHeaderString?[1]);
             }
         }
 
