@@ -9,6 +9,7 @@ using Swashbuckle.AspNetCore.Filters;
 using Serilog;
 using Microsoft.AspNetCore.Server.IISIntegration;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.FileProviders;
 
 namespace GenericTableAPI
 {
@@ -36,7 +37,7 @@ namespace GenericTableAPI
                 Log.Logger.Information("Please refer to ### Table Authorization ### section in the documentation to create a valid tablesettings.json file!");
                 throw new InvalidOperationException("tablesettings.json is missing. Add tablesettings.json in order to run the service!");
             }
-            
+
 
             // Add services to the container.
 
@@ -106,7 +107,7 @@ namespace GenericTableAPI
                 Log.Logger.Information("[AUTH] Using NTLMAuthentication");
                 builder.Services.AddAuthentication(IISDefaults.AuthenticationScheme);
                 allowedAuthSchemes.Add(IISDefaults.AuthenticationScheme);
-            }   
+            }
             if (allowedAuthSchemes.Count == 0)
             {
                 Log.Logger.Warning("[AUTH] Using No Authentication");
@@ -127,8 +128,11 @@ namespace GenericTableAPI
                     .Build();
             });
 
+            builder.Services.AddSingleton<IFileProvider>(new PhysicalFileProvider(
+                Path.Combine(Directory.GetCurrentDirectory(), "CodebaseFiles")));
+
             WebApplication app = builder.Build();
-            
+
             app.UseRouting();
 
             if(bool.Parse(builder.Configuration["EnableSwagger"] ?? "false"))
@@ -138,10 +142,10 @@ namespace GenericTableAPI
             }
 
             app.UseHttpsRedirection();
-            
+
             app.UseAuthentication();
             app.UseAuthorization();
-            
+
             // prioritize controllers in the following order
 
             app.UseEndpoints(endpoints =>
@@ -168,6 +172,8 @@ namespace GenericTableAPI
             });
 
             app.MapControllers();
+
+            app.UseStaticFiles();
 
             app.Run();
         }
