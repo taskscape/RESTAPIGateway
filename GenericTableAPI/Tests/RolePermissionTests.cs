@@ -4,6 +4,7 @@ using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using RestSharp;
 using RestSharp.Authenticators;
+using Tests;
 
 [TestClass]
 public class RolePermissionTests : BaseTestClass
@@ -55,13 +56,13 @@ public class RolePermissionTests : BaseTestClass
     [TestMethod]
     public void Test_NotFound_Success()
     {
-        foreach (var user in _users)
+        foreach (string? user in _users)
         {
             // Arrange
             RestRequest request = new("/api/tables/testnotfound");
-            new HttpBasicAuthenticator(user, _password).Authenticate(_client, request);
+            new HttpBasicAuthenticator(user, _password).Authenticate(Client, request);
             // Act
-            RestResponse response = _client.Execute(request);
+            RestResponse response = Client.Execute(request);
 
             // Assert
             Assert.AreEqual(HttpStatusCode.NotFound, response.StatusCode, $"{user} got response: {response.StatusCode} ");
@@ -72,13 +73,13 @@ public class RolePermissionTests : BaseTestClass
     [TestMethod]
     public void Test_GetAll_Success()
     {
-        foreach (var user in _users)
+        foreach (string? user in _users)
         {
             // Arrange
             RestRequest request = new("/api/tables/test");
-            new HttpBasicAuthenticator(user, _password).Authenticate(_client, request);
+            new HttpBasicAuthenticator(user, _password).Authenticate(Client, request);
             // Act
-            RestResponse response = _client.Execute(request);
+            RestResponse response = Client.Execute(request);
 
             // Assert
             Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, $"{user} got response: {response.StatusCode} ");
@@ -90,7 +91,7 @@ public class RolePermissionTests : BaseTestClass
     public void Test_Post_Success()
     {
         string[] users = [_users[1], _users[2]];
-        foreach (var user in users)
+        foreach (string? user in users)
         {
             // Arrange
             RestRequest request = new("/api/tables/test", Method.Post)
@@ -98,10 +99,10 @@ public class RolePermissionTests : BaseTestClass
                 RequestFormat = DataFormat.Json
             };
             request.AddJsonBody(new { FullName = user, Phone = "123" });
-            new HttpBasicAuthenticator(user, _password).Authenticate(_client, request);
+            new HttpBasicAuthenticator(user, _password).Authenticate(Client, request);
 
             // Act
-            RestResponse response = _client.Execute(request);
+            RestResponse response = Client.Execute(request);
             // Assert
             Assert.AreEqual(HttpStatusCode.Created, response.StatusCode, $"{user} got response: {response.StatusCode} ");
             Console.WriteLine($"[SUCCESS] {user} created!");
@@ -112,7 +113,7 @@ public class RolePermissionTests : BaseTestClass
     public void Test_Post_Forbidden()
     {
         string[] users = [_users[0]];
-        foreach (var user in users)
+        foreach (string? user in users)
         {
             // Arrange
             RestRequest request = new("/api/tables/test", Method.Post)
@@ -120,10 +121,10 @@ public class RolePermissionTests : BaseTestClass
                 RequestFormat = DataFormat.Json
             };
             request.AddJsonBody(new { FullName = user, Phone = "123" });
-            new HttpBasicAuthenticator(user, _password).Authenticate(_client, request);
+            new HttpBasicAuthenticator(user, _password).Authenticate(Client, request);
 
             // Act
-            RestResponse response = _client.Execute(request);
+            RestResponse response = Client.Execute(request);
             // Assert
             Assert.AreEqual(HttpStatusCode.Forbidden, response.StatusCode, $"{user} got response: {response.StatusCode}");
             Console.WriteLine($"[SUCCESS] {user} forbidden!");
@@ -135,7 +136,7 @@ public class RolePermissionTests : BaseTestClass
     {
         int firstId = GetFirstId();
         string[] users = [_users[1]];
-        foreach (var user in users)
+        foreach (string? user in users)
         {
             // Arrange
             RestRequest request = new($"/api/tables/test/{firstId}", Method.Put)
@@ -143,10 +144,10 @@ public class RolePermissionTests : BaseTestClass
                 RequestFormat = DataFormat.Json
             };
             request.AddJsonBody(new { FullName = user, Phone = "123" });
-            new HttpBasicAuthenticator(user, _password).Authenticate(_client, request);
+            new HttpBasicAuthenticator(user, _password).Authenticate(Client, request);
 
             // Act
-            RestResponse response = _client.Execute(request);
+            RestResponse response = Client.Execute(request);
             // Assert
             Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, $"{user} got response: {response.StatusCode} ");
             Console.WriteLine($"[SUCCESS] {user} success!");
@@ -158,7 +159,7 @@ public class RolePermissionTests : BaseTestClass
     {
         int firstId = GetFirstId();
         string[] users = [_users[0], _users[2]];
-        foreach (var user in users)
+        foreach (string? user in users)
         {
             // Arrange
             RestRequest request = new($"/api/tables/test/{firstId}", Method.Put)
@@ -166,10 +167,10 @@ public class RolePermissionTests : BaseTestClass
                 RequestFormat = DataFormat.Json
             };
             request.AddJsonBody(new { FullName = user, Phone = "123" });
-            new HttpBasicAuthenticator(user, _password).Authenticate(_client, request);
+            new HttpBasicAuthenticator(user, _password).Authenticate(Client, request);
 
             // Act
-            RestResponse response = _client.Execute(request);
+            RestResponse response = Client.Execute(request);
             // Assert
             Assert.AreEqual(HttpStatusCode.Forbidden, response.StatusCode, $"{user} got response: {response.StatusCode} ");
             Console.WriteLine($"[SUCCESS] {user} forbidden!");
@@ -181,13 +182,13 @@ public class RolePermissionTests : BaseTestClass
     {
         int firstId = GetFirstId();
         string[] users = [_users[2]];
-        foreach (var user in users)
+        foreach (string? user in users)
         {
             // Arrange
             RestRequest request = new($"/api/tables/test/{firstId}", Method.Delete);
-            new HttpBasicAuthenticator(user, _password).Authenticate(_client, request);
+            new HttpBasicAuthenticator(user, _password).Authenticate(Client, request);
             // Act
-            RestResponse response = _client.Execute(request);
+            RestResponse response = Client.Execute(request);
             // Assert
             Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, $"{user} got response: {response.StatusCode} ");
             Console.WriteLine($"[SUCCESS] {user} success!");
@@ -199,13 +200,13 @@ public class RolePermissionTests : BaseTestClass
     {
         int firstId = GetFirstId();
         string[] users = [_users[0], _users[1]];
-        foreach (var user in users)
+        foreach (string? user in users)
         {
             // Arrange
             RestRequest request = new($"/api/tables/test/{firstId}", Method.Delete);
-            new HttpBasicAuthenticator(user, _password).Authenticate(_client, request);
+            new HttpBasicAuthenticator(user, _password).Authenticate(Client, request);
             // Act
-            RestResponse response = _client.Execute(request);
+            RestResponse response = Client.Execute(request);
             // Assert
             Assert.AreEqual(HttpStatusCode.Forbidden, response.StatusCode, $"{user} got response: {response.StatusCode} ");
             Console.WriteLine($"[SUCCESS] {user} forbidden!");
@@ -215,13 +216,13 @@ public class RolePermissionTests : BaseTestClass
     [TestMethod]
     public void Test_Get_Default_Success()
     {
-        foreach (var user in _users)
+        foreach (string? user in _users)
         {
             // Arrange
             RestRequest request = new($"/api/tables/test2", Method.Get);
-            new HttpBasicAuthenticator(user, _password).Authenticate(_client, request);
+            new HttpBasicAuthenticator(user, _password).Authenticate(Client, request);
             // Act
-            RestResponse response = _client.Execute(request);
+            RestResponse response = Client.Execute(request);
             // Assert
             Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, $"{user} got response: {response.StatusCode} ");
             Console.WriteLine($"[SUCCESS] {user} success!");
@@ -232,7 +233,7 @@ public class RolePermissionTests : BaseTestClass
     public void Test_Post_Default_Success()
     {
         string[] users = [_users[1]];
-        foreach (var user in users)
+        foreach (string? user in users)
         {
             // Arrange
             RestRequest request = new($"/api/tables/test2", Method.Post)
@@ -240,10 +241,10 @@ public class RolePermissionTests : BaseTestClass
                 RequestFormat = DataFormat.Json
             };
             request.AddJsonBody(new { FullName = user, Phone = "123" });
-            new HttpBasicAuthenticator(user, _password).Authenticate(_client, request);
+            new HttpBasicAuthenticator(user, _password).Authenticate(Client, request);
 
             // Act
-            RestResponse response = _client.Execute(request);
+            RestResponse response = Client.Execute(request);
             // Assert
             Assert.AreEqual(HttpStatusCode.Created, response.StatusCode, $"{user} got response: {response.StatusCode} ");
             Console.WriteLine($"[SUCCESS] {user} created!");
@@ -254,7 +255,7 @@ public class RolePermissionTests : BaseTestClass
     public void Test_Post_Default_Forbidden()
     {
         string[] users = [_users[0], _users[2]];
-        foreach (var user in users)
+        foreach (string? user in users)
         {
             // Arrange
             RestRequest request = new($"/api/tables/test2", Method.Post)
@@ -262,10 +263,10 @@ public class RolePermissionTests : BaseTestClass
                 RequestFormat = DataFormat.Json
             };
             request.AddJsonBody(new { FullName = user, Phone = "123" });
-            new HttpBasicAuthenticator(user, _password).Authenticate(_client, request);
+            new HttpBasicAuthenticator(user, _password).Authenticate(Client, request);
 
             // Act
-            RestResponse response = _client.Execute(request);
+            RestResponse response = Client.Execute(request);
             // Assert
             Assert.AreEqual(HttpStatusCode.Forbidden, response.StatusCode, $"{user} got response: {response.StatusCode} ");
             Console.WriteLine($"[SUCCESS] {user} forbidden!");
@@ -275,7 +276,7 @@ public class RolePermissionTests : BaseTestClass
     public void Test_Put_Default_Forbidden()
     {
         int firstId = GetFirstId();
-        foreach (var user in _users)
+        foreach (string? user in _users)
         {
             // Arrange
             RestRequest request = new($"/api/tables/test2/{firstId}", Method.Put)
@@ -283,10 +284,10 @@ public class RolePermissionTests : BaseTestClass
                 RequestFormat = DataFormat.Json
             };
             request.AddJsonBody(new { FullName = user, Phone = "123" });
-            new HttpBasicAuthenticator(user, _password).Authenticate(_client, request);
+            new HttpBasicAuthenticator(user, _password).Authenticate(Client, request);
 
             // Act
-            RestResponse response = _client.Execute(request);
+            RestResponse response = Client.Execute(request);
             // Assert
             Assert.AreEqual(HttpStatusCode.Forbidden, response.StatusCode, $"{user} got response: {response.StatusCode} ");
             Console.WriteLine($"[SUCCESS] {user} forbidden!");
@@ -296,13 +297,13 @@ public class RolePermissionTests : BaseTestClass
     public void Test_Delete_Default_Forbidden()
     {
         int firstId = GetFirstId();
-        foreach (var user in _users)
+        foreach (string? user in _users)
         {
             // Arrange
             RestRequest request = new($"/api/tables/test2/{firstId}", Method.Delete);
-            new HttpBasicAuthenticator(user, _password).Authenticate(_client, request);
+            new HttpBasicAuthenticator(user, _password).Authenticate(Client, request);
             // Act
-            RestResponse response = _client.Execute(request);
+            RestResponse response = Client.Execute(request);
             // Assert
             Assert.AreEqual(HttpStatusCode.Forbidden, response.StatusCode, $"{user} got response: {response.StatusCode} ");
             Console.WriteLine($"[SUCCESS] {user} forbidden!");
@@ -315,8 +316,8 @@ public class RolePermissionTests : BaseTestClass
     {
         //Get the ID of first element
         RestRequest request = new("api/tables/test");
-        new HttpBasicAuthenticator(_users[0], _password).Authenticate(_client, request);
-        RestResponse response = _client.Execute(request);
+        new HttpBasicAuthenticator(_users[0], _password).Authenticate(Client, request);
+        RestResponse response = Client.Execute(request);
         if (HttpStatusCode.OK != response.StatusCode)
             throw new Exception($"Got response code: {response.StatusCode} from GET request!");
 

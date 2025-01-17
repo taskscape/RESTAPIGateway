@@ -14,12 +14,12 @@ public class NoAuthenticationHandler : AuthenticationHandler<AuthenticationSchem
 
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-        var claims = new List<Claim>();
-        var identity = new ClaimsIdentity(claims, Scheme.Name);
-        var principal = new ClaimsPrincipal(identity);
-        var ticket = new AuthenticationTicket(principal, Scheme.Name);
+        List<Claim>? claims = new List<Claim>();
+        ClaimsIdentity? identity = new ClaimsIdentity(claims, Scheme.Name);
+        ClaimsPrincipal? principal = new ClaimsPrincipal(identity);
+        AuthenticationTicket? ticket = new AuthenticationTicket(principal, Scheme.Name);
 
-        var result = AuthenticateResult.Success(ticket);
+        AuthenticateResult? result = AuthenticateResult.Success(ticket);
 
         return Task.FromResult(result);
     }

@@ -2,12 +2,11 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Text.RegularExpressions;
 using GenericTableAPI.Models;
-using Microsoft.IdentityModel.Tokens;
 using static GenericTableAPI.Utilities.DatabaseUtilities;
 
 namespace GenericTableAPI.Services
 {
-    public partial class SyntaxService
+    public abstract partial class SyntaxService
     {
         private static readonly Regex TableNameRegex = TableNameRegexInit();
         private static readonly Regex WhereClauseRegex = WhereClauseRegexInit();
@@ -32,7 +31,7 @@ namespace GenericTableAPI.Services
         /// </summary>
         /// <param name="tableName">The table name to validate.</param>
         /// <exception cref="ArgumentException">Thrown when the table name is invalid.</exception>
-        private static void ValidateTableName(string tableName)
+        private static void ValidateTableName(string? tableName)
         {
             if (string.IsNullOrEmpty(tableName) || !TableNameRegex.IsMatch(tableName))
             {
@@ -45,7 +44,7 @@ namespace GenericTableAPI.Services
         /// </summary>
         /// <param name="where">The WHERE clause to validate.</param>
         /// <exception cref="ArgumentException">Thrown when the WHERE clause is invalid.</exception>
-        private static void ValidateWhereClause(string where)
+        private static void ValidateWhereClause(string? where)
         {
             if (!string.IsNullOrEmpty(where) && !WhereClauseRegex.IsMatch(where))
             {
@@ -58,7 +57,7 @@ namespace GenericTableAPI.Services
         /// </summary>
         /// <param name="orderBy">The ORDER BY clause to validate.</param>
         /// <exception cref="ArgumentException">Thrown when the ORDER BY clause is invalid.</exception>
-        private static void ValidateOrderByClause(string orderBy)
+        private static void ValidateOrderByClause(string? orderBy)
         {
             if (!string.IsNullOrEmpty(orderBy) && !OrderByClauseRegex.IsMatch(orderBy))
             {
@@ -76,14 +75,16 @@ namespace GenericTableAPI.Services
         /// <param name="limit">The maximum number of records to retrieve (optional).</param>
         /// <param name="connectionString">The connection string.</param>
         /// <returns>The SQL SELECT query.</returns>
-        public static string GetAllQuery(string tableName, string? schemaName, string? where = null, string? orderBy = null, int? limit = null, string? connectionString = null)
+        public static string GetAllQuery(string tableName, string? schemaName, string? where = null,
+            string? orderBy = null, int? limit = null, string? connectionString = null)
         {
             ValidateTableName(tableName);
+
             ValidateWhereClause(where);
             ValidateOrderByClause(orderBy);
 
             DatabaseType dbType = GetDatabaseType(connectionString);
-            var query = $"SELECT";
+            string query = $"SELECT";
             tableName = GetTableName(tableName, schemaName);
 
             switch (dbType)
@@ -93,11 +94,13 @@ namespace GenericTableAPI.Services
                     {
                         query += $" TOP {limit.Value} ";
                     }
+
                     query += $" * FROM {tableName}";
                     if (!string.IsNullOrEmpty(where))
                     {
                         query += $" WHERE {where}";
                     }
+
                     break;
 
                 case DatabaseType.Oracle:
@@ -114,8 +117,10 @@ namespace GenericTableAPI.Services
                     {
                         query += $" WHERE ROWNUM <= {limit.Value}";
                     }
+
                     break;
 
+                case DatabaseType.Unknown:
                 default:
                     throw new NotSupportedException("Unknown database type.");
             }
@@ -126,6 +131,7 @@ namespace GenericTableAPI.Services
             }
 
             return query;
+
         }
 
         /// <summary>
@@ -145,7 +151,7 @@ namespace GenericTableAPI.Services
             }
 
             tableName = GetTableName(tableName, schemaName);
-            var sql = $"SELECT * FROM {tableName} WHERE {primaryKeyColumn} = '{id}'";
+            string sql = $"SELECT * FROM {tableName} WHERE {primaryKeyColumn} = '{id}'";
 
             return sql;
         }
@@ -206,11 +212,11 @@ namespace GenericTableAPI.Services
 
             tableName = GetTableName(tableName, schemaName);
 
-            var sql = $"UPDATE {tableName} SET {setClauses} WHERE {primaryKeyColumn} = '{id}'";
+            string sql = $"UPDATE {tableName} SET {setClauses} WHERE {primaryKeyColumn} = '{id}'";
 
             return sql;
         }
-        
+
         /// <summary>
         /// Constructs a SQL MERGE query to replace a record in a table.
         /// </summary>
@@ -218,10 +224,11 @@ namespace GenericTableAPI.Services
         /// <param name="schemaName">The name of the schema (optional).</param>
         /// <param name="id">The value of the primary key.</param>
         /// <param name="values">A dictionary containing column names and their corresponding values to update.</param>
+        /// <param name="connectionString"></param>
         /// <param name="primaryKeyColumn">The name of the primary key column.</param>
         /// <param name="setClauses">A comma-separated list of column name = value pairs for the SET clause.</param>
         /// <returns>The SQL MERGE query.</returns>
-        public static string MergeQuery(string tableName, string? schemaName, string id, IDictionary<string, object> values, string connectionString, string? primaryKeyColumn = null, string? setClauses = null)
+        public static string MergeQuery(string tableName, string? schemaName, string id, IDictionary<string, object?> values, string connectionString, string? primaryKeyColumn = null, string? setClauses = null)
         {
             ValidateTableName(tableName);
             if (string.IsNullOrEmpty(id) || !TableNameRegex.IsMatch(id))
@@ -229,10 +236,10 @@ namespace GenericTableAPI.Services
                 throw new ArgumentException(InvalidTableNameMessage);
             }
             
-            DatabaseType databaseType = GetDatabaseType(connectionString);
+            DatabaseType databaseType = GetDatabaseType(connectionString: connectionString);
             tableName = GetTableName(tableName, schemaName);
             
-            string keys = primaryKeyColumn;
+            string? keys = primaryKeyColumn;
             if (values?.Count > 0)
             {
                 keys = $"{primaryKeyColumn}, {string.Join(", ", values.Keys)}";
@@ -263,7 +270,7 @@ namespace GenericTableAPI.Services
         /// <param name="id">The value of the primary key.</param>
         /// <param name="primaryKeyColumn">The name of the primary key column.</param>
         /// <returns>The SQL DELETE query.</returns>
-        public static string DeleteQuery(string tableName, string? schemaName, string id, string primaryKeyColumn = null)
+        public static string DeleteQuery(string tableName, string? schemaName, string id, string? primaryKeyColumn = null)
         {
             ValidateTableName(tableName);
             if (string.IsNullOrEmpty(id) || !TableNameRegex.IsMatch(id))
@@ -273,7 +280,7 @@ namespace GenericTableAPI.Services
 
             tableName = GetTableName(tableName, schemaName);
 
-            var sql = $"DELETE FROM {tableName} WHERE {primaryKeyColumn} = '{id}'";
+            string sql = $"DELETE FROM {tableName} WHERE {primaryKeyColumn} = '{id}'";
 
             return sql;
         }
@@ -290,7 +297,7 @@ namespace GenericTableAPI.Services
         {
             DatabaseType databaseType = GetDatabaseType(connectionString);
             
-            var parameters = new StringBuilder();
+            StringBuilder parameters = new();
             foreach (StoredProcedureParameter? param in values)
             {
                 string parameterFormat;
@@ -307,22 +314,13 @@ namespace GenericTableAPI.Services
                         throw new NotSupportedException();
                 }
 
-                string parameterValue;
-                switch (param.Type)
+                string parameterValue = param?.Type switch
                 {
-                    case "string":
-                        parameterValue = $"'{param.Value}'";
-                        break;
-                    case "int":
-                    case "float":
-                        parameterValue = param.Value;
-                        break;
-                    case "null":
-                        parameterValue = "null";
-                        break;
-                    default:
-                        throw new NotSupportedException();
-                }
+                    "string" => $"'{param.Value}'",
+                    "int" or "float" => param.Value,
+                    "null" => "null",
+                    _ => throw new NotSupportedException()
+                };
                 parameters.AppendFormat(parameterFormat, param.Name, parameterValue).Append(", ");
             }
 

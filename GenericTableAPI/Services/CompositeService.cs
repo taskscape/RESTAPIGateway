@@ -2,7 +2,6 @@
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using System.Net.Http.Headers;
-using System.Text;
 using Microsoft.Extensions.Primitives;
 using GenericTableAPI.Exceptions;
 using GenericTableAPI.Utilities;
@@ -31,21 +30,20 @@ namespace GenericTableAPI.Services
                     if (string.IsNullOrEmpty(request.Method) ||
                         string.IsNullOrEmpty(request.Endpoint))
                     {
-                        logger.LogError("Invalid input for composite request.");
+                        logger.LogError("Invalid input for composite request");
                         allResponses.AppendDebugLine("[ERROR] Invalid input for composite request.");
                         return new StringResponse(StatusCodes.Status400BadRequest, allResponses.ToString());
                     }
 
                     if (logger.IsEnabled(LogLevel.Information))
                     {
-                        logger.LogInformation(
-                            $"{request.Method?.ToUpper() ?? "UNKNOWN"} request to \"{request.Endpoint}\" with parameters: {(request.Parameters != null ? JsonConvert.SerializeObject(request.Parameters) : "null")}. Timestamp: {DateTimeOffset.UtcNow}");
+                        logger.LogInformation("{Unknown} request to \\\"{RequestEndpoint}\\\" with parameters: {SerializeObject}. Timestamp: {UtcNow}", request.Method?.ToUpper() ?? "UNKNOWN", request.Endpoint, (request.Parameters != null ? JsonConvert.SerializeObject(request.Parameters) : "null"), DateTimeOffset.UtcNow);
                     }
 
                     if(!string.IsNullOrWhiteSpace(request.Foreach) && _variables.TryGetValue(request.Foreach, out string? originalValue))
                     {
                         //Handle 'foreach' request
-                        string[] returnedVariablesArray;
+                        string[]? returnedVariablesArray;
                         try
                         {
                             returnedVariablesArray = JsonConvert.DeserializeObject<string[]>(originalValue);
@@ -92,8 +90,7 @@ namespace GenericTableAPI.Services
             }
             catch (Exception exception)
             {
-                logger.LogError(exception,
-                    $"Error while processing request: {httpRequest.Method} {httpRequest.RequestUri} thrown an exception: {exception.Message}");
+                logger.LogError(exception, "Error while processing request: {HttpRequestMethod} {HttpRequestRequestUri} thrown an exception: {ExceptionMessage}", httpRequest.Method, httpRequest.RequestUri, exception.Message);
                 allResponses.AppendDebugLine(
                     $"[FATAL ERROR] \"{httpRequest.Method}\" \"{httpRequest.RequestUri}\" thrown an exception: {exception.Message}");
                 allResponses.AppendResponseObject(compositeRequest.Response, _variables);
@@ -110,8 +107,7 @@ namespace GenericTableAPI.Services
 
             if (response.IsSuccessStatusCode)
             {
-                logger.LogInformation(
-                    $"Response returned from \"{httpRequest.RequestUri}\" with status code {response.StatusCode}. Timestamp: {timestamp}");
+                logger.LogInformation("Response returned from \\\"{HttpRequestRequestUri}\\\" with status code {ResponseStatusCode}. Timestamp: {Timestamp}", httpRequest.RequestUri, response.StatusCode, timestamp);
                 dynamic? content =
                     JsonConvert.DeserializeObject<dynamic>(await response.Content.ReadAsStringAsync());
                 allResponses.AppendDebugLine(
@@ -146,8 +142,8 @@ namespace GenericTableAPI.Services
                             {
                                 contentPathValue = obj.FirstOrDefault() switch
                                 {
-                                    JToken token when token.Type == JTokenType.String => $"\"{token}\"", // Add quotes if string
-                                    JToken token => token.ToString(), // Use the token as is if not a string
+                                    { Type: JTokenType.String } token => $"\"{token}\"", // Add quotes if string
+                                    { } token => token.ToString(), // Use the token as is if not a string
                                     _ => string.Empty // In case obj is empty or doesn't have a valid element
                                 };
                             }
@@ -155,7 +151,7 @@ namespace GenericTableAPI.Services
 
                         if (contentPathValue == null) continue;
 
-                        if (!string.IsNullOrWhiteSpace(request.Foreach) && _variables.TryGetValue(requestVariable.Key, out string? val) && val != null)
+                        if (!string.IsNullOrWhiteSpace(request.Foreach) && _variables.TryGetValue(requestVariable.Key, out string? val))
                         {
                             allResponses.AppendDebugLine(
                             $"[INFO] Returned parameter: {requestVariable.Key} = {contentPathValue}");
@@ -174,7 +170,7 @@ namespace GenericTableAPI.Services
                     }
                     catch (Exception ex)
                     {
-                        logger.LogError($"Returned parameter: {requestVariable.Value} not found!");
+                        logger.LogError("Returned parameter: {RequestVariableValue} not found!", requestVariable.Value);
                         allResponses.AppendDebugLine(
                         $"[ERROR] \"{httpRequest.Method}\" \"{httpRequest.RequestUri}\" Could not find {ReplaceUrlParameters(requestVariable.Value, request.Parameters)} Reason: {ex.Message}");
                         throw new ResponseException(StatusCodes.Status400BadRequest, allResponses.ToString());
@@ -183,8 +179,7 @@ namespace GenericTableAPI.Services
             }
             else
             {
-                logger.LogError(
-                    $"Response returned from \"{httpRequest.RequestUri}\" with status code {response.StatusCode}. Timestamp: {timestamp}");
+                logger.LogError("Response returned from \\\"{HttpRequestRequestUri}\\\" with status code {ResponseStatusCode}. Timestamp: {Timestamp}", httpRequest.RequestUri, response.StatusCode, timestamp);
                 allResponses.AppendDebugLine(
                     $"[ERROR] \"{httpRequest.Method}\" \"{httpRequest.RequestUri}\" ended up with {(int)response.StatusCode} {response.StatusCode}!");
                 throw new ResponseException(StatusCodes.Status500InternalServerError, allResponses.ToString());
@@ -223,8 +218,9 @@ namespace GenericTableAPI.Services
         {
             if (!AuthorizationHeader.HasValue || string.IsNullOrEmpty(AuthorizationHeader.Value)) return;
             {
-                string[] authHeaderString = AuthorizationHeader.Value[0].Split(' ');
-                httpRequest.Headers.Authorization = new AuthenticationHeaderValue(authHeaderString[0], authHeaderString[1]);
+                string?[]? authHeaderString = AuthorizationHeader.Value[0]?.Split(' ');
+                httpRequest.Headers.Authorization =
+                    new AuthenticationHeaderValue(authHeaderString?[0] ?? string.Empty, authHeaderString?[1]);
             }
         }
 

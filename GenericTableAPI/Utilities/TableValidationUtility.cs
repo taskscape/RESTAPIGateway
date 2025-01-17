@@ -27,7 +27,7 @@ namespace GenericTableAPI.Utilities
 
             if (User != null)
             {
-                var roles = GetUserRoles(User);
+                string[]? roles = GetUserRoles(User);
                 if(roles?.Length > 0)
                     return rolePermissions
                         .Select(x => x.StartsWith("rolename:") || x.StartsWith("username:") ? x : $"rolename:{x}")

@@ -26,7 +26,7 @@ namespace GenericTableAPI.Controllers
             _logger.LogInformation("POST request to \"{Path}\" from \"{RemoteIpAddress}\" by user \"{UserName}\" with values: {Values}. Timestamp: {Timestamp}", HttpContext.Request.Path, HttpContext.Connection.RemoteIpAddress, User.Identity?.Name ?? "unknown", JsonConvert.SerializeObject(compositeRequest), timestamp);
 
             _service.AuthorizationHeader = HttpContext.Request.Headers.Authorization;
-            var result = await _service.RunCompositeRequest(compositeRequest);
+            StringResponse? result = await _service.RunCompositeRequest(compositeRequest);
 
             return StatusCode(result.Code, result.Content);
         }

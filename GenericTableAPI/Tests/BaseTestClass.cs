@@ -1,30 +1,30 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using System.Net;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using RestSharp;
-using System.Net;
 using RestSharp.Authenticators;
+
+namespace Tests;
 
 public class BaseTestClass
 {
-    protected RestClient _client;
-    protected static string _bearerToken;
+    protected RestClient Client = new(BaseUrl);
 
     private const string BaseUrl = "http://localhost:5066/";
-    
 
-    protected string JWTAuthUsername = "admin";
-    protected string JWTAuthPassword = "passwd";
 
-    protected string BasicAuthUsername = "admin";
-    protected string BasicAuthPassword = "passwd";
+    private const string JWTAuthUsername = "admin";
+    private const string JWTAuthPassword = "passwd";
+
+    protected const string BasicAuthUsername = "admin";
+    protected const string BasicAuthPassword = "passwd";
 
     protected void Setup()
     {
-        _client = new RestClient(BaseUrl);
-        _bearerToken = GetBearerToken();
+        GetBearerToken();
     }
 
-    private string GetBearerToken()
+    private void GetBearerToken()
     {
         RestRequest request = new("api/token", Method.Post)
         {
@@ -32,20 +32,29 @@ public class BaseTestClass
         };
         request.AddJsonBody(new { userName = JWTAuthUsername, password = JWTAuthPassword });
 
-        RestResponse response = _client.Execute(request);
+        RestResponse? response = Client?.Execute(request);
 
-        return JsonConvert.DeserializeObject<string>(response.Content);
+        if (response?.Content == null) return;
+        JsonConvert.DeserializeObject<string>(response.Content);
     }
     //Returns the ID of the first element from Table 'test'
     protected virtual int GetFirstId()
     {
         //Get the ID of first element
         RestRequest request = new("api/tables/test");
-        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(_client, request);
-        RestResponse response = _client.Execute(request);
+        if (Client == null) return -1;
+        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(Client, request);
+        RestResponse response = Client.Execute(request);
         if (HttpStatusCode.OK != response.StatusCode)
             throw new Exception($"Got response code: {response.StatusCode} from GET request!");
 
-        return (int)JsonConvert.DeserializeObject<IEnumerable<JToken>>(response.Content).First().First.First;
+        if (response.Content == null) return -1;
+        JToken? firstFirst = (JsonConvert.DeserializeObject<IEnumerable<JToken>>(response.Content) ??
+                              Array.Empty<JToken>()).First().First?.First;
+        if (response.Content == null) return -1;
+        if (firstFirst != null)
+            return (int)firstFirst;
+
+        return -1;
     }
 }
