@@ -105,6 +105,36 @@ public class RolePermissionTests : BaseTestClass
     }
 
     [TestMethod]
+    public void Test_Post_BasicBearer_Success()
+    {
+        //TEST THE BEARER AUTHENTICATION
+        RestRequest request = new("/api/tables/test", Method.Post)
+        {
+            RequestFormat = DataFormat.Json
+        };
+        request.AddJsonBody(new { FullName = "test-bearer", Phone = "123" });
+        request.AddHeader("Authorization", "Bearer " + GetBearerToken("test", _password));
+
+        // Act
+        RestResponse response = Client.Execute(request);
+        // Assert
+        Assert.AreEqual(HttpStatusCode.Created, response.StatusCode, $"JWTAdmin got response: {response.StatusCode} ");
+        Console.WriteLine($"[SUCCESS] [JWT] test created!");
+
+        //TEST THE BASIC AUTHENTICATION
+        request = new($"/api/tables/test/{GetFirstId()}", Method.Delete)
+        {
+            RequestFormat = DataFormat.Json
+        };
+        new HttpBasicAuthenticator("test", _password).Authenticate(Client, request);
+
+        // Act
+        response = Client.Execute(request);
+        // Assert
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, $"admin got response: {response.StatusCode} ");
+        Console.WriteLine($"[SUCCESS] [basic] test deleted!");
+    }
+    [TestMethod]
     public void Test_Post_Forbidden()
     {
         string[] users = [_users[0]];
