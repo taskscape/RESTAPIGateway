@@ -1,6 +1,7 @@
 ﻿using GenericTableAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using System.Data;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
@@ -39,8 +40,9 @@ namespace GenericTableAPI.Controllers
         {
             List<Claim> claims = [new Claim(ClaimTypes.Name, user.Username)];
 
-            if (!string.IsNullOrEmpty(user.Role))
-                claims.Add(new Claim(ClaimTypes.Role, user.Role));
+            foreach (string role in user.GetRoles())
+                if (!string.IsNullOrEmpty(role))
+                    claims.Add(new Claim(ClaimTypes.Role, role));
 
             SymmetricSecurityKey key = new(System.Text.Encoding.UTF8.GetBytes(_configuration.GetSection("JwtSettings:Key").Value));
 
