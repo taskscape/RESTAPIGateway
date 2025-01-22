@@ -26,8 +26,8 @@
       "test": {
         "select": [ "*" ],
         "update": [ "Role1", "rolename:Role2", "Admin" ],
-        "delete": [ "username:user3", "Admin" ],
-        "insert": [ "rolename:Role1", "Role2", "rolename:Role3", "Admin", "JWTAdmin" ]
+        "delete": [ "username:user3", "Admin", "BASICuser" ],
+        "insert": [ "rolename:Role1", "Role2", "rolename:Role3", "Admin", "JWTuser" ]
       },
       "testnotfound": {
         "select": [ "username:user1", "Role3", "rolename:Role2", "Admin" ]
