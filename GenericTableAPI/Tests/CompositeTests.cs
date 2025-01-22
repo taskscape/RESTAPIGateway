@@ -7,12 +7,6 @@ using Tests;
 [TestClass]
 public class CompositeTests : BaseTestClass
 {
-    [TestInitialize]
-    public void Init()
-    {
-        Setup();
-    }
-
     [TestMethod]
     public void Test_GetAll_ReturnsSuccess()
     {

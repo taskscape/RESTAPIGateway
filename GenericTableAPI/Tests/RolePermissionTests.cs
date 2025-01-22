@@ -45,14 +45,9 @@ public class RolePermissionTests : BaseTestClass
       },
      */
 
-    private readonly string[] _users = ["user1", "user2", "user3"];
+    private readonly string[] _users = ["user1", "user2", "user3", "user4"];
     private readonly string _password = "passwd";
 
-    [TestInitialize]
-    public void Init()
-    {
-        Setup();
-    }
     [TestMethod]
     public void Test_NotFound_Success()
     {
@@ -90,7 +85,7 @@ public class RolePermissionTests : BaseTestClass
     [TestMethod]
     public void Test_Post_Success()
     {
-        string[] users = [_users[1], _users[2]];
+        string[] users = [_users[1], _users[2], _users[3]];
         foreach (string? user in users)
         {
             // Arrange
@@ -135,7 +130,7 @@ public class RolePermissionTests : BaseTestClass
     public void Test_Put_Success()
     {
         int firstId = GetFirstId();
-        string[] users = [_users[1]];
+        string[] users = [_users[1], _users[3]];
         foreach (string? user in users)
         {
             // Arrange
@@ -199,7 +194,7 @@ public class RolePermissionTests : BaseTestClass
     public void Test_Delete_Forbidden()
     {
         int firstId = GetFirstId();
-        string[] users = [_users[0], _users[1]];
+        string[] users = [_users[0], _users[1], _users[3]];
         foreach (string? user in users)
         {
             // Arrange
@@ -232,7 +227,7 @@ public class RolePermissionTests : BaseTestClass
     [TestMethod]
     public void Test_Post_Default_Success()
     {
-        string[] users = [_users[1]];
+        string[] users = [_users[1], _users[3]];
         foreach (string? user in users)
         {
             // Arrange
