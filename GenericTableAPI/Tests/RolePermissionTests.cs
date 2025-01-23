@@ -45,14 +45,9 @@ public class RolePermissionTests : BaseTestClass
       },
      */
 
-    private readonly string[] _users = ["user1", "user2", "user3"];
+    private readonly string[] _users = ["user1", "user2", "user3", "user4"];
     private readonly string _password = "passwd";
 
-    [TestInitialize]
-    public void Init()
-    {
-        Setup();
-    }
     [TestMethod]
     public void Test_NotFound_Success()
     {
@@ -90,7 +85,7 @@ public class RolePermissionTests : BaseTestClass
     [TestMethod]
     public void Test_Post_Success()
     {
-        string[] users = [_users[1], _users[2]];
+        string[] users = [_users[1], _users[2], _users[3]];
         foreach (string? user in users)
         {
             // Arrange
@@ -107,6 +102,37 @@ public class RolePermissionTests : BaseTestClass
             Assert.AreEqual(HttpStatusCode.Created, response.StatusCode, $"{user} got response: {response.StatusCode} ");
             Console.WriteLine($"[SUCCESS] {user} created!");
         }
+    }
+
+    [TestMethod]
+    public void Test_Post_BasicBearer_Success()
+    {
+        //TEST THE BEARER AUTHENTICATION
+        RestRequest request = new("/api/tables/test", Method.Post)
+        {
+            RequestFormat = DataFormat.Json
+        };
+        request.AddJsonBody(new { FullName = "test-bearer", Phone = "123" });
+        request.AddHeader("Authorization", "Bearer " + GetBearerToken("test", _password));
+
+        // Act
+        RestResponse response = Client.Execute(request);
+        // Assert
+        Assert.AreEqual(HttpStatusCode.Created, response.StatusCode, $"JWTAdmin got response: {response.StatusCode} ");
+        Console.WriteLine($"[SUCCESS] [JWT] test created!");
+
+        //TEST THE BASIC AUTHENTICATION
+        request = new($"/api/tables/test/{GetFirstId()}", Method.Delete)
+        {
+            RequestFormat = DataFormat.Json
+        };
+        new HttpBasicAuthenticator("test", _password).Authenticate(Client, request);
+
+        // Act
+        response = Client.Execute(request);
+        // Assert
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, $"admin got response: {response.StatusCode} ");
+        Console.WriteLine($"[SUCCESS] [basic] test deleted!");
     }
 
     [TestMethod]
@@ -135,7 +161,7 @@ public class RolePermissionTests : BaseTestClass
     public void Test_Put_Success()
     {
         int firstId = GetFirstId();
-        string[] users = [_users[1]];
+        string[] users = [_users[1], _users[3]];
         foreach (string? user in users)
         {
             // Arrange
@@ -199,7 +225,7 @@ public class RolePermissionTests : BaseTestClass
     public void Test_Delete_Forbidden()
     {
         int firstId = GetFirstId();
-        string[] users = [_users[0], _users[1]];
+        string[] users = [_users[0], _users[1], _users[3]];
         foreach (string? user in users)
         {
             // Arrange
@@ -232,7 +258,7 @@ public class RolePermissionTests : BaseTestClass
     [TestMethod]
     public void Test_Post_Default_Success()
     {
-        string[] users = [_users[1]];
+        string[] users = [_users[1], _users[3]];
         foreach (string? user in users)
         {
             // Arrange

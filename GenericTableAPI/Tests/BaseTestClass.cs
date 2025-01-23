@@ -19,23 +19,22 @@ public class BaseTestClass
     protected const string BasicAuthUsername = "admin";
     protected const string BasicAuthPassword = "passwd";
 
-    protected void Setup()
-    {
-        GetBearerToken();
-    }
-
-    private void GetBearerToken()
+    protected string? GetBearerToken(string username, string password)
     {
         RestRequest request = new("api/token", Method.Post)
         {
             RequestFormat = DataFormat.Json
         };
-        request.AddJsonBody(new { userName = JWTAuthUsername, password = JWTAuthPassword });
+        request.AddJsonBody(new { userName = username, password = password });
 
         RestResponse? response = Client?.Execute(request);
 
-        if (response?.Content == null) return;
-        JsonConvert.DeserializeObject<string>(response.Content);
+        if (response?.Content == null) return null;
+        return JsonConvert.DeserializeObject<string>(response.Content);
+    }
+    protected string? GetBearerToken()
+    {
+        return GetBearerToken(JWTAuthUsername, JWTAuthPassword);
     }
     //Returns the ID of the first element from Table 'test'
     protected virtual int GetFirstId()

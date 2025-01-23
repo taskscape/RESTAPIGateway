@@ -9,11 +9,6 @@ using Tests;
 [TestClass]
 public class IntegrationTests : BaseTestClass
 {
-    [TestInitialize]
-    public void Init()
-    {
-        Setup();
-    }
     #region GET Tests
     [TestMethod]
     public void Test_Get_BasicAuth_Success()
@@ -33,6 +28,30 @@ public class IntegrationTests : BaseTestClass
         // Arrange
         RestRequest request = new("/api/tables/test");
         new HttpBasicAuthenticator("foo", "123").Authenticate(Client, request);
+        // Act
+        RestResponse response = Client.Execute(request);
+
+        // Assert
+        Assert.AreEqual(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+    [TestMethod]
+    public void Test_Get_BearerAuth_Success()
+    {
+        // Arrange
+        RestRequest request = new("/api/tables/test");
+        request.AddHeader("Authorization", "Bearer " + GetBearerToken());
+        // Act
+        RestResponse response = Client.Execute(request);
+
+        // Assert
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+    }
+    [TestMethod]
+    public void Test_Get_BearerAuth_WrongCredentials()
+    {
+        // Arrange
+        RestRequest request = new("/api/tables/test");
+        request.AddHeader("Authorization", "Bearer " + GetBearerToken("foo", "123"));
         // Act
         RestResponse response = Client.Execute(request);
 

@@ -376,13 +376,16 @@ The solution supports authentication using Basic Auth, JWT Token Auth (Bearer Au
       {
         "Username": "[user_name]",
         "Password": "[password]",
-        "Role": "[role]"
+        "Role": "[role]", //OPTIONAL
+        "Roles": [ "[role1]", "[role2]", "[role2]" ] //OPTIONAL
       }
       // Subsequent users follow the same structure
     ]
   },
 ```
-- You can specify as many users as needed (at least one), with each user assigned a single role for authorization purposes, as the system supports only one role per user at this time.
+- You can specify as many users as needed (at least one), with each user assigned one or more roles for authorization purposes. The system supports both a single role (using "Role") or multiple roles (using "Roles"). However, it is recommended to use "Roles" for clarity and better readability.
+
+- If both "Role" and "Roles" are specified for a user, their roles will be combined, and the user will have access to all roles listed.
 
 - Each username must be unique to ensure proper authentication and authorization for each user.
 
@@ -395,14 +398,17 @@ The solution supports authentication using Basic Auth, JWT Token Auth (Bearer Au
   {
     "Username": "[user_name]",
     "Password": "[password]",
-    "Role": "[role]"
+    "Role": "[role]", //OPTIONAL
+    "Roles": [ "[role1]", "[role2]", "[role3]" ] //OPTIONAL
   }
   // Subsequent users follow the same structure
 ],
 
 ```
 
-- You can specify as many users as needed (at least one), with each user assigned a single role for authorization purposes, as the system supports only one role per user at this time.
+- You can specify as many users as needed (at least one), with each user assigned one or more roles for authorization purposes. The system supports both a single role (using "Role") or multiple roles (using "Roles"). However, it is recommended to use "Roles" for clarity and better readability.
+
+- If both "Role" and "Roles" are specified for a user, their roles will be combined, and the user will have access to all roles listed.
 
 - Each username must be unique to ensure proper authentication and authorization for each user.
 
