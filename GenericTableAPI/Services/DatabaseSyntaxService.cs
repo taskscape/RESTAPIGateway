@@ -378,7 +378,7 @@ namespace GenericTableAPI.Services
         
         [GeneratedRegex(@"^\w+$", RegexOptions.Compiled)]
         private static partial Regex TableNameRegexInit();
-        [GeneratedRegex(@"^\w+\s*=.*$", RegexOptions.Compiled)]
+        [GeneratedRegex(@"^\w+\s*(=|>=|<=|>|<)\s*.*$", RegexOptions.Compiled)]
         private static partial Regex WhereClauseRegexInit();
         [GeneratedRegex(@"^\w+(\s+(ASC|DESC))?$", RegexOptions.Compiled)]
         private static partial Regex OrderByClauseRegexInit();
