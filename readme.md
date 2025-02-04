@@ -360,13 +360,11 @@ In this section, you can enable Swagger by setting the following option:
 
 ### Enable Exception Page
 
-In this section, you can enable exception page by setting the following option:
+You can enable exception page by setting the environment variable `DOTNET_ENVIRONMENT` to `Development`
 
 ```text
-  "EnableExceptionPage": true,
+set DOTNET_ENVIRONMENT=Production
 ```
-
-This allows controlling whether detailed stack traces are displayed based on configuration, making it adaptable for different environments.
 
 **Note**: For production environments, it is recommended to disable exception page to enhance security.
 

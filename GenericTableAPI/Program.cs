@@ -138,11 +138,7 @@ namespace GenericTableAPI
             }
 
             // Use exception handling middleware
-            if (bool.Parse(builder.Configuration["EnableExceptionPage"] ?? "false"))
-            {
-                app.UseDeveloperExceptionPage(); // Shows stack trace
-            }
-            else
+            if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler(appBuilder =>
                 {
@@ -153,6 +149,10 @@ namespace GenericTableAPI
                         await context.Response.WriteAsync("An error occurred. Please try again later.");
                     });
                 });
+            }
+            else
+            {
+                app.UseDeveloperExceptionPage(); // Shows stack trace
             }
 
             app.UseHttpsRedirection();
