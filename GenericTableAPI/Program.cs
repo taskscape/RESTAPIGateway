@@ -137,6 +137,24 @@ namespace GenericTableAPI
                 app.UseSwaggerUI();
             }
 
+            // Use exception handling middleware
+            if (bool.Parse(builder.Configuration["EnableExceptionPage"] ?? "false"))
+            {
+                app.UseDeveloperExceptionPage(); // Shows stack trace
+            }
+            else
+            {
+                app.UseExceptionHandler(appBuilder =>
+                {
+                    appBuilder.Run(async context =>
+                    {
+                        context.Response.StatusCode = 500;
+                        context.Response.ContentType = "text/plain";
+                        await context.Response.WriteAsync("An error occurred. Please try again later.");
+                    });
+                });
+            }
+
             app.UseHttpsRedirection();
             
             app.UseAuthentication();

@@ -358,6 +358,18 @@ In this section, you can enable Swagger by setting the following option:
 
 **Note**: For production environments, it is recommended to disable Swagger to enhance security.
 
+### Enable Exception Page
+
+In this section, you can enable exception page by setting the following option:
+
+```text
+  "EnableExceptionPage": true,
+```
+
+This allows controlling whether detailed stack traces are displayed based on configuration, making it adaptable for different environments.
+
+**Note**: For production environments, it is recommended to disable exception page to enhance security.
+
 ### Authentication
 
 The solution supports authentication using Basic Auth, JWT Token Auth (Bearer Authentication), or Windows Authentication. 
