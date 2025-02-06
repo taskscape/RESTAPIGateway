@@ -358,6 +358,16 @@ In this section, you can enable Swagger by setting the following option:
 
 **Note**: For production environments, it is recommended to disable Swagger to enhance security.
 
+### Enable Exception Page
+
+You can enable exception page by setting the environment variable `DOTNET_ENVIRONMENT` to `Development`
+
+```text
+set DOTNET_ENVIRONMENT=Production
+```
+
+**Note**: For production environments, it is recommended to disable exception page to enhance security.
+
 ### Authentication
 
 The solution supports authentication using Basic Auth, JWT Token Auth (Bearer Authentication), or Windows Authentication. 
