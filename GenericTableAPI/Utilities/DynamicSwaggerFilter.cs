@@ -1,4 +1,5 @@
 ﻿using Dapper;
+using GenericTableAPI.Utilities;
 using Microsoft.Data.SqlClient;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
@@ -44,14 +45,47 @@ public class DynamicSwaggerFilter : IDocumentFilter
             context.SchemaGenerator.GenerateSchema(typeof(Dictionary<string, object>), context.SchemaRepository);
             context.SchemaRepository.Schemas[table] = schema;
 
+            var Operations = new Dictionary<OperationType, OpenApiOperation>();
+            var OperationsId = new Dictionary<OperationType, OpenApiOperation>();
+
+            //Check if given table exist in tablesettings.json and if given table has "*" permission
+            if (TableValidationUtility.ValidTablePermission(_configuration, table, "select"))
+            {
+                Operations.Add(OperationType.Get, GetAllOperation(table));
+                OperationsId.Add(OperationType.Get, GetByIdOperation(table));
+            }
+            if (TableValidationUtility.ValidTablePermission(_configuration, table, "update"))
+            {
+                OperationsId.Add(OperationType.Put, PutOperation(table));
+                OperationsId.Add(OperationType.Patch, PatchOperation(table));
+            }
+            if (TableValidationUtility.ValidTablePermission(_configuration, table, "insert"))
+            {
+                Operations.Add(OperationType.Post, PostOperation(table));
+            }
+            if (TableValidationUtility.ValidTablePermission(_configuration, table, "delete"))
+            {
+                OperationsId.Add(OperationType.Delete, DeleteOperation(table));
+            }
+
             swaggerDoc.Paths[$"/api/tables/{table}"] = new OpenApiPathItem
             {
-                Operations = new Dictionary<OperationType, OpenApiOperation>
-                {
-                    [OperationType.Get] = new OpenApiOperation
-                    {
-                        Summary = $"Get all records from {table}",
-                        Security = new List<OpenApiSecurityRequirement>
+                Operations = Operations
+            };
+
+            swaggerDoc.Paths[$"/api/tables/{table}/{{id}}"] = new OpenApiPathItem
+            {
+                Operations = OperationsId
+            };
+        }
+    }
+
+    private OpenApiOperation GetAllOperation(string table)
+    {
+        return new OpenApiOperation
+        {
+            Summary = $"Get all records from {table}",
+            Security = new List<OpenApiSecurityRequirement>
                         {
                             new OpenApiSecurityRequirement
                             {
@@ -61,73 +95,77 @@ public class DynamicSwaggerFilter : IDocumentFilter
                                 }
                             }
                         },
-                        Parameters = new List<OpenApiParameter>
+            Parameters = new List<OpenApiParameter>
                         {
                             new OpenApiParameter { Name = "where", In = ParameterLocation.Query, Schema = new OpenApiSchema { Type = "string" }, Description = "Filter condition" },
                             new OpenApiParameter { Name = "orderBy", In = ParameterLocation.Query, Schema = new OpenApiSchema { Type = "string" }, Description = "Order by condition" },
                             new OpenApiParameter { Name = "limit", In = ParameterLocation.Query, Schema = new OpenApiSchema { Type = "integer", Format = "int32" }, Description = "Limit results" }
                         },
-                        Responses = new OpenApiResponses
-                        {
-                            ["200"] = new OpenApiResponse
-                            {
-                                Description = "Success",
-                                Content = new Dictionary<string, OpenApiMediaType>
-                                {
-                                    ["application/json"] = new OpenApiMediaType
-                                    {
-                                        Schema = new OpenApiSchema
-                                        {
-                                            Type = "array",
-                                            Items = new OpenApiSchema { Reference = new OpenApiReference { Type = ReferenceType.Schema, Id = table } }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    [OperationType.Post] = new OpenApiOperation
+            Responses = new OpenApiResponses
+            {
+                ["200"] = new OpenApiResponse
+                {
+                    Description = "Success",
+                    Content = new Dictionary<string, OpenApiMediaType>
                     {
-                        Summary = $"Insert a new record into {table}",
-                        Security = new List<OpenApiSecurityRequirement>
+                        ["application/json"] = new OpenApiMediaType
                         {
-                            new OpenApiSecurityRequirement
+                            Schema = new OpenApiSchema
                             {
-                                {
-                                    new OpenApiSecurityScheme { Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "oauth2" } },
-                                    new List<string>()
-                                }
+                                Type = "array",
+                                Items = new OpenApiSchema { Reference = new OpenApiReference { Type = ReferenceType.Schema, Id = table } }
                             }
-                        },
-                        RequestBody = new OpenApiRequestBody
-                        {
-                            Required = true,
-                            Content = new Dictionary<string, OpenApiMediaType>
-                            {
-                                ["application/json"] = new OpenApiMediaType
-                                {
-                                    Schema = new OpenApiSchema { Reference = new OpenApiReference { Type = ReferenceType.Schema, Id = table } }
-                                }
-                            }
-                        },
-                        Responses = new OpenApiResponses
-                        {
-                            //TODO: MAKE CORRECT RESPONSES
-                            ["201"] = new OpenApiResponse { Description = "Created" },
-                            ["400"] = new OpenApiResponse { Description = "Bad Request" }
                         }
                     }
                 }
-            };
+            }
+        };
+    }
 
-            swaggerDoc.Paths[$"/api/tables/{table}/{{id}}"] = new OpenApiPathItem
+    private OpenApiOperation GetByIdOperation(string table)
+    {
+        return new OpenApiOperation
+        {
+            Summary = $"Insert a new record into {table}",
+            Security = new List<OpenApiSecurityRequirement>
+                        {
+                            new OpenApiSecurityRequirement
+                            {
+                                {
+                                    new OpenApiSecurityScheme { Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "oauth2" } },
+                                    new List<string>()
+                                }
+                            }
+                        },
+            Parameters = new List<OpenApiParameter>
+                        {
+                            new OpenApiParameter { Name = "id", In = ParameterLocation.Path, Schema = new OpenApiSchema { Type = "string" }, Description = "ID of the record to update", Required = true },
+                            new OpenApiParameter { Name = "primaryKeyColumnName", In = ParameterLocation.Query, Schema = new OpenApiSchema { Type = "string" }, Description = "Primary Key Column Name" }
+                        },
+            Responses = new OpenApiResponses
             {
-                Operations = new Dictionary<OperationType, OpenApiOperation>
+                ["200"] = new OpenApiResponse
                 {
-                    [OperationType.Get] = new OpenApiOperation
+                    Description = "Success",
+                    Content = new Dictionary<string, OpenApiMediaType>
                     {
-                        Summary = $"Insert a new record into {table}",
-                        Security = new List<OpenApiSecurityRequirement>
+                        ["application/json"] = new OpenApiMediaType
+                        {
+                            Schema = new OpenApiSchema { Reference = new OpenApiReference { Type = ReferenceType.Schema, Id = table } }
+                        }
+                    }
+                },
+                ["404"] = new OpenApiResponse { Description = "Not Found" }
+            }
+        };
+    }
+
+    private OpenApiOperation PostOperation(string table)
+    {
+        return new OpenApiOperation
+        {
+            Summary = $"Insert a new record into {table}",
+            Security = new List<OpenApiSecurityRequirement>
                         {
                             new OpenApiSecurityRequirement
                             {
@@ -137,31 +175,72 @@ public class DynamicSwaggerFilter : IDocumentFilter
                                 }
                             }
                         },
-                        Parameters = new List<OpenApiParameter>
+            RequestBody = new OpenApiRequestBody
+            {
+                Required = true,
+                Content = new Dictionary<string, OpenApiMediaType>
+                {
+                    ["application/json"] = new OpenApiMediaType
+                    {
+                        Schema = new OpenApiSchema { Reference = new OpenApiReference { Type = ReferenceType.Schema, Id = table } }
+                    }
+                }
+            },
+            Responses = new OpenApiResponses
+            {
+                //TODO: MAKE CORRECT RESPONSES
+                ["201"] = new OpenApiResponse { Description = "Created" },
+                ["400"] = new OpenApiResponse { Description = "Bad Request" }
+            }
+        };
+    }
+
+    private OpenApiOperation PatchOperation(string table)
+    {
+        return new OpenApiOperation
+        {
+            Summary = $"Insert a new record into {table}",
+            Security = new List<OpenApiSecurityRequirement>
+                        {
+                            new OpenApiSecurityRequirement
+                            {
+                                {
+                                    new OpenApiSecurityScheme { Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "oauth2" } },
+                                    new List<string>()
+                                }
+                            }
+                        },
+            Parameters = new List<OpenApiParameter>
                         {
                             new OpenApiParameter { Name = "id", In = ParameterLocation.Path, Schema = new OpenApiSchema { Type = "string" }, Description = "ID of the record to update", Required = true },
                             new OpenApiParameter { Name = "primaryKeyColumnName", In = ParameterLocation.Query, Schema = new OpenApiSchema { Type = "string" }, Description = "Primary Key Column Name" }
                         },
-                        Responses = new OpenApiResponses
-                        {
-                            ["200"] = new OpenApiResponse
-                            {
-                                Description = "Success",
-                                Content = new Dictionary<string, OpenApiMediaType>
-                                {
-                                    ["application/json"] = new OpenApiMediaType
-                                    {
-                                        Schema = new OpenApiSchema { Reference = new OpenApiReference { Type = ReferenceType.Schema, Id = table } }
-                                    }
-                                }
-                            },
-                            ["404"] = new OpenApiResponse { Description = "Not Found" }
-                        }
-                    },
-                    [OperationType.Patch] = new OpenApiOperation
+            RequestBody = new OpenApiRequestBody
+            {
+                Required = true,
+                Content = new Dictionary<string, OpenApiMediaType>
+                {
+                    ["application/json"] = new OpenApiMediaType
                     {
-                        Summary = $"Insert a new record into {table}",
-                        Security = new List<OpenApiSecurityRequirement>
+                        Schema = new OpenApiSchema { Reference = new OpenApiReference { Type = ReferenceType.Schema, Id = table } }
+                    }
+                }
+            },
+            Responses = new OpenApiResponses
+            {
+                //TODO: MAKE CORRECT RESPONSES
+                ["201"] = new OpenApiResponse { Description = "Created" },
+                ["400"] = new OpenApiResponse { Description = "Bad Request" }
+            }
+        };
+    }
+
+    private OpenApiOperation PutOperation(string table)
+    {
+        return new OpenApiOperation
+        {
+            Summary = $"Insert a new record into {table}",
+            Security = new List<OpenApiSecurityRequirement>
                         {
                             new OpenApiSecurityRequirement
                             {
@@ -171,33 +250,37 @@ public class DynamicSwaggerFilter : IDocumentFilter
                                 }
                             }
                         },
-                        Parameters = new List<OpenApiParameter>
+            Parameters = new List<OpenApiParameter>
                         {
                             new OpenApiParameter { Name = "id", In = ParameterLocation.Path, Schema = new OpenApiSchema { Type = "string" }, Description = "ID of the record to update", Required = true },
                             new OpenApiParameter { Name = "primaryKeyColumnName", In = ParameterLocation.Query, Schema = new OpenApiSchema { Type = "string" }, Description = "Primary Key Column Name" }
                         },
-                        RequestBody = new OpenApiRequestBody
-                        {
-                            Required = true,
-                            Content = new Dictionary<string, OpenApiMediaType>
-                            {
-                                ["application/json"] = new OpenApiMediaType
-                                {
-                                    Schema = new OpenApiSchema { Reference = new OpenApiReference { Type = ReferenceType.Schema, Id = table } }
-                                }
-                            }
-                        },
-                        Responses = new OpenApiResponses
-                        {
-                            //TODO: MAKE CORRECT RESPONSES
-                            ["201"] = new OpenApiResponse { Description = "Created" },
-                            ["400"] = new OpenApiResponse { Description = "Bad Request" }
-                        }
-                    },
-                    [OperationType.Put] = new OpenApiOperation
+            RequestBody = new OpenApiRequestBody
+            {
+                Required = true,
+                Content = new Dictionary<string, OpenApiMediaType>
+                {
+                    ["application/json"] = new OpenApiMediaType
                     {
-                        Summary = $"Insert a new record into {table}",
-                        Security = new List<OpenApiSecurityRequirement>
+                        Schema = new OpenApiSchema { Reference = new OpenApiReference { Type = ReferenceType.Schema, Id = table } }
+                    }
+                }
+            },
+            Responses = new OpenApiResponses
+            {
+                //TODO: MAKE CORRECT RESPONSES
+                ["201"] = new OpenApiResponse { Description = "Created" },
+                ["400"] = new OpenApiResponse { Description = "Bad Request" }
+            }
+        };
+    }
+
+    private OpenApiOperation DeleteOperation(string table)
+    {
+        return new OpenApiOperation
+        {
+            Summary = $"Delete a record from {table} by ID",
+            Security = new List<OpenApiSecurityRequirement>
                         {
                             new OpenApiSecurityRequirement
                             {
@@ -207,43 +290,7 @@ public class DynamicSwaggerFilter : IDocumentFilter
                                 }
                             }
                         },
-                        Parameters = new List<OpenApiParameter>
-                        {
-                            new OpenApiParameter { Name = "id", In = ParameterLocation.Path, Schema = new OpenApiSchema { Type = "string" }, Description = "ID of the record to update", Required = true },
-                            new OpenApiParameter { Name = "primaryKeyColumnName", In = ParameterLocation.Query, Schema = new OpenApiSchema { Type = "string" }, Description = "Primary Key Column Name" }
-                        },
-                        RequestBody = new OpenApiRequestBody
-                        {
-                            Required = true,
-                            Content = new Dictionary<string, OpenApiMediaType>
-                            {
-                                ["application/json"] = new OpenApiMediaType
-                                {
-                                    Schema = new OpenApiSchema { Reference = new OpenApiReference { Type = ReferenceType.Schema, Id = table } }
-                                }
-                            }
-                        },
-                        Responses = new OpenApiResponses
-                        {
-                            //TODO: MAKE CORRECT RESPONSES
-                            ["201"] = new OpenApiResponse { Description = "Created" },
-                            ["400"] = new OpenApiResponse { Description = "Bad Request" }
-                        }
-                    },
-                    [OperationType.Delete] = new OpenApiOperation
-                    {
-                        Summary = $"Delete a record from {table} by ID",
-                        Security = new List<OpenApiSecurityRequirement>
-                        {
-                            new OpenApiSecurityRequirement
-                            {
-                                {
-                                    new OpenApiSecurityScheme { Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "oauth2" } },
-                                    new List<string>()
-                                }
-                            }
-                        },
-                        Parameters = new List<OpenApiParameter>
+            Parameters = new List<OpenApiParameter>
                         {
                             new OpenApiParameter
                             {
@@ -255,16 +302,13 @@ public class DynamicSwaggerFilter : IDocumentFilter
                             },
                             new OpenApiParameter { Name = "primaryKeyColumnName", In = ParameterLocation.Query, Schema = new OpenApiSchema { Type = "string" }, Description = "Primary Key Column Name" }
                         },
-                        Responses = new OpenApiResponses
-                        {
-                            //TODO: MAKE CORRECT RESPONSES
-                            ["204"] = new OpenApiResponse { Description = "No Content" },
-                            ["404"] = new OpenApiResponse { Description = "Not Found" }
-                        }
-                    }
-                }
-            };
-        }
+            Responses = new OpenApiResponses
+            {
+                //TODO: MAKE CORRECT RESPONSES
+                ["204"] = new OpenApiResponse { Description = "No Content" },
+                ["404"] = new OpenApiResponse { Description = "Not Found" }
+            }
+        };
     }
 
     private string MapSqlTypeToOpenApiType(string sqlType)
