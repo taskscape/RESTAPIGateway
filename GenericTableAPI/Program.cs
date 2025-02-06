@@ -61,6 +61,7 @@ namespace GenericTableAPI
                     Type = SecuritySchemeType.ApiKey
                 });
 
+                options.DocumentFilter<DynamicSwaggerFilter>();
                 options.OperationFilter<SecurityRequirementsOperationFilter>();
                 options.SwaggerDoc("v1",
                     new OpenApiInfo
