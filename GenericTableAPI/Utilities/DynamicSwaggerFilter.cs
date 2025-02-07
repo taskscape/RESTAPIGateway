@@ -1,83 +1,80 @@
-﻿using Dapper;
-using GenericTableAPI.Utilities;
-using Microsoft.Data.SqlClient;
+﻿using GenericTableAPI.Utilities;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 public class DynamicSwaggerFilter : IDocumentFilter
 {
     private readonly IConfiguration _configuration;
+    private readonly ILogger<DynamicSwaggerFilter> _logger;
 
-    public DynamicSwaggerFilter(IConfiguration configuration)
+    public DynamicSwaggerFilter(IConfiguration configuration, ILogger<DynamicSwaggerFilter> logger)
     {
         _configuration = configuration;
+        _logger = logger;
     }
 
     public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
     {
-        var connectionString = _configuration.GetConnectionString("DefaultConnection");
-        using var dbConnection = new SqlConnection(connectionString);
-
-        //TODO: ADD FILTRATION BASED ON AUTHORIZATION
-
-        //TODO: GET THE RESPONSES RIGHT (EVERY POSSIBLE RESPONSE CODE ETC.)
-
-        //TODO: TEST IF IT WORKS FOR ORACLE DB
-
-        var tables = dbConnection.Query<string>("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'");
-
-        foreach (var table in tables)
+        try
         {
-            var columns = dbConnection.Query<(string COLUMN_NAME, string DATA_TYPE)>(
-                "SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = @TableName",
-                new { TableName = table }
-            );
+            var connection = new DatabaseHandler(_configuration.GetConnectionString("DefaultConnection"));
+            var tables = connection.GetTableNames();
 
-            var schema = new OpenApiSchema
+            foreach (var table in tables)
             {
-                Type = "object",
-                Properties = columns.ToDictionary(
-                    col => col.COLUMN_NAME,
-                    col => new OpenApiSchema { Type = MapSqlTypeToOpenApiType(col.DATA_TYPE) }
-                )
-            };
+                var columns = connection.GetSchemaForTable(table);
 
-            context.SchemaGenerator.GenerateSchema(typeof(Dictionary<string, object>), context.SchemaRepository);
-            context.SchemaRepository.Schemas[table] = schema;
+                var schema = new OpenApiSchema
+                {
+                    Type = "object",
+                    Properties = columns.ToDictionary(
+                        col => col.COLUMN_NAME,
+                        col => new OpenApiSchema { Type = MapSqlTypeToOpenApiType(col.DATA_TYPE) }
+                    )
+                };
 
-            var Operations = new Dictionary<OperationType, OpenApiOperation>();
-            var OperationsId = new Dictionary<OperationType, OpenApiOperation>();
+                context.SchemaGenerator.GenerateSchema(typeof(Dictionary<string, object>), context.SchemaRepository);
+                context.SchemaRepository.Schemas[table] = schema;
 
-            //Check if given table exist in tablesettings.json and if given table has "*" permission
-            if (TableValidationUtility.ValidTablePermission(_configuration, table, "select"))
-            {
-                Operations.Add(OperationType.Get, GetAllOperation(table));
-                OperationsId.Add(OperationType.Get, GetByIdOperation(table));
+                var Operations = new Dictionary<OperationType, OpenApiOperation>();
+                var OperationsId = new Dictionary<OperationType, OpenApiOperation>();
+
+                //Check if given table exist in tablesettings.json and if given table has "*" permission
+                if (TableValidationUtility.ValidTablePermission(_configuration, table, "select"))
+                {
+                    Operations.Add(OperationType.Get, GetAllOperation(table));
+                    OperationsId.Add(OperationType.Get, GetByIdOperation(table));
+                }
+                if (TableValidationUtility.ValidTablePermission(_configuration, table, "update"))
+                {
+                    OperationsId.Add(OperationType.Put, PutOperation(table));
+                    OperationsId.Add(OperationType.Patch, PatchOperation(table));
+                }
+                if (TableValidationUtility.ValidTablePermission(_configuration, table, "insert"))
+                {
+                    Operations.Add(OperationType.Post, PostOperation(table));
+                }
+                if (TableValidationUtility.ValidTablePermission(_configuration, table, "delete"))
+                {
+                    OperationsId.Add(OperationType.Delete, DeleteOperation(table));
+                }
+
+                swaggerDoc.Paths[$"/api/tables/{table}"] = new OpenApiPathItem
+                {
+                    Operations = Operations
+                };
+
+                swaggerDoc.Paths[$"/api/tables/{table}/{{id}}"] = new OpenApiPathItem
+                {
+                    Operations = OperationsId
+                };
             }
-            if (TableValidationUtility.ValidTablePermission(_configuration, table, "update"))
-            {
-                OperationsId.Add(OperationType.Put, PutOperation(table));
-                OperationsId.Add(OperationType.Patch, PatchOperation(table));
-            }
-            if (TableValidationUtility.ValidTablePermission(_configuration, table, "insert"))
-            {
-                Operations.Add(OperationType.Post, PostOperation(table));
-            }
-            if (TableValidationUtility.ValidTablePermission(_configuration, table, "delete"))
-            {
-                OperationsId.Add(OperationType.Delete, DeleteOperation(table));
-            }
-
-            swaggerDoc.Paths[$"/api/tables/{table}"] = new OpenApiPathItem
-            {
-                Operations = Operations
-            };
-
-            swaggerDoc.Paths[$"/api/tables/{table}/{{id}}"] = new OpenApiPathItem
-            {
-                Operations = OperationsId
-            };
         }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, ex.Message);
+        }
+        
     }
 
     private OpenApiOperation GetAllOperation(string table)
@@ -117,7 +114,8 @@ public class DynamicSwaggerFilter : IDocumentFilter
                             }
                         }
                     }
-                }
+                },
+                ["404"] = new OpenApiResponse { Description = "Not Found" }
             }
         };
     }
@@ -126,7 +124,7 @@ public class DynamicSwaggerFilter : IDocumentFilter
     {
         return new OpenApiOperation
         {
-            Summary = $"Insert a new record into {table}",
+            Summary = $"Get record from {table} by ID",
             Security = new List<OpenApiSecurityRequirement>
                         {
                             new OpenApiSecurityRequirement
@@ -188,9 +186,17 @@ public class DynamicSwaggerFilter : IDocumentFilter
             },
             Responses = new OpenApiResponses
             {
-                //TODO: MAKE CORRECT RESPONSES
-                ["201"] = new OpenApiResponse { Description = "Created" },
-                ["400"] = new OpenApiResponse { Description = "Bad Request" }
+                ["201"] = new OpenApiResponse
+                {
+                    Description = "Created",
+                    Content = new Dictionary<string, OpenApiMediaType>
+                    {
+                        ["application/json"] = new OpenApiMediaType
+                        {
+                            Schema = new OpenApiSchema { Reference = new OpenApiReference { Type = ReferenceType.Schema, Id = table } }
+                        }
+                    }
+                }
             }
         };
     }
@@ -199,7 +205,7 @@ public class DynamicSwaggerFilter : IDocumentFilter
     {
         return new OpenApiOperation
         {
-            Summary = $"Insert a new record into {table}",
+            Summary = $"Update a record from {table} by ID",
             Security = new List<OpenApiSecurityRequirement>
                         {
                             new OpenApiSecurityRequirement
@@ -228,9 +234,18 @@ public class DynamicSwaggerFilter : IDocumentFilter
             },
             Responses = new OpenApiResponses
             {
-                //TODO: MAKE CORRECT RESPONSES
-                ["201"] = new OpenApiResponse { Description = "Created" },
-                ["400"] = new OpenApiResponse { Description = "Bad Request" }
+                ["200"] = new OpenApiResponse
+                {
+                    Description = "Success",
+                    Content = new Dictionary<string, OpenApiMediaType>
+                    {
+                        ["application/json"] = new OpenApiMediaType
+                        {
+                            Schema = new OpenApiSchema { Reference = new OpenApiReference { Type = ReferenceType.Schema, Id = table } }
+                        }
+                    }
+                },
+                ["404"] = new OpenApiResponse { Description = "Not Found" }
             }
         };
     }
@@ -239,7 +254,7 @@ public class DynamicSwaggerFilter : IDocumentFilter
     {
         return new OpenApiOperation
         {
-            Summary = $"Insert a new record into {table}",
+            Summary = $"Update a record from {table} by ID",
             Security = new List<OpenApiSecurityRequirement>
                         {
                             new OpenApiSecurityRequirement
@@ -268,9 +283,18 @@ public class DynamicSwaggerFilter : IDocumentFilter
             },
             Responses = new OpenApiResponses
             {
-                //TODO: MAKE CORRECT RESPONSES
-                ["201"] = new OpenApiResponse { Description = "Created" },
-                ["400"] = new OpenApiResponse { Description = "Bad Request" }
+                ["200"] = new OpenApiResponse
+                {
+                    Description = "Success",
+                    Content = new Dictionary<string, OpenApiMediaType>
+                    {
+                        ["application/json"] = new OpenApiMediaType
+                        {
+                            Schema = new OpenApiSchema { Reference = new OpenApiReference { Type = ReferenceType.Schema, Id = table } }
+                        }
+                    }
+                },
+                ["404"] = new OpenApiResponse { Description = "Not Found" }
             }
         };
     }
@@ -304,16 +328,14 @@ public class DynamicSwaggerFilter : IDocumentFilter
                         },
             Responses = new OpenApiResponses
             {
-                //TODO: MAKE CORRECT RESPONSES
-                ["204"] = new OpenApiResponse { Description = "No Content" },
-                ["404"] = new OpenApiResponse { Description = "Not Found" }
+                ["200"] = new OpenApiResponse { Description = "Success" },
             }
         };
     }
 
     private string MapSqlTypeToOpenApiType(string sqlType)
     {
-        return sqlType switch
+        return sqlType.ToLower() switch
         {
             "int" => "integer",
             "bigint" => "integer",
@@ -328,6 +350,7 @@ public class DynamicSwaggerFilter : IDocumentFilter
             "decimal" => "number",
             "float" => "number",
             "real" => "number",
+            "number" => "number",
             _ => "string"
         };
     }
