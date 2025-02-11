@@ -3,6 +3,7 @@ using Oracle.ManagedDataAccess.Client;
 using static GenericTableAPI.Utilities.DatabaseUtilities;
 using System.Data.Common;
 using System.Data;
+using Dapper;
 
 namespace GenericTableAPI.Utilities;
 
@@ -51,6 +52,29 @@ public class DatabaseHandler : IDisposable
             return OracleExecuteInsertAsync(query);
         else
             return ExecuteScalarAsync(query);
+    }
+
+    public IEnumerable<string> GetTableNames()
+    {
+        if (_connection is OracleConnection)
+            return _connection.Query<string>("SELECT TABLE_NAME FROM USER_TABLES WHERE TABLE_NAME NOT LIKE 'MVIEW$%' AND TABLE_NAME NOT LIKE 'AQ$%' AND TABLE_NAME NOT LIKE 'OL$%' AND TABLE_NAME NOT IN ('SQLPLUS_PRODUCT_PROFILE', 'HELP', 'REDO_DB', 'REDO_LOG', 'SCHEDULER_PROGRAM_ARGS_TBL', 'SCHEDULER_JOB_ARGS_TBL')");
+        else
+            return _connection.Query<string>("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'");
+
+    }
+
+    public IEnumerable<(string COLUMN_NAME, string DATA_TYPE)> GetSchemaForTable(string table)
+    {
+        if (_connection is OracleConnection)
+            return _connection.Query<(string COLUMN_NAME, string DATA_TYPE)>(
+                    "SELECT COLUMN_NAME, DATA_TYPE FROM ALL_TAB_COLUMNS WHERE TABLE_NAME = :TableName",
+                    new { TableName = table.ToUpper() } // Oracle stores object names in uppercase by default
+                );
+        else
+            return _connection.Query<(string COLUMN_NAME, string DATA_TYPE)>(
+                    "SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = @TableName",
+                    new { TableName = table }
+                );
     }
 
     private Task<object?> OracleExecuteInsertAsync(string query)
