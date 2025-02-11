@@ -1,50 +1,53 @@
-﻿using System.Net;
-using System.Text;
+﻿using Microsoft.AspNetCore.Authentication;
 
 public class SwaggerAuthenticationMiddleware
 {
-    private readonly RequestDelegate next;
-    private readonly IConfiguration config;
+    private readonly RequestDelegate _next;
+    public IAuthenticationSchemeProvider Schemes { get; set; }
 
-    public SwaggerAuthenticationMiddleware(RequestDelegate next, IConfiguration config)
+    public SwaggerAuthenticationMiddleware(RequestDelegate next, IAuthenticationSchemeProvider schemes)
     {
-        this.next = next;
-        this.config = config;
+        _next = next ?? throw new ArgumentNullException(nameof(next));
+        Schemes = schemes ?? throw new ArgumentNullException(nameof(schemes));
     }
 
     public async Task InvokeAsync(HttpContext context)
     {
         if (context.Request.Path.StartsWithSegments("/swagger"))
         {
-            string authHeader = context.Request.Headers["Authorization"];
-            if (authHeader != null && context.User.Identity != null && !context.User.Identity.IsAuthenticated)
+            context.Features.Set<IAuthenticationFeature>(new AuthenticationFeature
             {
-                await next.Invoke(context);
-                return;
+                OriginalPath = context.Request.Path,
+                OriginalPathBase = context.Request.PathBase
+            });
+
+            var handlers = context.RequestServices.GetRequiredService<IAuthenticationHandlerProvider>();
+            foreach (var scheme in await Schemes.GetRequestHandlerSchemesAsync())
+            {
+                var handler = await handlers.GetHandlerAsync(context, scheme.Name) as IAuthenticationRequestHandler;
+                if (handler != null && await handler.HandleRequestAsync())
+                {
+                    return;
+                }
             }
 
-            context.Response.Headers["WWW-Authenticate"] = "Basic";
-
-            context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+            var defaultAuthenticate = await Schemes.GetDefaultAuthenticateSchemeAsync();
+            if (defaultAuthenticate != null)
+            {
+                var result = await context.AuthenticateAsync(defaultAuthenticate.Name);
+                if (result?.Principal != null)
+                {
+                    context.User = result.Principal;
+                }
+                else
+                {
+                    context.Response.Headers["WWW-Authenticate"] = "Basic";
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    return;
+                }
+            }
         }
-        else
-        {
-            await next.Invoke(context);
-        }
-    }
 
-    private bool IsLocalRequest(HttpContext context)
-    {
-        if (context.Request.Host.Value.StartsWith("localhost:"))
-            return true;
-
-        //Handle running using the Microsoft.AspNetCore.TestHost and the site being run entirely locally in memory without an actual TCP/IP connection
-        if (context.Connection.RemoteIpAddress == null && context.Connection.LocalIpAddress == null)
-            return true;
-
-        if (context.Connection.RemoteIpAddress != null && context.Connection.RemoteIpAddress.Equals(context.Connection.LocalIpAddress))
-            return true;
-
-        return IPAddress.IsLoopback(context.Connection.RemoteIpAddress);
+        await _next(context);
     }
 }
