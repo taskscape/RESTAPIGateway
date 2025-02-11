@@ -138,7 +138,8 @@ namespace GenericTableAPI
 
             if (bool.Parse(builder.Configuration["EnableSwagger"] ?? "false"))
             {
-                app.UseMiddleware<SwaggerAuthenticationMiddleware>();
+                if (bool.Parse(builder.Configuration["BasicAuthForSwagger"] ?? "false"))
+                    app.UseMiddleware<SwaggerAuthenticationMiddleware>();
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
