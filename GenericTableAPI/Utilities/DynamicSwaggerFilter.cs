@@ -6,15 +6,22 @@ public class DynamicSwaggerFilter : IDocumentFilter
 {
     private readonly IConfiguration _configuration;
     private readonly ILogger<DynamicSwaggerFilter> _logger;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public DynamicSwaggerFilter(IConfiguration configuration, ILogger<DynamicSwaggerFilter> logger)
+    public DynamicSwaggerFilter(IConfiguration configuration, ILogger<DynamicSwaggerFilter> logger, IHttpContextAccessor httpContextAccessor)
     {
         _configuration = configuration;
         _logger = logger;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
     {
+        var user = _httpContextAccessor.HttpContext?.User;
+        if (user == null)
+        {
+            return; // Do not generate Swagger docs if the user is not authenticated
+        }
         try
         {
             var connection = new DatabaseHandler(_configuration.GetConnectionString("DefaultConnection"));
@@ -40,21 +47,21 @@ public class DynamicSwaggerFilter : IDocumentFilter
                 var OperationsId = new Dictionary<OperationType, OpenApiOperation>();
 
                 //Check if given table exist in tablesettings.json and if given table has "*" permission
-                if (TableValidationUtility.ValidTablePermission(_configuration, table, "select"))
+                if (TableValidationUtility.ValidTablePermission(_configuration, table, "select", user))
                 {
                     Operations.Add(OperationType.Get, GetAllOperation(table));
                     OperationsId.Add(OperationType.Get, GetByIdOperation(table));
                 }
-                if (TableValidationUtility.ValidTablePermission(_configuration, table, "update"))
+                if (TableValidationUtility.ValidTablePermission(_configuration, table, "update", user))
                 {
                     OperationsId.Add(OperationType.Put, PutOperation(table));
                     OperationsId.Add(OperationType.Patch, PatchOperation(table));
                 }
-                if (TableValidationUtility.ValidTablePermission(_configuration, table, "insert"))
+                if (TableValidationUtility.ValidTablePermission(_configuration, table, "insert", user))
                 {
                     Operations.Add(OperationType.Post, PostOperation(table));
                 }
-                if (TableValidationUtility.ValidTablePermission(_configuration, table, "delete"))
+                if (TableValidationUtility.ValidTablePermission(_configuration, table, "delete", user))
                 {
                     OperationsId.Add(OperationType.Delete, DeleteOperation(table));
                 }

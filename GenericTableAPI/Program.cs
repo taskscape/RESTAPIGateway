@@ -48,6 +48,7 @@ namespace GenericTableAPI
             builder.Services.AddSingleton(new DapperRepository(builder.Configuration.GetConnectionString("DefaultConnection"), builder.Configuration.GetValue<string>("SchemaName"), Log.Logger));
             builder.Services.AddScoped<DatabaseService>();
             builder.Services.AddHttpClient();
+            builder.Services.AddHttpContextAccessor();
 
             builder.Services.AddScoped<CompositeService>();
 
@@ -132,8 +133,13 @@ namespace GenericTableAPI
             
             app.UseRouting();
 
-            if(bool.Parse(builder.Configuration["EnableSwagger"] ?? "false"))
+            app.UseAuthentication();
+            app.UseAuthorization();
+
+            if (bool.Parse(builder.Configuration["EnableSwagger"] ?? "false"))
             {
+                if (bool.Parse(builder.Configuration["BasicAuthForSwagger"] ?? "false"))
+                    app.UseMiddleware<SwaggerAuthenticationMiddleware>();
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
@@ -158,8 +164,7 @@ namespace GenericTableAPI
 
             app.UseHttpsRedirection();
             
-            app.UseAuthentication();
-            app.UseAuthorization();
+            
             
             // prioritize controllers in the following order
 

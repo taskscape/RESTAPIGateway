@@ -76,6 +76,24 @@ The service can be used by querying configured endpoints by providing database t
 
 - The only allowed types are `string`, `int`, `float` and `null`. For type `null`, `value` is not taken into account. For a parameterless procedure, leave empty brackets `[]`.
 
+### Swagger UI  
+
+Swagger UI is an interactive API documentation tool that allows developers to explore and test API endpoints directly from a web interface. It provides a user-friendly way to visualize API requests, responses, and schemas.  
+
+**Default Endpoint:**  
+The Swagger UI is accessible at:  
+
+```
+/swagger
+```
+
+**Authentication & Access Control**
+
+If authentication is required (see the **Configuration** section), Swagger UI will display API endpoints and tables that the authenticated user has permission to access.  
+
+- **Authenticated Users:** Only see tables they are authorized to view.  
+- **Anonymous Users:** If anonymous access is allowed, tables with `"*"` (public) permissions will be displayed.  
+
 ## Composition
 
 The service can be used to specify more complex composition requests that allow calling inner API methods in a sequential manner that allows accessing  return values using JSON Path and use as parameters for calling subsequent API methods. In this usage scenario user may want to perform multiple operations on multiple tables in a single API call.
@@ -357,6 +375,18 @@ In this section, you can enable Swagger by setting the following option:
 ```
 
 **Note**: For production environments, it is recommended to disable Swagger to enhance security.
+
+### Enabling Basic Authentication for Swagger  
+
+You can enable Basic Authentication for the Swagger UI by setting the following option in your configuration:  
+
+```json
+"BasicAuthForSwagger": true
+```
+
+When enabled (`true`), users must enter a valid username and password before accessing the Swagger UI. Only the credentials specified in `BasicAuthSettings` (see the **Authentication** section below) will be accepted.  
+
+**Default Setting:** This option is disabled by default (`false`).
 
 ### Enable Exception Page
 
