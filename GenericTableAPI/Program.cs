@@ -9,7 +9,7 @@ using Swashbuckle.AspNetCore.Filters;
 using Serilog;
 using Microsoft.AspNetCore.Server.IISIntegration;
 using Microsoft.AspNetCore.Authorization;
-using GenericTableAPI.Utilities;
+using GenericTableAPI.Extensions;
 
 namespace GenericTableAPI
 {
@@ -132,7 +132,7 @@ namespace GenericTableAPI
 
             builder.Services.AddMemoryCache();
             if(int.TryParse(builder.Configuration["CacheDurationSeconds"] ?? "0", out int cacheDuration))
-                MemoryCacheHandler.CacheDurationSeconds = cacheDuration;
+                MemoryCacheExtension.CacheDurationSeconds = cacheDuration;
 
             WebApplication app = builder.Build();
             
