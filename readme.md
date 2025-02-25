@@ -376,6 +376,42 @@ This section allows you to configure how long cached data should remain in memor
 
 The configured duration determines how long objects stored in memory will persist before being removed automatically. If set to 0 or a negative value, caching is disabled.
 
+### Rate Limiting
+
+This section allows you to configure rate limiting.
+
+#### Configuration Structure
+Modify your configuration file to enable and customize rate limiting:
+
+```json
+  "RateLimiting": {
+    "Type": "FixedWindow", // Options: FixedWindow, SlidingWindow, TokenBucket, Concurrency, null (to disable rate limiting)
+    "Mode": "PerUser", // Options: PerIP, PerUser. Default: PerIP
+    "PermitLimit": 3,
+    "WindowSeconds": 30,
+    "SegmentsPerWindow": 2,
+    "QueueLimit": 2,
+    "TokensPerPeriod": 1,
+    "ReplenishmentPeriodSeconds": 5
+  }
+```
+
+#### Explanation of Parameters
+| Parameter                   | Description |
+|-----------------------------|-------------|
+| `Type`                      | The type of rate limiting to use. Options include `FixedWindow`, `SlidingWindow`, `TokenBucket`, `Concurrency`. Set to `null` to disable rate limiting. |
+| `Mode`                      | Determines if rate limiting is based on IP (`PerIP`) or User (`PerUser`). Default is `PerIP`. |
+| `PermitLimit`               | The maximum number of requests allowed within the rate limit window. Required for all strategies. |
+| `WindowSeconds`             | The duration of the rate limit window in seconds (used in `FixedWindow` and `SlidingWindow` strategies). |
+| `SegmentsPerWindow`         | Number of segments within a window for `SlidingWindow` strategy to allow smoother rate limiting. |
+| `QueueLimit`                | Maximum number of requests that can be queued before rejection (used in `TokenBucket` and `Concurrency` strategies). |
+| `TokensPerPeriod`           | Number of tokens refilled per period in the `TokenBucket` strategy. |
+| `ReplenishmentPeriodSeconds`| The time interval (in seconds) to replenish tokens in the `TokenBucket` strategy. |
+
+By configuring these settings in `appsettings.json`, you can fully control the rate-limiting behavior of your .NET 8 application.
+
+
+
 ### Enable Swagger
 
 In this section, you can enable Swagger by setting the following option:

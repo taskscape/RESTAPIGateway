@@ -134,6 +134,8 @@ namespace GenericTableAPI
             if(int.TryParse(builder.Configuration["CacheDurationSeconds"] ?? "0", out int cacheDuration))
                 MemoryCacheExtension.CacheDurationSeconds = cacheDuration;
 
+            builder.Services.AddRateLimit(builder.Configuration.GetSection("RateLimiting"));
+
             WebApplication app = builder.Build();
             
             app.UseRouting();
@@ -168,9 +170,14 @@ namespace GenericTableAPI
             }
 
             app.UseHttpsRedirection();
-            
-            
-            
+
+            if (!string.IsNullOrEmpty(builder.Configuration["RateLimiting:Type"]))
+            {
+                Log.Logger.Information("Rate Limiter enabled! Current Rate Limiter Type: {RateLimitingType}", builder.Configuration["RateLimiting:Type"]);
+                app.UseRateLimiter(); // Apply rate limiting middleware
+            }
+                
+
             // prioritize controllers in the following order
 
             app.UseEndpoints(endpoints =>
