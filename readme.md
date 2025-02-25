@@ -366,6 +366,16 @@ Alternatively the connection parameter can be adjusted to support Oracle databas
 
 You need to substitute tokens denoted by square brackets with actual values (without square brackets). In case of doubts, please follow the official instructions for alternative connection string syntax, if needed.
 
+### Cache Duration Seconds
+
+This section allows you to configure how long cached data should remain in memory before expiring. This setting is useful for optimizing performance and reducing unnecessary database or API calls.
+
+```text
+  "CacheDurationSeconds": [Cache_duration_in_seconds],
+```
+
+The configured duration determines how long objects stored in memory will persist before being removed automatically. If set to 0 or a negative value, caching is disabled.
+
 ### Enable Swagger
 
 In this section, you can enable Swagger by setting the following option:

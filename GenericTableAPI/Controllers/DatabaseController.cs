@@ -3,9 +3,8 @@ using GenericTableAPI.Services;
 using GenericTableAPI.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Caching.Memory;
 using Newtonsoft.Json;
-using System.Security.Principal;
 
 namespace GenericTableAPI.Controllers
 {
@@ -17,12 +16,14 @@ namespace GenericTableAPI.Controllers
         private readonly DatabaseService _service;
         private readonly ILogger<DatabaseController> _logger;
         private readonly IConfiguration _configuration;
+        private readonly IMemoryCache _cache;
 
-        public DatabaseController(DatabaseService service, ILogger<DatabaseController> logger, IConfiguration configuration)
+        public DatabaseController(DatabaseService service, ILogger<DatabaseController> logger, IConfiguration configuration, IMemoryCache memoryCache)
         {
             _service = service;
             _logger = logger;
             _configuration = configuration;
+            _cache = memoryCache;
         }
 
         [Route("tables/{tableName}")]
@@ -39,11 +40,23 @@ namespace GenericTableAPI.Controllers
                 _logger.LogWarning("User {UserName} attempted to access table {TableName} with GET-all and without permission. Timestamp: {TimeStamp}", User.Identity?.Name ?? "unknown", tableName, timestamp);
                 return Forbid();
             }
+
+            if(_cache.TryGetCache($"{tableName}-GetAll-{where}-{orderBy}-{limit}", out object? cacheResponse))
+            {
+                _logger.LogInformation("Getting all entities from {TableName} from cache. Timestamp: {TimeStamp}", tableName, timestamp);
+                if (cacheResponse == null)
+                    return responseObj = NotFound();
+                if(cacheResponse is IEnumerable<dynamic> enumerable && !enumerable.Any())
+                    return responseObj = NoContent();
+                return responseObj = Ok(cacheResponse);
+            }
         
             try
             {
                 _logger.LogInformation("Getting all entities from {TableName}. Timestamp: {TimeStamp}", tableName, timestamp);
                 IEnumerable<dynamic>? entities = await _service.GetAllAsync(tableName, where, orderBy, limit).ConfigureAwait(false);
+
+                _cache.SetCache($"{tableName}-GetAll-{where}-{orderBy}-{limit}", entities);
 
                 if (entities == null)
                 {
@@ -86,12 +99,24 @@ namespace GenericTableAPI.Controllers
                 _logger.LogWarning("User {UserName} attempted to access table {TableName} with GET-ID command and without permission. Timestamp: {TimeStamp}", User.Identity?.Name ?? "unknown", tableName, timestamp);
                 return Forbid();
             }
-        
+
+            if (_cache.TryGetCache($"{tableName}-GetById-{id}-{primaryKeyColumnName}", out object? cacheResponse))
+            {
+                _logger.LogInformation("Getting entity with from table: {TableName} using identifier: {ID} from cache. Timestamp: {TimeStamp}", tableName, id, timestamp);
+                if (cacheResponse == null)
+                    return responseObj = NotFound();
+                if (cacheResponse is IEnumerable<dynamic> enumerable && !enumerable.Any())
+                    return responseObj = NoContent();
+                return responseObj = Ok(cacheResponse);
+            }
+
             _logger.LogInformation("Getting entity with from table: {TableName} using identifier: {ID}. Timestamp: {TimeStamp}", tableName, id, timestamp);
         
             try
             {
                 dynamic? entity = await _service.GetByIdAsync(tableName, id, primaryKeyColumnName).ConfigureAwait(false);
+                _cache.SetCache($"{tableName}-GetById-{id}-{primaryKeyColumnName}", (object?)entity);
+
                 if (entity == null)
                 {
                     _logger.LogInformation("No entity found with identifier={ID} in {TableName}. Request: {requestInfo}", id, tableName, requestInfo);
@@ -128,7 +153,7 @@ namespace GenericTableAPI.Controllers
                 _logger.LogWarning("User {UserName} attempted to access table {TableName} with POST command and without permission. Timestamp: {TimeStamp}", User.Identity?.Name ?? "unknown", tableName, timestamp);
                 return Forbid();
             }
-        
+
             _logger.LogInformation("Adding a new entity to table: {TableName} using values: {Values}. Timestamp: {TimeStamp}", tableName, JsonConvert.SerializeObject(valuesDict), timestamp);
         
             try
