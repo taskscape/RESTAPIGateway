@@ -366,6 +366,22 @@ Alternatively the connection parameter can be adjusted to support Oracle databas
 
 You need to substitute tokens denoted by square brackets with actual values (without square brackets). In case of doubts, please follow the official instructions for alternative connection string syntax, if needed.
 
+### Retry Policy
+
+In this section, you can configure the Retry Policy
+
+```text
+  "RetryPolicy": {
+        "RetryCount": 3,
+        "WaitDurationSeconds": 5
+    },
+```
+
+- `RetryCount` - Number of retry attempts.
+- `WaitDurationSeconds` - Wait time (in seconds) between retries.
+
+To disable the **Retry Policy**: Remove the *RetryPolicy section* or Set `"RetryCount": 0`.
+
 ### Enable Swagger
 
 In this section, you can enable Swagger by setting the following option:
