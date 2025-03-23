@@ -145,15 +145,9 @@ namespace GenericTableAPI.Services
         public static string GetByIdQuery(string tableName, string? schemaName, [FromRoute] string id, string? primaryKeyColumn = null)
         {
             ValidateTableName(tableName);
-            if (string.IsNullOrEmpty(id) || !TableNameRegex.IsMatch(id))
-            {
-                throw new ArgumentException(InvalidTableNameMessage);
-            }
-
             tableName = GetTableName(tableName, schemaName);
-            string sql = $"SELECT * FROM {tableName} WHERE {primaryKeyColumn} = '{id}'";
 
-            return sql;
+            return $"SELECT * FROM {tableName} WHERE {primaryKeyColumn} = @Id";
         }
 
         /// <summary>
@@ -382,5 +376,24 @@ namespace GenericTableAPI.Services
         private static partial Regex WhereClauseRegexInit();
         [GeneratedRegex(@"^\w+(\s+(ASC|DESC))?$", RegexOptions.Compiled)]
         private static partial Regex OrderByClauseRegexInit();
+
+        /// <summary>
+        /// Constructs a SQL INSERT query to add multiple records to a table.
+        /// </summary>
+        /// <param name="tableName">The name of the table.</param>
+        /// <param name="schemaName">The name of the schema (optional).</param>
+        /// <param name="valuesList">A list of dictionaries containing column names and their corresponding values.</param>
+        /// <returns>The SQL INSERT query.</returns>
+        public static string AddBatchQuery(string tableName, string? schemaName, IEnumerable<IDictionary<string, object?>> valuesList)
+        {
+            ValidateTableName(tableName);
+            tableName = GetTableName(tableName, schemaName);
+
+            var columns = valuesList.First().Keys;
+            var valuesSql = string.Join(",", valuesList.Select(v =>
+                $"({string.Join(",", columns.Select(c => "@" + c))})"));
+
+            return $"INSERT INTO {tableName} ({string.Join(",", columns)}) VALUES {valuesSql}";
+        }
     }
 }
