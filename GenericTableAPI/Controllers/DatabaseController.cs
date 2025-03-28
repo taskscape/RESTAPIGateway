@@ -29,7 +29,7 @@ namespace GenericTableAPI.Controllers
 
         [Route("tables/{tableName}")]
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<dynamic>>> GetAll(string tableName, string? where = null, string? orderBy = null, int? limit = null)
+        public async Task<ActionResult<IEnumerable<dynamic>>> GetAll(string tableName, string? where = null, string? orderBy = null, int? limit = null, int? offset = null)
         {
             DateTimeOffset timestamp = DateTimeOffset.UtcNow;
             string requestInfo = $"GET request to \"{HttpContext.Request.Path}{HttpContext.Request.QueryString}\" from \"{HttpContext.Connection.RemoteIpAddress}\" by user \"{User.Identity?.Name ?? "unknown"}\". Timestamp: {timestamp}";
@@ -42,7 +42,7 @@ namespace GenericTableAPI.Controllers
                 return Forbid();
             }
 
-            if(_cache.TryGetCache($"{tableName}-GetAll-{where}-{orderBy}-{limit}", out object? cacheResponse))
+            if(_cache.TryGetCache($"{tableName}-GetAll-{where}-{orderBy}-{limit}-{offset}", out object? cacheResponse))
             {
                 _logger.LogInformation("Getting all entities from {TableName} from cache. Timestamp: {TimeStamp}", tableName, timestamp);
                 if (cacheResponse == null)
@@ -55,9 +55,9 @@ namespace GenericTableAPI.Controllers
             try
             {
                 _logger.LogInformation("Getting all entities from {TableName}. Timestamp: {TimeStamp}", tableName, timestamp);
-                IEnumerable<dynamic>? entities = await _service.GetAllAsync(tableName, where, orderBy, limit).ConfigureAwait(false);
+                IEnumerable<dynamic>? entities = await _service.GetAllAsync(tableName, where, orderBy, limit, offset).ConfigureAwait(false);
 
-                _cache.SetCache($"{tableName}-GetAll-{where}-{orderBy}-{limit}", entities);
+                _cache.SetCache($"{tableName}-GetAll-{where}-{orderBy}-{limit}-{offset}", entities);
 
                 if (entities == null)
                 {

@@ -95,6 +95,38 @@ public class IntegrationTests : BaseTestClass
         // Assert
         Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
     }
+
+    [TestMethod]
+    public void Test_GetOffset_ReturnsSuccess()
+    {
+        // Arrange             ORDER BY ID  LIMIT=10 OFFSET = 0 (Default)
+        RestRequest request = new("/api/tables/test?orderBy=ID&limit=2");
+        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(Client, request);
+        // Act
+        RestResponse response = Client.Execute(request);
+        // Assert
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+        // Deserialize response content
+        var responseData = JsonConvert.DeserializeObject<List<TestTableItem>>(response.Content);
+        Assert.IsNotNull(responseData, "Response data should not be null.");
+        Assert.IsTrue(responseData.Count > 0, "Response should contain at least one item.");
+        Assert.IsTrue(responseData.Count <= 2, "Response should contain less or equal than 2 items (Limit error).");
+        int lastId = responseData.Last().Id;
+
+        // Arrange                              ORDER BY ID  LIMIT=10 OFFSET = 1
+        request = new("/api/tables/test?orderBy=ID&limit=2&offset=1");
+        new HttpBasicAuthenticator(BasicAuthUsername, BasicAuthPassword).Authenticate(Client, request);
+        // Act
+        response = Client.Execute(request);
+        // Assert
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+        // Deserialize response content
+        responseData = JsonConvert.DeserializeObject<List<TestTableItem>>(response.Content);
+        Assert.IsNotNull(responseData, "Response data should not be null.");
+        Assert.IsTrue(responseData.Count > 0, "Response should contain at least one item.");
+        Assert.IsTrue(responseData.Count <= 2, "Response should contain less or equal than 2 items (Limit error).");
+        Assert.IsTrue(lastId == responseData.First().Id, "The last item from request1 does not match the first item of the request2 (Offset error)");
+    }
     [TestMethod]
     public void Test_GetById_ReturnsSuccess()
     {
@@ -335,4 +367,12 @@ public class IntegrationTests : BaseTestClass
         Assert.AreEqual(HttpStatusCode.InternalServerError, response.StatusCode);
     }
     #endregion
+}
+
+//Class for deserialization
+public class TestTableItem
+{
+    public int Id { get; set; }
+    public string? Fullname { get; set; }
+    public string? Phone { get; set; }
 }

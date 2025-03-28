@@ -25,13 +25,14 @@ public partial class DapperRepository(string? connectionString, string? schemaNa
     /// <param name="where"></param>
     /// <param name="orderBy"></param>
     /// <param name="limit"></param>
+    /// <param name="offset"></param>
     /// <returns>List of objects</returns>
-    public async Task<IEnumerable<dynamic>?> GetAllAsync(string tableName, string? where = null, string? orderBy = null, int? limit = null)
+    public async Task<IEnumerable<dynamic>?> GetAllAsync(string tableName, string? where = null, string? orderBy = null, int? limit = null, int? offset = null)
     {
         using DatabaseHandler connectionHandler = new(connectionString);
         connectionHandler.Open();
 
-        string query = SyntaxService.GetAllQuery(tableName, schemaName, where, orderBy, limit, connectionString);
+        string query = SyntaxService.GetAllQuery(tableName, schemaName, where, orderBy, limit, offset, connectionString);
         try
         {
             logger.Information("Repository.GetAllAsync: executing: " + query);

@@ -4,9 +4,9 @@ namespace GenericTableAPI.Services;
 
 public class DatabaseService(DapperRepository repository)
 {
-    public Task<IEnumerable<dynamic>?> GetAllAsync(string tableName, string? where, string? orderBy, int? limit)
+    public Task<IEnumerable<dynamic>?> GetAllAsync(string tableName, string? where, string? orderBy, int? limit, int? offset)
     {
-        return repository.GetAllAsync(tableName, where, orderBy, limit);
+        return repository.GetAllAsync(tableName, where, orderBy, limit, offset);
     }
 
     public Task<dynamic?> GetByIdAsync(string tableName, string id, string? columnName = "")

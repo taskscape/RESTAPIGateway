@@ -73,13 +73,13 @@ namespace GenericTableAPI.Services
         /// <param name="where">The WHERE clause (optional).</param>
         /// <param name="orderBy">The ORDER BY clause (optional).</param>
         /// <param name="limit">The maximum number of records to retrieve (optional).</param>
+        /// <param name="offset">The number of records to skip before starting to return records (optional).</param>
         /// <param name="connectionString">The connection string.</param>
         /// <returns>The SQL SELECT query.</returns>
         public static string GetAllQuery(string tableName, string? schemaName, string? where = null,
-            string? orderBy = null, int? limit = null, string? connectionString = null)
+            string? orderBy = null, int? limit = null, int? offset = null, string? connectionString = null)
         {
             ValidateTableName(tableName);
-
             ValidateWhereClause(where);
             ValidateOrderByClause(orderBy);
 
@@ -90,17 +90,29 @@ namespace GenericTableAPI.Services
             switch (dbType)
             {
                 case DatabaseType.SqlServer:
-                    if (limit.HasValue)
-                    {
-                        query += $" TOP {limit.Value} ";
-                    }
-
-                    query += $" * FROM {tableName}";
+                    query += " * FROM " + tableName;
                     if (!string.IsNullOrEmpty(where))
                     {
                         query += $" WHERE {where}";
                     }
 
+                    if (!string.IsNullOrEmpty(orderBy))
+                    {
+                        query += $" ORDER BY {orderBy}";
+                    }
+                    else
+                    {
+                        query += " ORDER BY (SELECT NULL)"; // Ensures ORDER BY is present for OFFSET
+                    }
+
+                    if (offset.HasValue || limit.HasValue)
+                    {
+                        query += $" OFFSET {offset.GetValueOrDefault(0)} ROWS";
+                        if (limit.HasValue)
+                        {
+                            query += $" FETCH NEXT {limit.Value} ROWS ONLY";
+                        }
+                    }
                     break;
 
                 case DatabaseType.Oracle:
@@ -108,16 +120,25 @@ namespace GenericTableAPI.Services
                     if (!string.IsNullOrEmpty(where))
                     {
                         query += $" WHERE {where}";
-                        if (limit.HasValue)
-                        {
-                            query += $" AND ROWNUM <= {limit.Value}";
-                        }
-                    }
-                    else if (limit.HasValue)
-                    {
-                        query += $" WHERE ROWNUM <= {limit.Value}";
                     }
 
+                    if (!string.IsNullOrEmpty(orderBy))
+                    {
+                        query += $" ORDER BY {orderBy}";
+                    }
+                    else
+                    {
+                        query += " ORDER BY NULL"; // Ensures ORDER BY is present for OFFSET
+                    }
+
+                    if (offset.HasValue || limit.HasValue)
+                    {
+                        query += $" OFFSET {offset.GetValueOrDefault(0)} ROWS";
+                        if (limit.HasValue)
+                        {
+                            query += $" FETCH NEXT {limit.Value} ROWS ONLY";
+                        }
+                    }
                     break;
 
                 case DatabaseType.Unknown:
@@ -125,14 +146,9 @@ namespace GenericTableAPI.Services
                     throw new NotSupportedException("Unknown database type.");
             }
 
-            if (!string.IsNullOrEmpty(orderBy))
-            {
-                query += $" ORDER BY {orderBy}";
-            }
-
             return query;
-
         }
+
 
         /// <summary>
         /// Constructs a SQL SELECT query to retrieve a record by its primary key.
