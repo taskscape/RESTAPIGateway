@@ -34,7 +34,7 @@ public class DatabaseService(DapperRepository repository)
         return repository.DeleteAsync(tableName, id, columnName);
     }
     
-    public Task<List<object>?> ExecuteAsync(string procedureName, IEnumerable<StoredProcedureParameter?> values)
+    public Task<List<object>?> ExecuteAsync(string procedureName, IEnumerable<StoredProcedureParameter?>? values)
     {
         return repository.ExecuteAsync(procedureName, values);
     }

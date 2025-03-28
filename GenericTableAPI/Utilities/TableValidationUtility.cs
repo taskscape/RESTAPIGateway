@@ -70,5 +70,32 @@ namespace GenericTableAPI.Utilities
 
             return userClaims.ToArray();
         }
+
+        public static bool ValidProcedurePermission(IConfiguration configuration, string procedureName, ClaimsPrincipal user)
+        {
+            if (!configuration.GetSection("Database").Exists()) return false;
+            IConfigurationSection tableSection = configuration.GetSection("Database:Procedures:" + procedureName);
+            if (!tableSection.Exists())
+            {
+                tableSection = configuration.GetSection("Database:Procedures:*");//Check default permission
+                if (!tableSection.Exists())
+                    return false;
+            }
+            List<string>? rolePermissions = tableSection.Get<List<string>>();
+
+            if (rolePermissions?.FirstOrDefault() == "*") return true;
+
+            if (user != null)
+            {
+                string[]? roles = GetUserRoles(user);
+                if (roles?.Length > 0)
+                    return rolePermissions
+                        .Select(x => x.StartsWith("rolename:") || x.StartsWith("username:") ? x : $"rolename:{x}")
+                        .Intersect(roles)
+                        .Any();
+            }
+
+            return false;
+        }
     }
 }

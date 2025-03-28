@@ -336,7 +336,7 @@ public partial class DapperRepository(string? connectionString, string? schemaNa
     /// <param name="values">A collection of parameters to pass to the stored procedure.</param>
     /// <returns>A list of objects representing the rows returned by the stored procedure, or null if an error occurs.</returns>
     /// <exception cref="Exception">Thrown if an error occurs while executing the stored procedure.</exception>
-    public async Task<List<object>?> ExecuteAsync(string procedureName, IEnumerable<StoredProcedureParameter?> values)
+    public async Task<List<object>?> ExecuteAsync(string procedureName, IEnumerable<StoredProcedureParameter?>? values)
     {
         using DatabaseHandler connectionHandler = new(connectionString);
         connectionHandler.Open();

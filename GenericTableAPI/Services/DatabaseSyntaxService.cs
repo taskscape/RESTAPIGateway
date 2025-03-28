@@ -309,40 +309,43 @@ namespace GenericTableAPI.Services
         /// <param name="connectionString">The connection string.</param>
         /// <returns>The SQL query to execute the stored procedure.</returns>
         /// <exception cref="NotSupportedException">Thrown when the database type is not supported.</exception>
-        public static string ExecuteQuery(string procedureName, IEnumerable<StoredProcedureParameter?> values, string? connectionString = null)
+        public static string ExecuteQuery(string procedureName, IEnumerable<StoredProcedureParameter?>? values, string? connectionString = null)
         {
             DatabaseType databaseType = GetDatabaseType(connectionString);
             
             StringBuilder parameters = new();
-            foreach (StoredProcedureParameter? param in values)
+            if(values is not null)
             {
-                string parameterFormat;
-                switch (databaseType)
+                foreach (StoredProcedureParameter? param in values)
                 {
-                    case DatabaseType.SqlServer:
-                        parameterFormat = "@{0} = {1}";
-                        break;
-                    case DatabaseType.Oracle:
-                        parameterFormat = "{1}";
-                        break;
-                    case DatabaseType.Unknown:
-                    default:
-                        throw new NotSupportedException();
+                    string parameterFormat;
+                    switch (databaseType)
+                    {
+                        case DatabaseType.SqlServer:
+                            parameterFormat = "@{0} = {1}";
+                            break;
+                        case DatabaseType.Oracle:
+                            parameterFormat = "{1}";
+                            break;
+                        case DatabaseType.Unknown:
+                        default:
+                            throw new NotSupportedException();
+                    }
+
+                    string parameterValue = param?.Type switch
+                    {
+                        "string" => $"'{param.Value}'",
+                        "int" or "float" => param.Value,
+                        "null" => "null",
+                        _ => throw new NotSupportedException()
+                    };
+                    parameters.AppendFormat(parameterFormat, param.Name, parameterValue).Append(", ");
                 }
 
-                string parameterValue = param?.Type switch
+                if (parameters.Length > 0)
                 {
-                    "string" => $"'{param.Value}'",
-                    "int" or "float" => param.Value,
-                    "null" => "null",
-                    _ => throw new NotSupportedException()
-                };
-                parameters.AppendFormat(parameterFormat, param.Name, parameterValue).Append(", ");
-            }
-
-            if (parameters.Length > 0)
-            {
-                parameters.Length -= 2;
+                    parameters.Length -= 2;
+                }
             }
 
             string sql;

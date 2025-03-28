@@ -557,19 +557,19 @@ Please consult [https://github.com/serilog/serilog-settings-configuration](docum
 
 ### Table Authorization
 
-The `tablesettings.json` file defines permissions for database tables, specifying which actions are allowed for each table and who has access based on user roles and individual users. This setup allows for granular control over data access at the table level.
+The `tablesettings.json` file defines permissions for database tables and stored procedures, specifying which actions are allowed for each table and procedure and who has access based on user roles and individual users. This setup allows for granular control over data access at both the table and procedure levels.
 
 **Note** This file is required to run the service.
 
 #### Structure of `tablesettings.json`
 
-The configuration file is structured under the `Database` key, containing `Tables` section where each table's access settings can be defined in detail.
+The configuration file is structured under the `Database` key, containing `Tables` and `Procedures` sections where access settings can be defined in detail.
 
+### **Tables Section**
 Each table entry supports defining actions: `select`, `insert`, `update`, and `delete`, along with access specifications for each action.
 
-#### **Default Permissions**
-
-The **Default Permissions** can be specified by using `*` (asterisk) instead of a tablename. This will define global permissions that apply to all tables that are **not** explicitly specified in the `Tables` section. Permissions are specified for the actions `select`, `insert`, `update`, and `delete`.
+#### **Default Permissions for Tables**
+The **Default Permissions** can be specified using `*` (asterisk) instead of a table name. This will define global permissions that apply to all tables that are **not** explicitly specified in the `Tables` section. Permissions are specified for the actions `select`, `insert`, `update`, and `delete`.
 
 **Example:**
 
@@ -579,28 +579,27 @@ The **Default Permissions** can be specified by using `*` (asterisk) instead of 
     "Tables": {
       "*": {
         "select": ["*"], // Default: All users can select.
-        "insert": ["rolename:AdminRole"],    // Default: AdminRole can insert.
-        "update": [],    // Default: No update access.
-        "delete": []     // Default: No delete access.
+        "insert": ["rolename:AdminRole"], // Default: AdminRole can insert.
+        "update": [], // Default: No update access.
+        "delete": [] // Default: No delete access.
       }
-      //Every explicitly specified table will NOT use the default permissions
+      // Every explicitly specified table will NOT use the default permissions
     }
   }
 }
 ```
 
-The **Default Permissions** support both **Simple Access** and **Role-Based and User-Based Access**
+The **Default Permissions** support both **Simple Access** and **Role-Based/User-Based Access**.
 
 #### Simple Access
 
-Simple permissions can be assigned by listing the allowed actions as an array. Any authenticated user will have those permissions
+Simple permissions can be assigned by listing the allowed actions as an array. Any authenticated user will have those permissions.
 
 ```json
 {
   "Database": {
     "Tables": {
       "TableName": [ PERMISSIONS in string array ]
-      }
     }
   }
 }
@@ -613,7 +612,6 @@ Simple permissions can be assigned by listing the allowed actions as an array. A
   "Database": {
     "Tables": {
       "MyTable1": [ "select", "insert" ]
-      }
     }
   }
 }
@@ -628,13 +626,11 @@ Roles or Usernames can be specified for each action to limit access to users wit
 {
   "Database": {
     "Tables": {
-      "TableName":
-        {
-          "select": [ PERMISSIONS ],
-          "update": [ PERMISSIONS ],
-          "delete": [ PERMISSIONS ],
-          "insert": [ PERMISSIONS ]
-        }
+      "TableName": {
+        "select": [ PERMISSIONS ],
+        "update": [ PERMISSIONS ],
+        "delete": [ PERMISSIONS ],
+        "insert": [ PERMISSIONS ]
       }
     }
   }
@@ -650,7 +646,7 @@ Although roles can be specified without any prefix, using `rolename:` allows for
 ```json
 "select": [ "rolename:Role1", "Role2" ]
 ```
-Here, only users with Role1 or Role2 can perform select actions
+Here, only users with Role1 or Role2 can perform select actions.
 
 **Usernames**
 
@@ -659,7 +655,7 @@ Specific users can be granted access by specifying their usernames with the pref
 ```json
 "select": [ "username:User1", "username:User2" ]
 ```
-Here, only users with User1 or User2 can perform select actions
+Here, only users with User1 or User2 can perform select actions.
 
 **Wildcard Access**
 
@@ -675,7 +671,8 @@ This grants `select` permission to all authenticated users.
 ```json
 {
   "Database": {
-    "Table1": {
+    "Tables": {
+      "Table1": {
         "select": [ "*" ],
         "update": [ "Role1", "rolename:Role2" ],
         "delete": [ "username:user3" ],
@@ -685,13 +682,41 @@ This grants `select` permission to all authenticated users.
   }
 }
 ```
-In this example to `Table1`:
+In this example for `Table1`:
 - Everyone can `select`.
 - Only users with `Role1` or `Role2` can `update`.
 - Only `user3` can `delete`.
 - `insert` is allowed for `user1`, `user3`, and roles `Role2` and `Role3`.
 
-**Note** The configuration allows a mix of simple and detailed permissions within the same file.
+### **Procedures Section**
+
+The `Procedures` section defines access permissions for stored procedures. Just like the `Tables` section, it allows specifying default permissions and individual overrides for specific procedures.
+
+#### **Default Permissions for Procedures**
+Using `*` (asterisk) instead of a procedure name defines global permissions that apply to all procedures **not explicitly listed** in the `Procedures` section.
+
+#### **Example:**
+```json
+{
+  "Database": {
+    "Procedures": {
+      "*": ["Admin"], // Default: Only Admins can execute unspecified procedures.
+      "MyProcedureName": ["rolename:Admin", "username:user1"], // Admin role and user1 have access.
+      "PublicProcedure": ["*"] // Everyone has access.
+    }
+  }
+}
+```
+
+### **Key Notes**
+- Every explicitly specified table or procedure **will NOT inherit default permissions**.
+- The `Tables` section supports four actions: `select`, `insert`, `update`, and `delete`.
+- The `Procedures` section only requires listing allowed users or roles, as procedures typically have execute permissions.
+- Role-based (`rolename:RoleName`) and user-based (`username:UserName`) access control is supported for both tables and procedures.
+- The configuration allows a mix of simple and detailed permissions within the same file.
+
+This structure ensures fine-grained control over database access while providing sensible defaults.
+
 
 ## Maintenance
 

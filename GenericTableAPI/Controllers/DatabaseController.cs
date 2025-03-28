@@ -330,12 +330,18 @@ namespace GenericTableAPI.Controllers
         /// <param name="values">stored procedure parameters</param>
         [Route("procedures/{procedureName}")]
         [HttpPost]
-        public async Task<ActionResult> ExecuteProcedure(string procedureName, [FromBody] IEnumerable<StoredProcedureParameter?> values)
+        public async Task<ActionResult> ExecuteProcedure(string procedureName, [FromBody] IEnumerable<StoredProcedureParameter?>? values)
         {
             DateTimeOffset timestamp = DateTimeOffset.UtcNow;
             string requestInfo = $"POST request to \"{HttpContext.Request.Path}{HttpContext.Request.QueryString}\" from \"{HttpContext.Connection.RemoteIpAddress}\" by user \"{User.Identity?.Name ?? "unknown"}\" with values: {JsonConvert.SerializeObject(values)}. Timestamp: {timestamp}";
             dynamic? responseObj = null;
             _logger.LogInformation("{RequestInfo}", requestInfo);
+
+            if (!TableValidationUtility.ValidProcedurePermission(_configuration, procedureName, User))
+            {
+                _logger.LogWarning("User {UserName} attempted to access procedure {procedureName} without permission. Timestamp: {TimeStamp}", User.Identity?.Name ?? "unknown", procedureName, timestamp);
+                return Forbid();
+            }
 
             try
             {
