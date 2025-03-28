@@ -37,7 +37,7 @@ namespace GenericTableAPI
                 Log.Logger.Information("Please refer to ### Table Authorization ### section in the documentation to create a valid tablesettings.json file!");
                 throw new InvalidOperationException("tablesettings.json is missing. Add tablesettings.json in order to run the service!");
             }
-            
+
 
             // Add services to the container.
 
@@ -45,7 +45,6 @@ namespace GenericTableAPI
 
             builder.Services.AddEndpointsApiExplorer();
 
-            builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSingleton(new DapperRepository(builder.Configuration.GetConnectionString("DefaultConnection"), builder.Configuration.GetValue<string>("SchemaName"), Log.Logger));
             builder.Services.AddScoped<DatabaseService>();
             builder.Services.AddHttpClient();
@@ -109,7 +108,7 @@ namespace GenericTableAPI
                 Log.Logger.Information("[AUTH] Using NTLMAuthentication");
                 builder.Services.AddAuthentication(IISDefaults.AuthenticationScheme);
                 allowedAuthSchemes.Add(IISDefaults.AuthenticationScheme);
-            }   
+            }
             if (allowedAuthSchemes.Count == 0)
             {
                 Log.Logger.Warning("[AUTH] Using No Authentication");
@@ -137,7 +136,7 @@ namespace GenericTableAPI
             builder.Services.AddRateLimit(builder.Configuration.GetSection("RateLimiting"));
 
             WebApplication app = builder.Build();
-            
+
             app.UseRouting();
 
             app.UseAuthentication();
