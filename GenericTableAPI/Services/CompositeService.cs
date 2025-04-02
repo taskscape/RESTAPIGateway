@@ -64,7 +64,7 @@ namespace GenericTableAPI.Services
                             catch (ResponseException ex)
                             {
                                 allResponses.AppendResponseObject(compositeRequest.Response, _variables);
-                                return new StringResponse(ex.StatusCode, allResponses.ToString());
+                                return new StringResponse(ex.StatusCode, $"ERROR: {ex.ErrorCode}\n\n{allResponses.ToString()}");
                             }
                         }
 
@@ -81,7 +81,7 @@ namespace GenericTableAPI.Services
                         catch (ResponseException ex)
                         {
                             allResponses.AppendResponseObject(compositeRequest.Response, _variables);
-                            return new StringResponse(ex.StatusCode, allResponses.ToString());
+                            return new StringResponse(ex.StatusCode, $"ERROR: {ex.ErrorCode}\n\n{allResponses.ToString()}");
                         }
                     }
                 }
@@ -173,7 +173,7 @@ namespace GenericTableAPI.Services
                         logger.LogError("Returned parameter: {RequestVariableValue} not found!", requestVariable.Value);
                         allResponses.AppendDebugLine(
                         $"[ERROR] \"{httpRequest.Method}\" \"{httpRequest.RequestUri}\" Could not find {ReplaceUrlParameters(requestVariable.Value, request.Parameters)} Reason: {ex.Message}");
-                        throw new ResponseException(StatusCodes.Status400BadRequest, allResponses.ToString());
+                        throw new ResponseException(StatusCodes.Status400BadRequest, allResponses.ToString(), "Returned parameter: {RequestVariableValue} not found!", requestVariable.Value);
                     }
                 }
             }
@@ -182,7 +182,7 @@ namespace GenericTableAPI.Services
                 logger.LogError("Response returned from \\\"{HttpRequestRequestUri}\\\" with status code {ResponseStatusCode}. Timestamp: {Timestamp}", httpRequest.RequestUri, response.StatusCode, timestamp);
                 allResponses.AppendDebugLine(
                     $"[ERROR] \"{httpRequest.Method}\" \"{httpRequest.RequestUri}\" ended up with {(int)response.StatusCode} {response.StatusCode}!");
-                throw new ResponseException(StatusCodes.Status500InternalServerError, allResponses.ToString());
+                throw new ResponseException(StatusCodes.Status500InternalServerError, allResponses.ToString(), $"Response returned from \\\"{httpRequest.RequestUri}\\\" with status code {response.StatusCode}");
             }
         }
 
