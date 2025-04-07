@@ -7,36 +7,25 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace GenericTableAPI
 {
     public class BasicAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
     {
         private readonly List<AuthUser>? _users = [];
-        private readonly IMemoryCache _cache;
 
         public BasicAuthenticationHandler(
             IOptionsMonitor<AuthenticationSchemeOptions> options,
             ILoggerFactory logger,
             UrlEncoder encoder,
-            IConfiguration config,
-            IMemoryCache cache)
+            IConfiguration config)
             : base(options, logger, encoder)
         {
             config.GetSection("BasicAuthSettings").Bind(_users);
-            _cache = cache;
         }
 
         protected override Task<AuthenticateResult> HandleAuthenticateAsync()
         {
-            string authHeader = Request.Headers["Authorization"].ToString();
-
-            if (_cache.TryGetValue(authHeader, out AuthenticateResult cachedResult))
-            {
-                return Task.FromResult(cachedResult);
-            }
-
             if (!Request.Headers.TryGetValue("Authorization", out Microsoft.Extensions.Primitives.StringValues value))
             {
                 return Task.FromResult(AuthenticateResult.Fail("Authorization header not found."));
@@ -75,11 +64,7 @@ namespace GenericTableAPI
                 ClaimsPrincipal principal = new(identity);
                 AuthenticationTicket ticket = new(principal, Scheme.Name);
 
-                var result = AuthenticateResult.Success(ticket);
-
-                _cache.Set(authHeader, result, TimeSpan.FromMinutes(5));
-
-                return Task.FromResult(result);
+                return Task.FromResult(AuthenticateResult.Success(ticket));
             }
             catch (FormatException exception)
             {
