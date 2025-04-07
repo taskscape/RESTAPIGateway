@@ -96,7 +96,7 @@ jobs:
         INSERT INTO Test (FullName, Phone) VALUES ('Jane Smith', '123');
         INSERT INTO Test2 (FullName, Phone) VALUES ('Alice Johnson', '123');
         INSERT INTO Test2 (FullName, Phone) VALUES ('Bob Brown', '123');
-        COMMIT;\" | sqlplus sys/oracle123@localhost:1521/XEPDB1 as sysdba
+        COMMIT;\" | sqlplus SYSTEM/oracle123@//localhost:1521
         "
 
 
@@ -105,7 +105,7 @@ jobs:
         pkill dotnet || true
         nohup dotnet run --project GenericTableAPI/GenericTableAPI.csproj &
       env:
-        ConnectionStrings__DefaultConnection: "Data Source=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=localhost)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=FREE)));User Id=system;Password=oracle123;"
+        ConnectionStrings__DefaultConnection: "User Id=SYSTEM;Password=oracle123;Data Source=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=localhost)(PORT=1521)))"
 
     - name: Run Tests on Oracle
       run: dotnet test --no-build --verbosity normal
