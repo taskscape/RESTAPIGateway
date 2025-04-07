@@ -103,7 +103,8 @@ public class DynamicSwaggerFilter : IDocumentFilter
                         {
                             new OpenApiParameter { Name = "where", In = ParameterLocation.Query, Schema = new OpenApiSchema { Type = "string" }, Description = "Filter condition" },
                             new OpenApiParameter { Name = "orderBy", In = ParameterLocation.Query, Schema = new OpenApiSchema { Type = "string" }, Description = "Order by condition" },
-                            new OpenApiParameter { Name = "limit", In = ParameterLocation.Query, Schema = new OpenApiSchema { Type = "integer", Format = "int32" }, Description = "Limit results" }
+                            new OpenApiParameter { Name = "limit", In = ParameterLocation.Query, Schema = new OpenApiSchema { Type = "integer", Format = "int32" }, Description = "Limit results" },
+                            new OpenApiParameter { Name = "offset", In = ParameterLocation.Query, Schema = new OpenApiSchema { Type = "integer", Format = "int32" }, Description = "The number of records to skip before starting to return results. Used for pagination." }
                         },
             Responses = new OpenApiResponses
             {
