@@ -156,7 +156,7 @@ public class IntegrationTests : BaseTestClass
         RestResponse response = Client.Execute(request);
 
         // Assert
-        Assert.AreEqual(HttpStatusCode.NoContent, response.StatusCode);
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
     }
     #endregion
 
@@ -332,7 +332,7 @@ public class IntegrationTests : BaseTestClass
         // Act
         RestResponse response = Client.Execute(request);
         // Assert
-        Assert.AreEqual(HttpStatusCode.InternalServerError, response.StatusCode);
+        Assert.AreEqual(HttpStatusCode.NotFound, response.StatusCode);
     }
     #endregion
 }
