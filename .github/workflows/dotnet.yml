@@ -49,15 +49,15 @@ jobs:
         docker exec -i $(docker ps -q -f ancestor=mcr.microsoft.com/mssql/server:2022-latest) /opt/mssql-tools18/bin/sqlcmd -S localhost -U SA -P "YourStrongPassword123" -C -Q "CREATE DATABASE TestDB"
         docker exec -i $(docker ps -q -f ancestor=mcr.microsoft.com/mssql/server:2022-latest) /opt/mssql-tools18/bin/sqlcmd -S localhost -U SA -P "YourStrongPassword123" -C -Q "
         USE TestDB;
-        CREATE TABLE TestEmpty (Id INT PRIMARY KEY IDENTITY(1,1), FullName VARCHAR(20), Phone VARCHAR(20));
-        CREATE TABLE Test (Id INT PRIMARY KEY IDENTITY(1,1), FullName VARCHAR(20), Phone VARCHAR(20));
-        CREATE TABLE Test2 (Id INT PRIMARY KEY IDENTITY(1,1), FullName VARCHAR(20), Phone VARCHAR(20));
-        INSERT INTO Test (Fullname, Phone) VALUES 
+        CREATE TABLE TestEmpty (ID INT PRIMARY KEY IDENTITY(1,1), FULLNAME VARCHAR(20), PHONE VARCHAR(20));
+        CREATE TABLE Test (ID INT PRIMARY KEY IDENTITY(1,1), FULLNAME VARCHAR(20), PHONE VARCHAR(20));
+        CREATE TABLE Test2 (ID INT PRIMARY KEY IDENTITY(1,1), FULLNAME VARCHAR(20), PHONE VARCHAR(20));
+        INSERT INTO Test (FULLNAME, PHONE) VALUES 
           ('foo', '123'), 
           ('foo', '123'), 
           ('John Doe', '123'), 
           ('Jane Smith', '123');
-        INSERT INTO Test2 (Fullname, Phone) VALUES 
+        INSERT INTO Test2 (FULLNAME, PHONE) VALUES 
           ('Alice Johnson', '123'), 
           ('Bob Brown', '123');
         "
