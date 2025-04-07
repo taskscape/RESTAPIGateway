@@ -37,7 +37,7 @@ namespace GenericTableAPI.Services
 
                     if (logger.IsEnabled(LogLevel.Information))
                     {
-                        logger.LogInformation("{Unknown} request to \\\"{RequestEndpoint}\\\" with parameters: {SerializeObject}. Timestamp: {UtcNow}", request.Method?.ToUpper() ?? "UNKNOWN", request.Endpoint, (request.Parameters != null ? JsonConvert.SerializeObject(request.Parameters) : "null"), DateTimeOffset.UtcNow);
+                        logger.LogInformation("{Unknown} request to \"{RequestEndpoint}\" with parameters: {SerializeObject}. Timestamp: {UtcNow}", request.Method?.ToUpper() ?? "UNKNOWN", request.Endpoint, (request.Parameters != null ? JsonConvert.SerializeObject(request.Parameters) : "null"), DateTimeOffset.UtcNow);
                     }
 
                     if(!string.IsNullOrWhiteSpace(request.Foreach) && _variables.TryGetValue(request.Foreach, out string? originalValue))
@@ -63,6 +63,7 @@ namespace GenericTableAPI.Services
                             }
                             catch (ResponseException ex)
                             {
+                                _variables.Add("Error", ex.Message);
                                 allResponses.AppendResponseObject(compositeRequest.Response, _variables);
                                 return new StringResponse(ex.StatusCode, allResponses.ToString());
                             }
@@ -80,6 +81,7 @@ namespace GenericTableAPI.Services
                         }
                         catch (ResponseException ex)
                         {
+                            _variables.Add("Error", ex.Message);
                             allResponses.AppendResponseObject(compositeRequest.Response, _variables);
                             return new StringResponse(ex.StatusCode, allResponses.ToString());
                         }
@@ -107,7 +109,7 @@ namespace GenericTableAPI.Services
 
             if (response.IsSuccessStatusCode)
             {
-                logger.LogInformation("Response returned from \\\"{HttpRequestRequestUri}\\\" with status code {ResponseStatusCode}. Timestamp: {Timestamp}", httpRequest.RequestUri, response.StatusCode, timestamp);
+                logger.LogInformation("Response returned from \"{HttpRequestRequestUri}\" with status code {ResponseStatusCode}. Timestamp: {Timestamp}", httpRequest.RequestUri, response.StatusCode, timestamp);
                 dynamic? content =
                     JsonConvert.DeserializeObject<dynamic>(await response.Content.ReadAsStringAsync());
                 allResponses.AppendDebugLine(
@@ -173,16 +175,16 @@ namespace GenericTableAPI.Services
                         logger.LogError("Returned parameter: {RequestVariableValue} not found!", requestVariable.Value);
                         allResponses.AppendDebugLine(
                         $"[ERROR] \"{httpRequest.Method}\" \"{httpRequest.RequestUri}\" Could not find {ReplaceUrlParameters(requestVariable.Value, request.Parameters)} Reason: {ex.Message}");
-                        throw new ResponseException(StatusCodes.Status400BadRequest, allResponses.ToString());
+                        throw new ResponseException(StatusCodes.Status400BadRequest, allResponses.ToString(), $"Returned parameter: {requestVariable.Value} not found!" );
                     }
                 }
             }
             else
             {
-                logger.LogError("Response returned from \\\"{HttpRequestRequestUri}\\\" with status code {ResponseStatusCode}. Timestamp: {Timestamp}", httpRequest.RequestUri, response.StatusCode, timestamp);
+                logger.LogError("Response returned from \"{HttpRequestRequestUri}\" with status code {ResponseStatusCode}. Timestamp: {Timestamp}", httpRequest.RequestUri, response.StatusCode, timestamp);
                 allResponses.AppendDebugLine(
                     $"[ERROR] \"{httpRequest.Method}\" \"{httpRequest.RequestUri}\" ended up with {(int)response.StatusCode} {response.StatusCode}!");
-                throw new ResponseException(StatusCodes.Status500InternalServerError, allResponses.ToString());
+                throw new ResponseException(StatusCodes.Status500InternalServerError, allResponses.ToString(), $"Response returned from \"{httpRequest.RequestUri}\" with status code {(int)response.StatusCode} {response.StatusCode}");
             }
         }
 

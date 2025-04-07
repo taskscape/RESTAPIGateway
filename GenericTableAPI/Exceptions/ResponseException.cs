@@ -2,11 +2,14 @@
 {
     public class ResponseException : Exception
     {
-        public int StatusCode { get; set; }
+        public int StatusCode { get; }
+        public string? Responses { get; }
 
-        public ResponseException(int statusCode, string? message = null) : base(message)
+        public ResponseException(int statusCode, string? responses = null, string? message = null)
+            : base(message)
         {
             StatusCode = statusCode;
+            Responses = responses;
         }
     }
 }

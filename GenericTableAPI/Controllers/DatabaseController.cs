@@ -48,7 +48,7 @@ namespace GenericTableAPI.Controllers
                 if (cacheResponse == null)
                     return responseObj = NotFound();
                 if(cacheResponse is IEnumerable<dynamic> enumerable && !enumerable.Any())
-                    return responseObj = NoContent();
+                    return responseObj = Ok();
                 return responseObj = Ok(cacheResponse);
             }
         
@@ -67,7 +67,7 @@ namespace GenericTableAPI.Controllers
                 if (!entities.Any())
                 {
                     _logger.LogInformation("No entities found for {TableName}. Timestamp: {TimeStamp}", tableName, timestamp);
-                    return responseObj = NoContent();
+                    return responseObj = Ok();
                 }
         
                 _logger.LogInformation("Found {EntitiesCount} entities in {TableName}. Timestamp: {TimeStamp}", entities.Count(), tableName, timestamp);
@@ -107,7 +107,7 @@ namespace GenericTableAPI.Controllers
                 if (cacheResponse == null)
                     return responseObj = NotFound();
                 if (cacheResponse is IEnumerable<dynamic> enumerable && !enumerable.Any())
-                    return responseObj = NoContent();
+                    return responseObj = Ok();
                 return responseObj = Ok(cacheResponse);
             }
 
@@ -300,8 +300,15 @@ namespace GenericTableAPI.Controllers
         
             try
             {
-                await _service.DeleteAsync(tableName, id, primaryKeyColumnName).ConfigureAwait(false);
                 dynamic? deletedItem = await _service.GetByIdAsync(tableName, id, primaryKeyColumnName).ConfigureAwait(false);
+                if (deletedItem == null)
+                {
+                    _logger.LogInformation("No entity found with identifier={ID} in {TableName}. Request: {Request}. Timestamp: {TimeStamp}", id, tableName, requestInfo, timestamp);
+                    return responseObj = NotFound();
+                }
+
+                await _service.DeleteAsync(tableName, id, primaryKeyColumnName).ConfigureAwait(false);
+                deletedItem = await _service.GetByIdAsync(tableName, id, primaryKeyColumnName).ConfigureAwait(false);
                 if (deletedItem != null)
                 {
                     _logger.LogInformation("Failed to delete entity with identifier={ID} from {TableName}. Timestamp: {TimeStamp}", id, tableName, timestamp);

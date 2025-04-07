@@ -162,14 +162,11 @@ namespace GenericTableAPI.Services
         {
             ValidateTableName(tableName);
             if (string.IsNullOrEmpty(id) || !TableNameRegex.IsMatch(id))
-            {
                 throw new ArgumentException(InvalidTableNameMessage);
-            }
 
             tableName = GetTableName(tableName, schemaName);
-            string sql = $"SELECT * FROM {tableName} WHERE {primaryKeyColumn} = '{id}'";
 
-            return sql;
+            return $"SELECT * FROM {tableName} WHERE {primaryKeyColumn} = '{id}'"; ;
         }
 
         /// <summary>
