@@ -388,7 +388,7 @@ public partial class DapperRepository(string? connectionString, string? schemaNa
                     
                 var orderColumn = dbType == DatabaseType.Oracle ? "ID" : "Id";
                 
-                baseQuery = $"SELECT * FROM {tableIdentifier} ORDER BY {orderColumn}";
+                baseQuery = string.Join(" ", new[] { "SELECT * FROM", tableIdentifier, "ORDER BY", orderColumn });
             }
             
             // Build the full query with WHERE, ORDER BY, and pagination
