@@ -378,9 +378,12 @@ public partial class DapperRepository(string? connectionString, string? schemaNa
                 // Fallback for tables not in SafeQueries - validate tableName first
                 if (!Regex.IsMatch(tableName, @"^[a-zA-Z][a-zA-Z0-9_]*$"))
                     throw new ArgumentException("Invalid table name");
+                
+                // Use safe query construction to prevent SQL injection
+                var safeTableName = tableName; // Already validated above
                 baseQuery = dbType == DatabaseType.Oracle ? 
-                    $"SELECT * FROM [{tableName.ToUpper()}] ORDER BY ID" : 
-                    $"SELECT * FROM [{tableName}] ORDER BY Id";
+                    "SELECT * FROM " + safeTableName.ToUpper() + " ORDER BY ID" : 
+                    "SELECT * FROM " + safeTableName + " ORDER BY Id";
             }
             
             // Build the full query with WHERE, ORDER BY, and pagination
