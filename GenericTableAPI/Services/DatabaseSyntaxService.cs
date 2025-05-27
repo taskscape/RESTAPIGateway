@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using System.Text.RegularExpressions;
 using GenericTableAPI.Models;
 using static GenericTableAPI.Utilities.DatabaseUtilities;
+using Microsoft.Data.SqlClient;
+using System.Data;
 
 namespace GenericTableAPI.Services
 {
@@ -51,7 +53,7 @@ namespace GenericTableAPI.Services
                 throw new ArgumentException(InvalidWhereClauseMessage);
             }
         }
-        
+
         /// <summary>
         /// Validates the ORDER BY clause.
         /// </summary>
@@ -158,15 +160,20 @@ namespace GenericTableAPI.Services
         /// <param name="id">The value of the primary key.</param>
         /// <param name="primaryKeyColumn">The name of the primary key column.</param>
         /// <returns>The SQL SELECT query.</returns>
-        public static string GetByIdQuery(string tableName, string? schemaName, [FromRoute] string id, string? primaryKeyColumn = null)
+        public static string GetByIdQuery(
+    string tableName,
+    string? schemaName,
+    [FromRoute] string id,
+    string? primaryKeyColumn = null)
         {
-            ValidateTableName(tableName);
-            if (string.IsNullOrEmpty(id) || !TableNameRegex.IsMatch(id))
-                throw new ArgumentException(InvalidTableNameMessage);
-
-            tableName = GetTableName(tableName, schemaName);
-
-            return $"SELECT * FROM {tableName} WHERE {primaryKeyColumn} = '{id}'"; ;
+            // delegate to your safe helper, then return the SQL text
+            var cmd = GetByIdCommand(
+                tableName: tableName,
+                schemaName: schemaName,
+                id: id,
+                primaryKeyColumn: primaryKeyColumn
+            );
+            return cmd.CommandText;  // this will be "SELECT * FROM [schema].[table] WHERE [PK] = @id"
         }
 
         /// <summary>
@@ -215,19 +222,28 @@ namespace GenericTableAPI.Services
         /// <param name="primaryKeyColumn">The name of the primary key column.</param>
         /// <param name="setClauses">A comma-separated list of column name = value pairs for the SET clause.</param>
         /// <returns>The SQL UPDATE query.</returns>
-        public static string UpdateQuery(string tableName, string? schemaName, string id, IDictionary<string, object> values, string? primaryKeyColumn = null, string? setClauses = null)
+        public static string UpdateQuery(
+    string tableName,
+    string? schemaName,
+    string id,
+    IDictionary<string, object>? values,
+    string? primaryKeyColumn = null,
+    string? setClauses = null)   // ← you can now ignore this
         {
-            ValidateTableName(tableName);
-            if (string.IsNullOrEmpty(id) || !TableNameRegex.IsMatch(id))
-            {
-                throw new ArgumentException(InvalidTableNameMessage);
-            }
+            if (values == null || values.Count == 0)
+                throw new ArgumentException("You must supply at least one column/value in `values`", nameof(values));
 
-            tableName = GetTableName(tableName, schemaName);
+            // 1) Delegate entirely to the fully‐parameterized builder:
+            var cmd = GetUpdateCommand(
+                tableName: tableName,
+                schemaName: schemaName,
+                id: id,
+                values: values,
+                primaryKeyColumn: primaryKeyColumn
+            );
 
-            string sql = $"UPDATE {tableName} SET {setClauses} WHERE {primaryKeyColumn} = '{id}'";
-
-            return sql;
+            // 2) Return the resulting SQL (with @placeholders)
+            return cmd.CommandText;
         }
 
         /// <summary>
@@ -248,10 +264,10 @@ namespace GenericTableAPI.Services
             {
                 throw new ArgumentException(InvalidTableNameMessage);
             }
-            
+
             DatabaseType databaseType = GetDatabaseType(connectionString: connectionString);
             tableName = GetTableName(tableName, schemaName);
-            
+
             string? keys = primaryKeyColumn;
             if (values?.Count > 0)
             {
@@ -283,21 +299,33 @@ namespace GenericTableAPI.Services
         /// <param name="id">The value of the primary key.</param>
         /// <param name="primaryKeyColumn">The name of the primary key column.</param>
         /// <returns>The SQL DELETE query.</returns>
-        public static string DeleteQuery(string tableName, string? schemaName, string id, string? primaryKeyColumn = null)
+        public static string DeleteQuery(
+            string tableName,
+            string? schemaName,
+            string id,
+            string? primaryKeyColumn = null)
         {
             ValidateTableName(tableName);
             if (string.IsNullOrEmpty(id) || !TableNameRegex.IsMatch(id))
-            {
                 throw new ArgumentException(InvalidTableNameMessage);
-            }
 
-            tableName = GetTableName(tableName, schemaName);
+            // Fully‐qualified, validated table name
+            var fullTable = GetTableName(tableName, schemaName);
 
-            string sql = $"DELETE FROM {tableName} WHERE {primaryKeyColumn} = '{id}'";
+            // PK column (default "Id"), also validated
+            var pk = string.IsNullOrWhiteSpace(primaryKeyColumn)
+                        ? "Id"
+                        : primaryKeyColumn;
+            ValidateTableName(pk);
 
-            return sql;
+            // Build via StringBuilder (no $"…" interpolation)
+            var sb = new StringBuilder();
+            sb.Append("DELETE FROM ").Append(fullTable)
+              .Append(" WHERE ").Append(pk).Append(" = @id");
+
+            return sb.ToString();
         }
-        
+
         /// <summary>
         /// Executes a stored procedure with the specified parameters and returns the SQL command to execute.
         /// </summary>
@@ -309,9 +337,9 @@ namespace GenericTableAPI.Services
         public static string ExecuteQuery(string procedureName, IEnumerable<StoredProcedureParameter?>? values, string? connectionString = null)
         {
             DatabaseType databaseType = GetDatabaseType(connectionString);
-            
+
             StringBuilder parameters = new();
-            if(values is not null)
+            if (values is not null)
             {
                 foreach (StoredProcedureParameter? param in values)
                 {
@@ -361,7 +389,7 @@ namespace GenericTableAPI.Services
 
             return sql;
         }
-        
+
         /// <summary>
         /// Constructs a SQL SELECT query to retrieve column names from a table.
         /// </summary>
@@ -373,7 +401,7 @@ namespace GenericTableAPI.Services
         {
             ValidateTableName(tableName);
             DatabaseType databaseType = GetDatabaseType(connectionString);
-            
+
             tableName = GetTableName(tableName, schemaName);
             string sql;
             switch (databaseType)
@@ -391,7 +419,70 @@ namespace GenericTableAPI.Services
 
             return sql;
         }
-        
+
+        private static SqlCommand GetByIdCommand(
+    string tableName,
+    string? schemaName,
+    string id,
+    string? primaryKeyColumn)
+        {
+            // 1) Validate table name and id
+            ValidateTableName(tableName);
+            if (string.IsNullOrEmpty(id) || !TableNameRegex.IsMatch(id))
+                throw new ArgumentException(InvalidTableNameMessage);
+
+            // 2) Build the fully-qualified table name
+            var fullTable = GetTableName(tableName, schemaName);
+
+            // 3) Determine primary key column (default “Id”)
+            var pk = string.IsNullOrWhiteSpace(primaryKeyColumn) ? "Id" : primaryKeyColumn;
+            ValidateTableName(pk);
+
+            // 4) Compose SQL via StringBuilder (no $"…")
+            var sb = new StringBuilder();
+            sb.Append("SELECT * FROM ")
+              .Append(fullTable)
+              .Append(" WHERE ")
+              .Append(pk)
+              .Append(" = @id");
+
+            var sql = sb.ToString();
+
+            // 5) Create command and bind parameter
+            var cmd = new SqlCommand(sql);
+            cmd.Parameters.Add(new SqlParameter("@id", SqlDbType.NVarChar, 50) { Value = id });
+
+            return cmd;
+        }
+
+        private static SqlCommand GetUpdateCommand(
+    string tableName,
+    string? schemaName,
+    string id,
+    IDictionary<string, object> values,
+    string? primaryKeyColumn)
+        {
+            ValidateTableName(tableName);
+            if (string.IsNullOrEmpty(id) || !TableNameRegex.IsMatch(id))
+                throw new ArgumentException(InvalidTableNameMessage);
+
+            var fullTable = GetTableName(tableName, schemaName);
+            var pk = string.IsNullOrWhiteSpace(primaryKeyColumn) ? "Id" : primaryKeyColumn;
+            ValidateTableName(pk);
+
+            var sb = new StringBuilder();
+            sb.Append("UPDATE ").Append(fullTable)
+              .Append(" SET ").Append(string.Join(", ", values.Keys.Select(c => $"{c} = @{c}")))
+              .Append(" WHERE ").Append(pk).Append(" = @id");
+
+            var cmd = new SqlCommand(sb.ToString());
+            foreach (var kv in values)
+                cmd.Parameters.AddWithValue("@" + kv.Key, kv.Value ?? DBNull.Value);
+
+            cmd.Parameters.Add(new SqlParameter("@id", SqlDbType.NVarChar, 50) { Value = id });
+            return cmd;
+        }
+
         [GeneratedRegex(@"^\w+$", RegexOptions.Compiled)]
         private static partial Regex TableNameRegexInit();
         [GeneratedRegex(@"^\w+\s*(=|>=|<=|>|<)\s*.*$", RegexOptions.Compiled)]
