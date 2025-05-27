@@ -1,4 +1,5 @@
-﻿using Microsoft.Data.SqlClient;
+﻿using GenericTableAPI.Helpers;
+using Microsoft.Data.SqlClient;
 using Oracle.ManagedDataAccess.Client;
 using System.Data.Common;
 using System.Dynamic;
@@ -50,6 +51,8 @@ public static class DatabaseUtilities
     /// <exception cref="NotSupportedException"></exception>
     public static string GetPrimaryKeyColumnName(string? connectionString, string tableName, DatabaseType databaseType)
     {
+        QueryHelper.ValidateIdentifier(tableName);
+
         string query = databaseType switch
         {
             DatabaseType.SqlServer => $@"

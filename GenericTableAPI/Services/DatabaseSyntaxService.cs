@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Text.RegularExpressions;
 using GenericTableAPI.Models;
 using static GenericTableAPI.Utilities.DatabaseUtilities;
+using GenericTableAPI.Helpers;
 
 namespace GenericTableAPI.Services
 {
@@ -164,9 +165,21 @@ namespace GenericTableAPI.Services
             if (string.IsNullOrEmpty(id) || !TableNameRegex.IsMatch(id))
                 throw new ArgumentException(InvalidTableNameMessage);
 
+            QueryHelper.ValidateIdentifier(tableName);
+            QueryHelper.ValidateIdentifier(primaryKeyColumn);
+            QueryHelper.ValidateIdentifier(id);
+
             tableName = GetTableName(tableName, schemaName);
 
-            return $"SELECT * FROM {tableName} WHERE {primaryKeyColumn} = '{id}'"; ;
+            return QueryHelper.Build(
+                "SELECT * FROM ",
+                tableName,
+                " WHERE ",
+                primaryKeyColumn,
+                " = '",
+                id,
+                "'"
+            );
         }
 
         /// <summary>
@@ -225,7 +238,22 @@ namespace GenericTableAPI.Services
 
             tableName = GetTableName(tableName, schemaName);
 
-            string sql = $"UPDATE {tableName} SET {setClauses} WHERE {primaryKeyColumn} = '{id}'";
+            QueryHelper.ValidateIdentifier(tableName);
+            QueryHelper.ValidateIdentifier(setClauses);
+            QueryHelper.ValidateIdentifier(primaryKeyColumn);
+            QueryHelper.ValidateIdentifier(id);
+
+            string sql = QueryHelper.Build(
+                "UPDATE ",
+                tableName,
+                " SET ",
+                setClauses,
+                " WHERE ",
+                primaryKeyColumn,
+                " = '",
+                id,
+                "'"
+            );
 
             return sql;
         }
@@ -293,7 +321,19 @@ namespace GenericTableAPI.Services
 
             tableName = GetTableName(tableName, schemaName);
 
-            string sql = $"DELETE FROM {tableName} WHERE {primaryKeyColumn} = '{id}'";
+            QueryHelper.ValidateIdentifier(tableName);
+            QueryHelper.ValidateIdentifier(primaryKeyColumn);
+            QueryHelper.ValidateIdentifier(id);
+
+            string sql = QueryHelper.Build(
+                "DELETE FROM ",
+                tableName,
+                " WHERE ",
+                primaryKeyColumn,
+                " = '",
+                id,
+                "'"
+            );
 
             return sql;
         }
