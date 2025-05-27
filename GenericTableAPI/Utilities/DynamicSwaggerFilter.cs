@@ -169,7 +169,7 @@ public class DynamicSwaggerFilter : IDocumentFilter
     {
         return new OpenApiOperation
         {
-            Summary = "Insert a new record into " + table,
+            Summary = BuildSummary("Insert a new record into", table),
             Security = new List<OpenApiSecurityRequirement>
                         {
                             new OpenApiSecurityRequirement
@@ -213,7 +213,7 @@ public class DynamicSwaggerFilter : IDocumentFilter
     {
         return new OpenApiOperation
         {
-            Summary = "Update a record from " + table + " by ID",
+            Summary = BuildSummary("Update a record from", table, "by ID"),
             Security = new List<OpenApiSecurityRequirement>
                         {
                             new OpenApiSecurityRequirement
@@ -313,7 +313,7 @@ public class DynamicSwaggerFilter : IDocumentFilter
     {
         return new OpenApiOperation
         {
-            Summary = "Delete a record from " + table + " by ID",
+            Summary = BuildSummary("Delete a record from", table, "by ID"),
             Security = new List<OpenApiSecurityRequirement>
                         {
                             new OpenApiSecurityRequirement
@@ -365,5 +365,11 @@ public class DynamicSwaggerFilter : IDocumentFilter
             "number" => "number",
             _ => "string"
         };
+    }
+
+    private static string BuildSummary(string prefix, string table, string suffix = "")
+    {
+        var parts = new[] { prefix, table, suffix }.Where(p => !string.IsNullOrEmpty(p));
+        return string.Join(" ", parts);
     }
 }

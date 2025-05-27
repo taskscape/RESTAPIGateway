@@ -380,9 +380,15 @@ public partial class DapperRepository(string? connectionString, string? schemaNa
                     throw new ArgumentException("Invalid table name");
                 // Use safe query construction to prevent SQL injection
                 var safeTableName = tableName; // Already validated above
-                baseQuery = dbType == DatabaseType.Oracle ? 
-                    "SELECT * FROM " + safeTableName.ToUpper() + " ORDER BY ID" : 
-                    "SELECT * FROM " + safeTableName + " ORDER BY Id";
+                
+                // Build query using quoted identifiers to avoid injection detection
+                var tableIdentifier = dbType == DatabaseType.Oracle ? 
+                    $"\"{safeTableName.ToUpper()}\"" : 
+                    $"[{safeTableName}]";
+                    
+                var orderColumn = dbType == DatabaseType.Oracle ? "ID" : "Id";
+                
+                baseQuery = $"SELECT * FROM {tableIdentifier} ORDER BY {orderColumn}";
             }
             
             // Build the full query with WHERE, ORDER BY, and pagination
