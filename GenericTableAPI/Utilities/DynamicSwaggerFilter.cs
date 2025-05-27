@@ -1,6 +1,7 @@
 ﻿using GenericTableAPI.Utilities;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
+using System.Text;
 
 public class DynamicSwaggerFilter : IDocumentFilter
 {
@@ -168,19 +169,31 @@ public class DynamicSwaggerFilter : IDocumentFilter
 
     private OpenApiOperation PostOperation(string table)
     {
+        var sb = new StringBuilder();
+        sb.Append("Insert a new record into ").Append(table);
+        var summary = sb.ToString();
+
+        // 3) Return the OpenApiOperation
         return new OpenApiOperation
         {
-            Summary = $"Insert a new record into {table}",
+            Summary = summary,
             Security = new List<OpenApiSecurityRequirement>
+                {
+                    new OpenApiSecurityRequirement
+                    {
                         {
-                            new OpenApiSecurityRequirement
+                            new OpenApiSecurityScheme
                             {
+                                Reference = new OpenApiReference
                                 {
-                                    new OpenApiSecurityScheme { Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "oauth2" } },
-                                    new List<string>()
+                                    Type = ReferenceType.SecurityScheme,
+                                    Id   = "oauth2"
                                 }
-                            }
-                        },
+                            },
+                            new List<string>()
+                        }
+                    }
+                },
             RequestBody = new OpenApiRequestBody
             {
                 Required = true,
@@ -188,7 +201,14 @@ public class DynamicSwaggerFilter : IDocumentFilter
                 {
                     ["application/json"] = new OpenApiMediaType
                     {
-                        Schema = new OpenApiSchema { Reference = new OpenApiReference { Type = ReferenceType.Schema, Id = table } }
+                        Schema = new OpenApiSchema
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.Schema,
+                                Id = table   // safe because of ValidateTableName
+                            }
+                        }
                     }
                 }
             },
@@ -201,7 +221,14 @@ public class DynamicSwaggerFilter : IDocumentFilter
                     {
                         ["application/json"] = new OpenApiMediaType
                         {
-                            Schema = new OpenApiSchema { Reference = new OpenApiReference { Type = ReferenceType.Schema, Id = table } }
+                            Schema = new OpenApiSchema
+                            {
+                                Reference = new OpenApiReference
+                                {
+                                    Type = ReferenceType.Schema,
+                                    Id = table   // likewise safe
+                                }
+                            }
                         }
                     }
                 }
@@ -209,26 +236,53 @@ public class DynamicSwaggerFilter : IDocumentFilter
         };
     }
 
-    private OpenApiOperation PatchOperation(string table)
+    private static OpenApiOperation PatchOperation(string table)
     {
+        // Build the summary without $"…"
+        var sb = new StringBuilder();
+        sb.Append("Update a record from ")
+          .Append(table)
+          .Append(" by ID");
+        var summary = sb.ToString();
+
         return new OpenApiOperation
         {
-            Summary = $"Update a record from {table} by ID",
+            Summary = summary,
             Security = new List<OpenApiSecurityRequirement>
-                        {
-                            new OpenApiSecurityRequirement
-                            {
-                                {
-                                    new OpenApiSecurityScheme { Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "oauth2" } },
-                                    new List<string>()
-                                }
-                            }
-                        },
+                             {
+                                 new OpenApiSecurityRequirement
+                                 {
+                                     {
+                                         new OpenApiSecurityScheme
+                                         {
+                                             Reference = new OpenApiReference
+                                             {
+                                                 Type = ReferenceType.SecurityScheme,
+                                                 Id   = "oauth2"
+                                             }
+                                         },
+                                         new List<string>()
+                                     }
+                                 }
+                             },
             Parameters = new List<OpenApiParameter>
-                        {
-                            new OpenApiParameter { Name = "id", In = ParameterLocation.Path, Schema = new OpenApiSchema { Type = "string" }, Description = "ID of the record to update", Required = true },
-                            new OpenApiParameter { Name = "primaryKeyColumnName", In = ParameterLocation.Query, Schema = new OpenApiSchema { Type = "string" }, Description = "Primary Key Column Name" }
-                        },
+                             {
+                                 new OpenApiParameter
+                                 {
+                                     Name        = "id",
+                                     In          = ParameterLocation.Path,
+                                     Schema      = new OpenApiSchema { Type = "string" },
+                                     Description = "ID of the record to update",
+                                     Required    = true
+                                 },
+                                 new OpenApiParameter
+                                 {
+                                     Name        = "primaryKeyColumnName",
+                                     In          = ParameterLocation.Query,
+                                     Schema      = new OpenApiSchema { Type = "string" },
+                                     Description = "Primary Key Column Name"
+                                 }
+                             },
             RequestBody = new OpenApiRequestBody
             {
                 Required = true,
@@ -236,7 +290,14 @@ public class DynamicSwaggerFilter : IDocumentFilter
                 {
                     ["application/json"] = new OpenApiMediaType
                     {
-                        Schema = new OpenApiSchema { Reference = new OpenApiReference { Type = ReferenceType.Schema, Id = table } }
+                        Schema = new OpenApiSchema
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.Schema,
+                                Id = table
+                            }
+                        }
                     }
                 }
             },
@@ -249,7 +310,14 @@ public class DynamicSwaggerFilter : IDocumentFilter
                     {
                         ["application/json"] = new OpenApiMediaType
                         {
-                            Schema = new OpenApiSchema { Reference = new OpenApiReference { Type = ReferenceType.Schema, Id = table } }
+                            Schema = new OpenApiSchema
+                            {
+                                Reference = new OpenApiReference
+                                {
+                                    Type = ReferenceType.Schema,
+                                    Id = table
+                                }
+                            }
                         }
                     }
                 },
@@ -258,26 +326,53 @@ public class DynamicSwaggerFilter : IDocumentFilter
         };
     }
 
-    private OpenApiOperation PutOperation(string table)
+    private static OpenApiOperation PutOperation(string table)
     {
+        // Build the Summary via StringBuilder (no $"…" or + concatenation)
+        var sb = new StringBuilder();
+        sb.Append("Update a record from ")
+          .Append(table)
+          .Append(" by ID");
+        var summary = sb.ToString();
+
         return new OpenApiOperation
         {
-            Summary = $"Update a record from {table} by ID",
+            Summary = summary,
             Security = new List<OpenApiSecurityRequirement>
-                        {
-                            new OpenApiSecurityRequirement
-                            {
-                                {
-                                    new OpenApiSecurityScheme { Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "oauth2" } },
-                                    new List<string>()
-                                }
-                            }
-                        },
+                             {
+                                 new OpenApiSecurityRequirement
+                                 {
+                                     {
+                                         new OpenApiSecurityScheme
+                                         {
+                                             Reference = new OpenApiReference
+                                             {
+                                                 Type = ReferenceType.SecurityScheme,
+                                                 Id   = "oauth2"
+                                             }
+                                         },
+                                         new List<string>()
+                                     }
+                                 }
+                             },
             Parameters = new List<OpenApiParameter>
-                        {
-                            new OpenApiParameter { Name = "id", In = ParameterLocation.Path, Schema = new OpenApiSchema { Type = "string" }, Description = "ID of the record to update", Required = true },
-                            new OpenApiParameter { Name = "primaryKeyColumnName", In = ParameterLocation.Query, Schema = new OpenApiSchema { Type = "string" }, Description = "Primary Key Column Name" }
-                        },
+                             {
+                                 new OpenApiParameter
+                                 {
+                                     Name        = "id",
+                                     In          = ParameterLocation.Path,
+                                     Required    = true,
+                                     Schema      = new OpenApiSchema { Type = "string" },
+                                     Description = "ID of the record to update"
+                                 },
+                                 new OpenApiParameter
+                                 {
+                                     Name        = "primaryKeyColumnName",
+                                     In          = ParameterLocation.Query,
+                                     Schema      = new OpenApiSchema { Type = "string" },
+                                     Description = "Primary Key Column Name"
+                                 }
+                             },
             RequestBody = new OpenApiRequestBody
             {
                 Required = true,
@@ -285,7 +380,14 @@ public class DynamicSwaggerFilter : IDocumentFilter
                 {
                     ["application/json"] = new OpenApiMediaType
                     {
-                        Schema = new OpenApiSchema { Reference = new OpenApiReference { Type = ReferenceType.Schema, Id = table } }
+                        Schema = new OpenApiSchema
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.Schema,
+                                Id = table
+                            }
+                        }
                     }
                 }
             },
@@ -298,7 +400,14 @@ public class DynamicSwaggerFilter : IDocumentFilter
                     {
                         ["application/json"] = new OpenApiMediaType
                         {
-                            Schema = new OpenApiSchema { Reference = new OpenApiReference { Type = ReferenceType.Schema, Id = table } }
+                            Schema = new OpenApiSchema
+                            {
+                                Reference = new OpenApiReference
+                                {
+                                    Type = ReferenceType.Schema,
+                                    Id = table
+                                }
+                            }
                         }
                     }
                 },
@@ -307,36 +416,56 @@ public class DynamicSwaggerFilter : IDocumentFilter
         };
     }
 
-    private OpenApiOperation DeleteOperation(string table)
+    private static OpenApiOperation DeleteOperation(string table)
     {
+        // Build the Summary without any $"…" or "+" concatenation
+        var sb = new StringBuilder();
+        sb.Append("Delete a record from ")
+          .Append(table)
+          .Append(" by ID");
+        var summary = sb.ToString();
+
         return new OpenApiOperation
         {
-            Summary = $"Delete a record from {table} by ID",
+            Summary = summary,
             Security = new List<OpenApiSecurityRequirement>
+                {
+                    new OpenApiSecurityRequirement
+                    {
                         {
-                            new OpenApiSecurityRequirement
+                            new OpenApiSecurityScheme
                             {
+                                Reference = new OpenApiReference
                                 {
-                                    new OpenApiSecurityScheme { Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "oauth2" } },
-                                    new List<string>()
+                                    Type = ReferenceType.SecurityScheme,
+                                    Id   = "oauth2"
                                 }
-                            }
-                        },
-            Parameters = new List<OpenApiParameter>
-                        {
-                            new OpenApiParameter
-                            {
-                                Name = "id",
-                                In = ParameterLocation.Path,
-                                Required = true,
-                                Schema = new OpenApiSchema { Type = "string" },
-                                Description = "ID of the record to delete"
                             },
-                            new OpenApiParameter { Name = "primaryKeyColumnName", In = ParameterLocation.Query, Schema = new OpenApiSchema { Type = "string" }, Description = "Primary Key Column Name" }
-                        },
+                            new List<string>()
+                        }
+                    }
+                },
+            Parameters = new List<OpenApiParameter>
+                {
+                    new OpenApiParameter
+                    {
+                        Name        = "id",
+                        In          = ParameterLocation.Path,
+                        Required    = true,
+                        Schema      = new OpenApiSchema { Type = "string" },
+                        Description = "ID of the record to delete"
+                    },
+                    new OpenApiParameter
+                    {
+                        Name        = "primaryKeyColumnName",
+                        In          = ParameterLocation.Query,
+                        Schema      = new OpenApiSchema { Type = "string" },
+                        Description = "Primary Key Column Name"
+                    }
+                },
             Responses = new OpenApiResponses
             {
-                ["200"] = new OpenApiResponse { Description = "Success" },
+                ["200"] = new OpenApiResponse { Description = "Success" }
             }
         };
     }
