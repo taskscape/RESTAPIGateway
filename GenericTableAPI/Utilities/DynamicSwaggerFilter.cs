@@ -1,4 +1,4 @@
-﻿using GenericTableAPI.Utilities;
+using GenericTableAPI.Utilities;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
@@ -20,7 +20,7 @@ public class DynamicSwaggerFilter : IDocumentFilter
         var user = _httpContextAccessor.HttpContext?.User;
         if (user == null)
         {
-            return; // Do not generate Swagger docs if the user is not authenticated
+            return;
         }
         try
         {
@@ -46,7 +46,6 @@ public class DynamicSwaggerFilter : IDocumentFilter
                 var Operations = new Dictionary<OperationType, OpenApiOperation>();
                 var OperationsId = new Dictionary<OperationType, OpenApiOperation>();
 
-                //Check if given table exist in tablesettings.json and if given table has "*" permission
                 if (TableValidationUtility.ValidTablePermission(_configuration, table, "select", user))
                 {
                     Operations.Add(OperationType.Get, GetAllOperation(table));
@@ -66,12 +65,12 @@ public class DynamicSwaggerFilter : IDocumentFilter
                     OperationsId.Add(OperationType.Delete, DeleteOperation(table));
                 }
 
-                swaggerDoc.Paths[$"/api/tables/{table}"] = new OpenApiPathItem
+                swaggerDoc.Paths[string.Concat("/api/tables/", table)] = new OpenApiPathItem
                 {
                     Operations = Operations
                 };
 
-                swaggerDoc.Paths[$"/api/tables/{table}/{{id}}"] = new OpenApiPathItem
+                swaggerDoc.Paths[string.Concat("/api/tables/", table, "/{id}")] = new OpenApiPathItem
                 {
                     Operations = OperationsId
                 };
@@ -81,14 +80,12 @@ public class DynamicSwaggerFilter : IDocumentFilter
         {
             _logger.LogError(ex, ex.Message);
         }
-        
     }
-
     private OpenApiOperation GetAllOperation(string table)
     {
         return new OpenApiOperation
         {
-            Summary = $"Get all records from {table}",
+            Summary = string.Concat("Get all records from ", table),
             Security = new List<OpenApiSecurityRequirement>
                         {
                             new OpenApiSecurityRequirement
@@ -101,10 +98,10 @@ public class DynamicSwaggerFilter : IDocumentFilter
                         },
             Parameters = new List<OpenApiParameter>
                         {
-                            new OpenApiParameter { Name = "where", In = ParameterLocation.Query, Schema = new OpenApiSchema { Type = "string" }, Description = "Filter condition" },
-                            new OpenApiParameter { Name = "orderBy", In = ParameterLocation.Query, Schema = new OpenApiSchema { Type = "string" }, Description = "Order by condition" },
+                            new OpenApiParameter { Name = "whereParams", In = ParameterLocation.Query, Schema = new OpenApiSchema { Type = "string" }, Description = "Filter parameters" },
+                            new OpenApiParameter { Name = "orderBy", In = ParameterLocation.Query, Schema = new OpenApiSchema { Type = "string" }, Description = "Order by column names" },
                             new OpenApiParameter { Name = "limit", In = ParameterLocation.Query, Schema = new OpenApiSchema { Type = "integer", Format = "int32" }, Description = "Limit results" },
-                            new OpenApiParameter { Name = "offset", In = ParameterLocation.Query, Schema = new OpenApiSchema { Type = "integer", Format = "int32" }, Description = "The number of records to skip before starting to return results. Used for pagination." }
+                            new OpenApiParameter { Name = "offset", In = ParameterLocation.Query, Schema = new OpenApiSchema { Type = "integer", Format = "int32" }, Description = "Skip records for pagination" }
                         },
             Responses = new OpenApiResponses
             {
@@ -123,6 +120,7 @@ public class DynamicSwaggerFilter : IDocumentFilter
                         }
                     }
                 },
+                ["400"] = new OpenApiResponse { Description = "Bad Request" },
                 ["404"] = new OpenApiResponse { Description = "Not Found" }
             }
         };
@@ -132,7 +130,7 @@ public class DynamicSwaggerFilter : IDocumentFilter
     {
         return new OpenApiOperation
         {
-            Summary = $"Get record from {table} by ID",
+            Summary = string.Concat("Get record from ", table, " by ID"),
             Security = new List<OpenApiSecurityRequirement>
                         {
                             new OpenApiSecurityRequirement
@@ -145,7 +143,7 @@ public class DynamicSwaggerFilter : IDocumentFilter
                         },
             Parameters = new List<OpenApiParameter>
                         {
-                            new OpenApiParameter { Name = "id", In = ParameterLocation.Path, Schema = new OpenApiSchema { Type = "string" }, Description = "ID of the record to update", Required = true },
+                            new OpenApiParameter { Name = "id", In = ParameterLocation.Path, Schema = new OpenApiSchema { Type = "string" }, Description = "ID of the record to retrieve", Required = true },
                             new OpenApiParameter { Name = "primaryKeyColumnName", In = ParameterLocation.Query, Schema = new OpenApiSchema { Type = "string" }, Description = "Primary Key Column Name" }
                         },
             Responses = new OpenApiResponses
@@ -157,10 +155,11 @@ public class DynamicSwaggerFilter : IDocumentFilter
                     {
                         ["application/json"] = new OpenApiMediaType
                         {
-                            Schema = new OpenApiSchema { Reference = new OpenApiReference { Type = ReferenceType.Schema, Id = table } }
+                            Schema = new OpenApiSchema { Reference = new OpenApiReference { Type = ReferenceType.Schema, Id = table } }  
                         }
                     }
                 },
+                ["400"] = new OpenApiResponse { Description = "Bad Request" },
                 ["404"] = new OpenApiResponse { Description = "Not Found" }
             }
         };
@@ -170,7 +169,7 @@ public class DynamicSwaggerFilter : IDocumentFilter
     {
         return new OpenApiOperation
         {
-            Summary = $"Insert a new record into {table}",
+            Summary = string.Concat("Insert a new record into ", table),
             Security = new List<OpenApiSecurityRequirement>
                         {
                             new OpenApiSecurityRequirement
@@ -204,7 +203,8 @@ public class DynamicSwaggerFilter : IDocumentFilter
                             Schema = new OpenApiSchema { Reference = new OpenApiReference { Type = ReferenceType.Schema, Id = table } }
                         }
                     }
-                }
+                },
+                ["400"] = new OpenApiResponse { Description = "Bad Request" }
             }
         };
     }
@@ -213,7 +213,7 @@ public class DynamicSwaggerFilter : IDocumentFilter
     {
         return new OpenApiOperation
         {
-            Summary = $"Update a record from {table} by ID",
+            Summary = string.Concat("Update a record from ", table, " by ID"),
             Security = new List<OpenApiSecurityRequirement>
                         {
                             new OpenApiSecurityRequirement
@@ -253,6 +253,7 @@ public class DynamicSwaggerFilter : IDocumentFilter
                         }
                     }
                 },
+                ["400"] = new OpenApiResponse { Description = "Bad Request" },
                 ["404"] = new OpenApiResponse { Description = "Not Found" }
             }
         };
@@ -262,7 +263,7 @@ public class DynamicSwaggerFilter : IDocumentFilter
     {
         return new OpenApiOperation
         {
-            Summary = $"Update a record from {table} by ID",
+            Summary = string.Concat("Replace a record from ", table, " by ID"),
             Security = new List<OpenApiSecurityRequirement>
                         {
                             new OpenApiSecurityRequirement
@@ -275,7 +276,7 @@ public class DynamicSwaggerFilter : IDocumentFilter
                         },
             Parameters = new List<OpenApiParameter>
                         {
-                            new OpenApiParameter { Name = "id", In = ParameterLocation.Path, Schema = new OpenApiSchema { Type = "string" }, Description = "ID of the record to update", Required = true },
+                            new OpenApiParameter { Name = "id", In = ParameterLocation.Path, Schema = new OpenApiSchema { Type = "string" }, Description = "ID of the record to replace", Required = true },
                             new OpenApiParameter { Name = "primaryKeyColumnName", In = ParameterLocation.Query, Schema = new OpenApiSchema { Type = "string" }, Description = "Primary Key Column Name" }
                         },
             RequestBody = new OpenApiRequestBody
@@ -302,6 +303,7 @@ public class DynamicSwaggerFilter : IDocumentFilter
                         }
                     }
                 },
+                ["400"] = new OpenApiResponse { Description = "Bad Request" },
                 ["404"] = new OpenApiResponse { Description = "Not Found" }
             }
         };
@@ -311,7 +313,7 @@ public class DynamicSwaggerFilter : IDocumentFilter
     {
         return new OpenApiOperation
         {
-            Summary = $"Delete a record from {table} by ID",
+            Summary = string.Concat("Delete a record from ", table, " by ID"),
             Security = new List<OpenApiSecurityRequirement>
                         {
                             new OpenApiSecurityRequirement
@@ -337,6 +339,8 @@ public class DynamicSwaggerFilter : IDocumentFilter
             Responses = new OpenApiResponses
             {
                 ["200"] = new OpenApiResponse { Description = "Success" },
+                ["400"] = new OpenApiResponse { Description = "Bad Request" },
+                ["404"] = new OpenApiResponse { Description = "Not Found" }
             }
         };
     }
