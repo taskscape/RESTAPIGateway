@@ -379,8 +379,8 @@ public partial class DapperRepository(string? connectionString, string? schemaNa
                 if (!Regex.IsMatch(tableName, @"^[a-zA-Z][a-zA-Z0-9_]*$"))
                     throw new ArgumentException("Invalid table name");
                 baseQuery = dbType == DatabaseType.Oracle ? 
-                    "SELECT * FROM " + tableName.ToUpper() + " ORDER BY ID" : 
-                    "SELECT * FROM " + tableName + " ORDER BY Id";
+                    $"SELECT * FROM [{tableName.ToUpper()}] ORDER BY ID" : 
+                    $"SELECT * FROM [{tableName}] ORDER BY Id";
             }
             
             // Build the full query with WHERE, ORDER BY, and pagination
