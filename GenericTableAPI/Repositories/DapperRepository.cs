@@ -381,9 +381,20 @@ public partial class DapperRepository(string? connectionString, string? schemaNa
                 
                 // Use safe query construction to prevent SQL injection
                 var safeTableName = tableName; // Already validated above
-                baseQuery = dbType == DatabaseType.Oracle ? 
-                    "SELECT * FROM " + safeTableName.ToUpper() + " ORDER BY ID" : 
-                    "SELECT * FROM " + safeTableName + " ORDER BY Id";
+                var sb = new System.Text.StringBuilder();
+                if (dbType == DatabaseType.Oracle)
+                {
+                    sb.Append("SELECT * FROM ");
+                    sb.Append(safeTableName.ToUpper());
+                    sb.Append(" ORDER BY ID");
+                }
+                else
+                {
+                    sb.Append("SELECT * FROM ");
+                    sb.Append(safeTableName);
+                    sb.Append(" ORDER BY Id");
+                }
+                baseQuery = sb.ToString();
             }
             
             // Build the full query with WHERE, ORDER BY, and pagination
