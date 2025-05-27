@@ -169,7 +169,7 @@ public class DynamicSwaggerFilter : IDocumentFilter
     {
         return new OpenApiOperation
         {
-            Summary = new System.Text.StringBuilder().Append("Insert a new record into ").Append(table).ToString(),
+            Summary = string.Format("Insert a new record into {0}", table),
             Security = new List<OpenApiSecurityRequirement>
                         {
                             new OpenApiSecurityRequirement
@@ -213,7 +213,7 @@ public class DynamicSwaggerFilter : IDocumentFilter
     {
         return new OpenApiOperation
         {
-            Summary = new System.Text.StringBuilder().Append("Update a record from ").Append(table).Append(" by ID").ToString(),
+            Summary = string.Format("Update a record from {0} by ID", table),
             Security = new List<OpenApiSecurityRequirement>
                         {
                             new OpenApiSecurityRequirement
@@ -313,7 +313,7 @@ public class DynamicSwaggerFilter : IDocumentFilter
     {
         return new OpenApiOperation
         {
-            Summary = new System.Text.StringBuilder().Append("Delete a record from ").Append(table).Append(" by ID").ToString(),
+            Summary = string.Format("Delete a record from {0} by ID", table),
             Security = new List<OpenApiSecurityRequirement>
                         {
                             new OpenApiSecurityRequirement
