@@ -14,15 +14,10 @@ namespace GenericTableAPI.Helpers
         /// </summary>
         public static void ValidateIdentifier(string? name)
         {
-            if (name != null)
-            {
-                if (!IdentifierRegex.IsMatch(name))
+            if (string.IsNullOrEmpty(name))
+                return;
+            if (!IdentifierRegex.IsMatch(name))
                     throw new ArgumentException($"Invalid SQL identifier: '{name}'", nameof(name));
-            }
-            else
-            {
-                throw new ArgumentNullException(nameof(name));
-            }
         }
 
         /// <summary>
