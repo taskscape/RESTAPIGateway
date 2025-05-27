@@ -20,6 +20,11 @@ namespace GenericTableAPI.Services
                 [DatabaseType.SqlServer] = "SELECT * FROM Users WHERE Id = @idValue",
                 [DatabaseType.Oracle] = "SELECT * FROM Users WHERE Id = :idValue"
             },
+            ["GetAll_Users"] = new()
+            {
+                [DatabaseType.SqlServer] = "SELECT * FROM Users ORDER BY Id",
+                [DatabaseType.Oracle] = "SELECT * FROM Users ORDER BY Id"
+            },
             ["Insert_Users"] = new()
             {
                 [DatabaseType.SqlServer] = "INSERT INTO Users (Name, Email) OUTPUT Inserted.Id VALUES (@Name, @Email)",
@@ -34,6 +39,55 @@ namespace GenericTableAPI.Services
             {
                 [DatabaseType.SqlServer] = "DELETE FROM Users WHERE Id = @idValue",
                 [DatabaseType.Oracle] = "DELETE FROM Users WHERE Id = :idValue"
+            },
+            
+            // test table
+            ["GetColumns_test"] = new()
+            {
+                [DatabaseType.SqlServer] = "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'test'",
+                [DatabaseType.Oracle] = "SELECT COLUMN_NAME FROM ALL_TAB_COLS WHERE TABLE_NAME = 'TEST'"
+            },
+            ["GetById_test"] = new()
+            {
+                [DatabaseType.SqlServer] = "SELECT * FROM test WHERE Id = @idValue",
+                [DatabaseType.Oracle] = "SELECT * FROM test WHERE Id = :idValue"
+            },
+            ["GetAll_test"] = new()
+            {
+                [DatabaseType.SqlServer] = "SELECT * FROM test ORDER BY Id",
+                [DatabaseType.Oracle] = "SELECT * FROM test ORDER BY Id"
+            },
+            ["Insert_test"] = new()
+            {
+                [DatabaseType.SqlServer] = "INSERT INTO test (FullName, Phone) OUTPUT Inserted.Id VALUES (@FullName, @Phone)",
+                [DatabaseType.Oracle] = "INSERT INTO test (FullName, Phone) VALUES (:FullName, :Phone) RETURNING Id INTO :retVal"
+            },
+            ["Update_test"] = new()
+            {
+                [DatabaseType.SqlServer] = "UPDATE test SET FullName = @FullName, Phone = @Phone WHERE Id = @idValue",
+                [DatabaseType.Oracle] = "UPDATE test SET FullName = :FullName, Phone = :Phone WHERE Id = :idValue"
+            },
+            ["Delete_test"] = new()
+            {
+                [DatabaseType.SqlServer] = "DELETE FROM test WHERE Id = @idValue",
+                [DatabaseType.Oracle] = "DELETE FROM test WHERE Id = :idValue"
+            },
+            
+            // test2 table
+            ["GetColumns_test2"] = new()
+            {
+                [DatabaseType.SqlServer] = "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'test2'",
+                [DatabaseType.Oracle] = "SELECT COLUMN_NAME FROM ALL_TAB_COLS WHERE TABLE_NAME = 'TEST2'"
+            },
+            ["GetById_test2"] = new()
+            {
+                [DatabaseType.SqlServer] = "SELECT * FROM test2 WHERE Id = @idValue",
+                [DatabaseType.Oracle] = "SELECT * FROM test2 WHERE Id = :idValue"
+            },
+            ["GetAll_test2"] = new()
+            {
+                [DatabaseType.SqlServer] = "SELECT * FROM test2 ORDER BY Id",
+                [DatabaseType.Oracle] = "SELECT * FROM test2 ORDER BY Id"
             }
         };
 
