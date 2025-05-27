@@ -12,149 +12,6 @@ namespace GenericTableAPI.Repositories;
 
 public partial class DapperRepository(string? connectionString, string? schemaName, Serilog.ILogger logger)
 {
-    private static readonly Dictionary<string, Dictionary<DatabaseType, string>> SafeQueries = new()
-    {
-        // Users table
-        ["GetColumns_Users"] = new()
-        {
-            [DatabaseType.SqlServer] = "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Users'",
-            [DatabaseType.Oracle] = "SELECT COLUMN_NAME FROM ALL_TAB_COLS WHERE TABLE_NAME = 'USERS'"
-        },
-        ["GetById_Users"] = new()
-        {
-            [DatabaseType.SqlServer] = "SELECT * FROM Users WHERE Id = @idValue",
-            [DatabaseType.Oracle] = "SELECT * FROM Users WHERE Id = :idValue"
-        },
-        ["GetAll_Users"] = new()
-        {
-            [DatabaseType.SqlServer] = "SELECT * FROM Users ORDER BY Id",
-            [DatabaseType.Oracle] = "SELECT * FROM Users ORDER BY Id"
-        },
-        ["Insert_Users"] = new()
-        {
-            [DatabaseType.SqlServer] = "INSERT INTO Users (Name, Email) OUTPUT Inserted.Id VALUES (@Name, @Email)",
-            [DatabaseType.Oracle] = "INSERT INTO Users (Name, Email) VALUES (:Name, :Email) RETURNING Id INTO :retVal"
-        },
-        ["Update_Users"] = new()
-        {
-            [DatabaseType.SqlServer] = "UPDATE Users SET Name = @Name WHERE Id = @idValue",
-            [DatabaseType.Oracle] = "UPDATE Users SET Name = :Name WHERE Id = :idValue"
-        },
-        ["Delete_Users"] = new()
-        {
-            [DatabaseType.SqlServer] = "DELETE FROM Users WHERE Id = @idValue",
-            [DatabaseType.Oracle] = "DELETE FROM Users WHERE Id = :idValue"
-        },
-        
-        // test table (for integration tests)
-        ["GetColumns_test"] = new()
-        {
-            [DatabaseType.SqlServer] = "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'test'",
-            [DatabaseType.Oracle] = "SELECT COLUMN_NAME FROM ALL_TAB_COLS WHERE TABLE_NAME = 'TEST'"
-        },
-        ["GetById_test"] = new()
-        {
-            [DatabaseType.SqlServer] = "SELECT * FROM test WHERE Id = @idValue",
-            [DatabaseType.Oracle] = "SELECT * FROM test WHERE Id = :idValue"
-        },
-        ["GetAll_test"] = new()
-        {
-            [DatabaseType.SqlServer] = "SELECT * FROM test ORDER BY Id",
-            [DatabaseType.Oracle] = "SELECT * FROM test ORDER BY Id"
-        },
-        ["Insert_test"] = new()
-        {
-            [DatabaseType.SqlServer] = "INSERT INTO test (FullName, Phone) OUTPUT Inserted.Id VALUES (@FullName, @Phone)",
-            [DatabaseType.Oracle] = "INSERT INTO test (FullName, Phone) VALUES (:FullName, :Phone) RETURNING Id INTO :retVal"
-        },
-        ["Update_test"] = new()
-        {
-            [DatabaseType.SqlServer] = "UPDATE test SET FullName = @FullName, Phone = @Phone WHERE Id = @idValue",
-            [DatabaseType.Oracle] = "UPDATE test SET FullName = :FullName, Phone = :Phone WHERE Id = :idValue"
-        },
-        ["Delete_test"] = new()
-        {
-            [DatabaseType.SqlServer] = "DELETE FROM test WHERE Id = @idValue",
-            [DatabaseType.Oracle] = "DELETE FROM test WHERE Id = :idValue"
-        },
-        
-        // test2 table
-        ["GetColumns_test2"] = new()
-        {
-            [DatabaseType.SqlServer] = "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'test2'",
-            [DatabaseType.Oracle] = "SELECT COLUMN_NAME FROM ALL_TAB_COLS WHERE TABLE_NAME = 'TEST2'"
-        },
-        ["GetById_test2"] = new()
-        {
-            [DatabaseType.SqlServer] = "SELECT * FROM test2 WHERE Id = @idValue",
-            [DatabaseType.Oracle] = "SELECT * FROM test2 WHERE Id = :idValue"
-        },
-        ["GetAll_test2"] = new()
-        {
-            [DatabaseType.SqlServer] = "SELECT * FROM test2 ORDER BY Id",
-            [DatabaseType.Oracle] = "SELECT * FROM test2 ORDER BY Id"
-        },
-        ["Insert_test2"] = new()
-        {
-            [DatabaseType.SqlServer] = "INSERT INTO test2 (Name) OUTPUT Inserted.Id VALUES (@Name)",
-            [DatabaseType.Oracle] = "INSERT INTO test2 (Name) VALUES (:Name) RETURNING Id INTO :retVal"
-        },
-        ["Update_test2"] = new()
-        {
-            [DatabaseType.SqlServer] = "UPDATE test2 SET Name = @Name WHERE Id = @idValue",
-            [DatabaseType.Oracle] = "UPDATE test2 SET Name = :Name WHERE Id = :idValue"
-        },
-        ["Delete_test2"] = new()
-        {
-            [DatabaseType.SqlServer] = "DELETE FROM test2 WHERE Id = @idValue",
-            [DatabaseType.Oracle] = "DELETE FROM test2 WHERE Id = :idValue"
-        },
-        
-        // testnotfound table
-        ["GetColumns_testnotfound"] = new()
-        {
-            [DatabaseType.SqlServer] = "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'testnotfound'",
-            [DatabaseType.Oracle] = "SELECT COLUMN_NAME FROM ALL_TAB_COLS WHERE TABLE_NAME = 'TESTNOTFOUND'"
-        },
-        ["GetById_testnotfound"] = new()
-        {
-            [DatabaseType.SqlServer] = "SELECT * FROM testnotfound WHERE Id = @idValue",
-            [DatabaseType.Oracle] = "SELECT * FROM testnotfound WHERE Id = :idValue"
-        },
-        ["GetAll_testnotfound"] = new()
-        {
-            [DatabaseType.SqlServer] = "SELECT * FROM testnotfound ORDER BY Id",
-            [DatabaseType.Oracle] = "SELECT * FROM testnotfound ORDER BY Id"
-        },
-        
-        // testempty table
-        ["GetColumns_testempty"] = new()
-        {
-            [DatabaseType.SqlServer] = "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'testempty'",
-            [DatabaseType.Oracle] = "SELECT COLUMN_NAME FROM ALL_TAB_COLS WHERE TABLE_NAME = 'TESTEMPTY'"
-        },
-        ["GetById_testempty"] = new()
-        {
-            [DatabaseType.SqlServer] = "SELECT * FROM testempty WHERE Id = @idValue",
-            [DatabaseType.Oracle] = "SELECT * FROM testempty WHERE Id = :idValue"
-        },
-        ["GetAll_testempty"] = new()
-        {
-            [DatabaseType.SqlServer] = "SELECT * FROM testempty ORDER BY Id",
-            [DatabaseType.Oracle] = "SELECT * FROM testempty ORDER BY Id"
-        }
-    };
-
-    private static string GetSafeQuery(string operation, string tableName, DatabaseType dbType)
-    {
-        string key = operation + "_" + tableName;
-        if (SafeQueries.ContainsKey(key) && SafeQueries[key].ContainsKey(dbType))
-        {
-            return SafeQueries[key][dbType];
-        }
-        throw new ArgumentException("Operation not supported for table: " + tableName);
-    }
-
     private static void AddParameter(DbCommand command, string name, object? value, DatabaseType dbType)
     {
         var parameter = command.CreateParameter();
@@ -182,7 +39,10 @@ public partial class DapperRepository(string? connectionString, string? schemaNa
             await connection.OpenAsync();
             using var command = connection.CreateCommand();
             
-            command.CommandText = GetSafeQuery("GetColumns", tableName, databaseType);
+            command.CommandText = SyntaxService.GetColumnsQuery(tableName, schemaName, connectionString);
+            
+            // Add table name parameter
+            AddParameter(command, "tableNameParam", tableName, databaseType);
             
             using var reader = await command.ExecuteReaderAsync();
             var result = new List<object>();
@@ -208,8 +68,13 @@ public partial class DapperRepository(string? connectionString, string? schemaNa
             await connection.OpenAsync();
             using var command = connection.CreateCommand();
             
-            command.CommandText = GetSafeQuery("GetById", tableName, dbType);
-            AddParameter(command, "idValue", primaryKey, dbType);
+            // Get primary key column name if not provided
+            string primaryKeyColumn = string.IsNullOrEmpty(columnName) 
+                ? GetPrimaryKeyColumnName(connectionString, tableName, dbType) ?? "Id"
+                : columnName;
+            
+            command.CommandText = SyntaxService.GetByIdQuery(tableName, schemaName, primaryKey, primaryKeyColumn);
+            AddParameter(command, "idParam", primaryKey, dbType);
             
             using var reader = await command.ExecuteReaderAsync();
             if (await reader.ReadAsync())
@@ -240,8 +105,16 @@ public partial class DapperRepository(string? connectionString, string? schemaNa
             await connection.OpenAsync();
             using var command = connection.CreateCommand();
             
-            command.CommandText = GetSafeQuery("Insert", tableName, dbType);
+            // Get primary key column name if not provided
+            string primaryKeyColumn = string.IsNullOrEmpty(columnName) 
+                ? GetPrimaryKeyColumnName(connectionString, tableName, dbType) ?? "Id"
+                : columnName;
             
+            // Use the SyntaxService to generate parameterized query
+            string query = SyntaxService.AddQuery(tableName, schemaName, values, null, null, primaryKeyColumn, connectionString);
+            command.CommandText = query;
+            
+            // Add parameters for each value
             foreach (var kvp in values)
             {
                 AddParameter(command, kvp.Key, kvp.Value, dbType);
@@ -249,12 +122,19 @@ public partial class DapperRepository(string? connectionString, string? schemaNa
             
             if (dbType == DatabaseType.Oracle)
             {
-                AddParameter(command, "retVal", DBNull.Value, dbType);
+                // Oracle requires a return parameter for RETURNING clause
+                var returnParam = command.CreateParameter();
+                returnParam.ParameterName = "retVal";
+                returnParam.Direction = System.Data.ParameterDirection.Output;
+                returnParam.DbType = System.Data.DbType.Int32;
+                command.Parameters.Add(returnParam);
+                
                 await command.ExecuteNonQueryAsync();
-                return command.Parameters["retVal"].Value;
+                return returnParam.Value;
             }
             else
             {
+                // SQL Server uses OUTPUT clause
                 return await command.ExecuteScalarAsync();
             }
         }
@@ -274,13 +154,13 @@ public partial class DapperRepository(string? connectionString, string? schemaNa
             await connection.OpenAsync();
             using var command = connection.CreateCommand();
             
-            command.CommandText = GetSafeQuery("Update", tableName, dbType);
+            command.CommandText = SyntaxService.UpdateQuery(tableName, schemaName, primaryKey, values.Where(kvp => kvp.Value != null).ToDictionary(kvp => kvp.Key, kvp => kvp.Value!), string.IsNullOrEmpty(columnName) ? GetPrimaryKeyColumnName(connectionString, tableName, dbType) ?? "Id" : columnName);
             
-            foreach (var kvp in values)
+            foreach (var kvp in values.Where(kvp => kvp.Value != null))
             {
                 AddParameter(command, kvp.Key, kvp.Value, dbType);
             }
-            AddParameter(command, "idValue", primaryKey, dbType);
+            AddParameter(command, "idParam", primaryKey, dbType);
             
             int affectedRows = await command.ExecuteNonQueryAsync();
             return affectedRows > 0;
@@ -301,8 +181,8 @@ public partial class DapperRepository(string? connectionString, string? schemaNa
             await connection.OpenAsync();
             using var command = connection.CreateCommand();
             
-            command.CommandText = GetSafeQuery("Delete", tableName, dbType);
-            AddParameter(command, "idValue", primaryKey, dbType);
+            command.CommandText = SyntaxService.DeleteQuery(tableName, schemaName, primaryKey, string.IsNullOrEmpty(columnName) ? GetPrimaryKeyColumnName(connectionString, tableName, dbType) ?? "Id" : columnName);
+            AddParameter(command, "idParam", primaryKey, dbType);
             
             int affectedRows = await command.ExecuteNonQueryAsync();
             return affectedRows > 0;
@@ -367,102 +247,34 @@ public partial class DapperRepository(string? connectionString, string? schemaNa
             await connection.OpenAsync();
             using var command = connection.CreateCommand();
             
-            // Try to get the pre-built query first
-            string baseQuery;
-            try 
-            {
-                baseQuery = GetSafeQuery("GetAll", tableName, dbType);
-            }
-            catch
-            {
-                // Fallback for tables not in SafeQueries - validate tableName first
-                if (!Regex.IsMatch(tableName, @"^[a-zA-Z][a-zA-Z0-9_]*$"))
-                    throw new ArgumentException("Invalid table name");
-                // Use safe query construction to prevent SQL injection
-                var safeTableName = tableName; // Already validated above
-                
-                // Build query using quoted identifiers to avoid injection detection
-                var tableIdentifier = dbType == DatabaseType.Oracle ? 
-                    $"\"{safeTableName.ToUpper()}\"" : 
-                    $"[{safeTableName}]";
-                    
-                var orderColumn = dbType == DatabaseType.Oracle ? "ID" : "Id";
-                
-                baseQuery = string.Join(" ", new[] { "SELECT * FROM", tableIdentifier, "ORDER BY", orderColumn });
-            }
+            // Use the SyntaxService to generate parameterized query
+            string query = SyntaxService.GetAllQuery(tableName, schemaName, where, orderBy, limit, offset, connectionString);
+            command.CommandText = query;
             
-            // Build the full query with WHERE, ORDER BY, and pagination
-            var sqlBuilder = new System.Text.StringBuilder(baseQuery.Replace(" ORDER BY Id", "").Replace(" ORDER BY ID", ""));
-            var parameters = new Dictionary<string, object?>();
-            
-            // Add WHERE clause if specified
-            if (!string.IsNullOrEmpty(where))
+            // Add parameters for limit and offset if they exist
+            if (limit.HasValue)
             {
-                // Basic validation for WHERE clause
-                if (Regex.IsMatch(where, @"^[\w\s=<>!'%-]+$"))
-                {
-                    sqlBuilder.Append(" WHERE ").Append(where);
-                }
+                AddParameter(command, "limitParam", limit.Value, dbType);
             }
-            
-            // Add ORDER BY clause
-            if (!string.IsNullOrEmpty(orderBy))
+            if (offset.HasValue)
             {
-                if (Regex.IsMatch(orderBy, @"^[\w\s,]+(ASC|DESC)?$"))
-                {
-                    sqlBuilder.Append(" ORDER BY ").Append(orderBy);
-                }
-            }
-            else
-            {
-                sqlBuilder.Append(" ORDER BY Id");
-            }
-            
-            // Add pagination for SQL Server
-            if (dbType == DatabaseType.SqlServer && (offset.HasValue || limit.HasValue))
-            {
-                sqlBuilder.Append(" OFFSET @offsetValue ROWS");
-                parameters["offsetValue"] = offset.GetValueOrDefault(0);
-                
-                if (limit.HasValue)
-                {
-                    sqlBuilder.Append(" FETCH NEXT @limitValue ROWS ONLY");
-                    parameters["limitValue"] = limit.Value;
-                }
-            }
-            else if (dbType == DatabaseType.Oracle && (offset.HasValue || limit.HasValue))
-            {
-                sqlBuilder.Append(" OFFSET :offsetValue ROWS");
-                parameters["offsetValue"] = offset.GetValueOrDefault(0);
-                
-                if (limit.HasValue)
-                {
-                    sqlBuilder.Append(" FETCH NEXT :limitValue ROWS ONLY");
-                    parameters["limitValue"] = limit.Value;
-                }
-            }
-            
-            command.CommandText = sqlBuilder.ToString();
-            
-            // Add parameters
-            foreach (var param in parameters)
-            {
-                AddParameter(command, param.Key, param.Value, dbType);
+                AddParameter(command, "offsetParam", offset.Value, dbType);
             }
             
             using var reader = await command.ExecuteReaderAsync();
-            var results = new List<dynamic>();
+            var result = new List<dynamic>();
             while (await reader.ReadAsync())
             {
-                dynamic item = new ExpandoObject();
-                IDictionary<string, object> dict = item;
+                dynamic expandoObject = new ExpandoObject();
+                IDictionary<string, object> dictionary = expandoObject;
+                
                 for (int i = 0; i < reader.FieldCount; i++)
                 {
-                    dict[reader.GetName(i)] = reader.GetValue(i);
+                    dictionary[reader.GetName(i)] = reader.GetValue(i);
                 }
-                results.Add(item);
+                result.Add(expandoObject);
             }
-            return results;
+            return result;
         }
         catch (Exception exception)
         {
