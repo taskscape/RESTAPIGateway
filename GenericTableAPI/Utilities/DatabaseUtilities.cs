@@ -1,10 +1,8 @@
 ﻿using Microsoft.Data.SqlClient;
 using Oracle.ManagedDataAccess.Client;
-using System.Data;
 using System.Data.Common;
 using System.Dynamic;
 using System.Globalization;
-using System.Text;
 
 namespace GenericTableAPI.Utilities;
 
@@ -50,67 +48,39 @@ public static class DatabaseUtilities
     /// <param name="databaseType">Database type</param>
     /// <returns></returns>
     /// <exception cref="NotSupportedException"></exception>
-    public static string? GetPrimaryKeyColumnName(
-    string? connectionString,
-    string tableName,
-    DatabaseType databaseType)
+    public static string GetPrimaryKeyColumnName(string? connectionString, string tableName, DatabaseType databaseType)
     {
-        var sb = new StringBuilder();
-        switch (databaseType)
+        string query = databaseType switch
         {
-            case DatabaseType.SqlServer:
-                sb.AppendLine("SELECT COLUMN_NAME");
-                sb.AppendLine("  FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE");
-                sb.AppendLine(" WHERE OBJECTPROPERTY(" +
-                              "OBJECT_ID(CONSTRAINT_SCHEMA + '.' + CONSTRAINT_NAME)," +
-                              " 'IsPrimaryKey') = 1");
-                sb.Append("   AND TABLE_NAME = @tableName");
-                break;
+            DatabaseType.SqlServer => $@"
+                SELECT COLUMN_NAME
+                FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+                WHERE OBJECTPROPERTY(OBJECT_ID(CONSTRAINT_SCHEMA + '.' + CONSTRAINT_NAME), 'IsPrimaryKey') = 1
+                AND TABLE_NAME = '{tableName}'",
+            DatabaseType.Oracle => $@"
+                SELECT cols.column_name
+                FROM all_constraints cons, all_cons_columns cols
+                WHERE cons.constraint_type = 'P'
+                AND cons.constraint_name = cols.constraint_name
+                AND cons.owner = cols.owner
+                AND UPPER(cols.table_name) = '{tableName.ToUpper()}'",
+            _ => throw new NotSupportedException("Unsupported database type.")
+        };
 
-            case DatabaseType.Oracle:
-                sb.AppendLine("SELECT cols.column_name");
-                sb.AppendLine("  FROM all_constraints cons");
-                sb.AppendLine("       JOIN all_cons_columns cols");
-                sb.AppendLine("         ON cons.constraint_name = cols.constraint_name");
-                sb.AppendLine("        AND cons.owner           = cols.owner");
-                sb.AppendLine(" WHERE cons.constraint_type = 'P'");
-                sb.Append("   AND UPPER(cols.table_name) = :tableName");
-                break;
-
-            default:
-                throw new NotSupportedException("Unsupported database type.");
-        }
-
-        var sql = sb.ToString();
-
-        // 3) Create and open connection
         using DbConnection connection = databaseType switch
         {
             DatabaseType.SqlServer => new SqlConnection(connectionString),
             DatabaseType.Oracle => new OracleConnection(connectionString),
-            _ => throw new NotSupportedException()
+            _ => throw new NotSupportedException("Unsupported database type.")
         };
+
         connection.Open();
 
-        // 4) Create command, assign text & parameter
         using DbCommand command = connection.CreateCommand();
-        command.CommandText = sql;
+        command.CommandText = query;
 
-        var param = command.CreateParameter();
-        param.ParameterName = databaseType == DatabaseType.SqlServer
-                              ? "@tableName"
-                              : ":tableName";
-        param.DbType = DbType.String;
-        param.Value = databaseType == DatabaseType.Oracle
-                              ? tableName.ToUpperInvariant()
-                              : tableName;
-        command.Parameters.Add(param);
-
-        // 5) Execute and return
         using DbDataReader reader = command.ExecuteReader();
-        return reader.Read()
-             ? reader["COLUMN_NAME"]?.ToString()
-             : null;
+        return reader.Read() ? reader["COLUMN_NAME"].ToString() : null;
     }
 
     public static async IAsyncEnumerable<dynamic> ToDynamicList(DbDataReader reader)
