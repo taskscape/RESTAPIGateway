@@ -1,4 +1,4 @@
-using GenericTableAPI.Repositories;
+﻿using GenericTableAPI.Repositories;
 using GenericTableAPI.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -139,21 +139,37 @@ namespace GenericTableAPI
 
             app.UseRouting();
 
+            app.Use(async (context, next) =>
+            {
+                context.Response.OnStarting(() =>
+                {
+                    if (!context.Response.Headers.ContainsKey("Content-Security-Policy"))
+                    {
+                        context.Response.Headers.Add("Content-Security-Policy",
+                            "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'");
+                    }
+
+                    if (!context.Response.Headers.ContainsKey("X-Content-Type-Options"))
+                        context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
+
+                    if (!context.Response.Headers.ContainsKey("X-Frame-Options"))
+                        context.Response.Headers.Add("X-Frame-Options", "DENY");
+
+                    if (!context.Response.Headers.ContainsKey("X-XSS-Protection"))
+                        context.Response.Headers.Add("X-XSS-Protection", "1; mode=block");
+
+                    if (!context.Response.Headers.ContainsKey("Referrer-Policy"))
+                        context.Response.Headers.Add("Referrer-Policy", "strict-origin-when-cross-origin");
+
+                    return Task.CompletedTask;
+                });
+
+                await next();
+            });
+
             app.UseAuthentication();
             app.UseAuthorization();
 
-            app.UseSecurityHeaders(policies =>
-            {
-                policies.AddContentSecurityPolicy(builder =>
-                {
-                    builder.AddDefaultSrc().Self();
-                    builder.AddScriptSrc().Self();
-                    builder.AddStyleSrc().Self();
-                    builder.AddImgSrc().Self().Data();
-                    builder.AddFontSrc().Self();
-                    builder.AddConnectSrc().Self();
-                });
-            });
 
             if (bool.Parse(builder.Configuration["EnableSwagger"] ?? "false"))
             {
