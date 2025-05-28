@@ -142,6 +142,19 @@ namespace GenericTableAPI
             app.UseAuthentication();
             app.UseAuthorization();
 
+            app.UseSecurityHeaders(policies =>
+            {
+                policies.AddContentSecurityPolicy(builder =>
+                {
+                    builder.AddDefaultSrc().Self();
+                    builder.AddScriptSrc().Self();
+                    builder.AddStyleSrc().Self();
+                    builder.AddImgSrc().Self().Data();
+                    builder.AddFontSrc().Self();
+                    builder.AddConnectSrc().Self();
+                });
+            });
+
             if (bool.Parse(builder.Configuration["EnableSwagger"] ?? "false"))
             {
                 if (bool.Parse(builder.Configuration["BasicAuthForSwagger"] ?? "false"))
