@@ -1,4 +1,5 @@
-﻿using Microsoft.Data.SqlClient;
+﻿using GenericTableAPI.Helpers;
+using Microsoft.Data.SqlClient;
 using Oracle.ManagedDataAccess.Client;
 using System.Data.Common;
 using System.Dynamic;
@@ -50,20 +51,26 @@ public static class DatabaseUtilities
     /// <exception cref="NotSupportedException"></exception>
     public static string GetPrimaryKeyColumnName(string? connectionString, string tableName, DatabaseType databaseType)
     {
+        QueryHelper.ValidateIdentifier(tableName);
+
         string query = databaseType switch
         {
-            DatabaseType.SqlServer => $@"
-                SELECT COLUMN_NAME
-                FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
-                WHERE OBJECTPROPERTY(OBJECT_ID(CONSTRAINT_SCHEMA + '.' + CONSTRAINT_NAME), 'IsPrimaryKey') = 1
-                AND TABLE_NAME = '{tableName}'",
-            DatabaseType.Oracle => $@"
-                SELECT cols.column_name
-                FROM all_constraints cons, all_cons_columns cols
-                WHERE cons.constraint_type = 'P'
-                AND cons.constraint_name = cols.constraint_name
-                AND cons.owner = cols.owner
-                AND UPPER(cols.table_name) = '{tableName.ToUpper()}'",
+            DatabaseType.SqlServer => QueryHelper.Build(
+            "SELECT COLUMN_NAME\n",
+            "FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE\n",
+            "WHERE OBJECTPROPERTY(OBJECT_ID(CONSTRAINT_SCHEMA + '.' + CONSTRAINT_NAME), 'IsPrimaryKey') = 1\n",
+            "  AND TABLE_NAME = '", tableName, "'"
+        ),
+            DatabaseType.Oracle => QueryHelper.Build(
+                "SELECT cols.column_name\n",
+                "FROM all_constraints cons, all_cons_columns cols\n",
+                "WHERE cons.constraint_type = 'P'\n",
+                "  AND cons.constraint_name = cols.constraint_name\n",
+                "  AND cons.owner = cols.owner\n",
+                "  AND UPPER(cols.table_name) = '",
+                    tableName.ToUpperInvariant(),
+                "'"
+            ),
             _ => throw new NotSupportedException("Unsupported database type.")
         };
 
