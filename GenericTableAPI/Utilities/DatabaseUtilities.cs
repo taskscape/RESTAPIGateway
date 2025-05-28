@@ -51,7 +51,6 @@ public static class DatabaseUtilities
     /// <exception cref="NotSupportedException"></exception>
     public static string GetPrimaryKeyColumnName(string? connectionString, string tableName, DatabaseType databaseType)
     {
-        QueryHelper.ValidateIdentifier(tableName);
 
         string query = databaseType switch
         {

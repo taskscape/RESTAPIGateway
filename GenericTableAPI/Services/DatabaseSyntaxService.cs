@@ -167,18 +167,19 @@ namespace GenericTableAPI.Services
 
             QueryHelper.ValidateIdentifier(tableName);
             QueryHelper.ValidateIdentifier(primaryKeyColumn);
-            QueryHelper.ValidateIdentifier(id);
+            var safeIdPiece = id is null
+    ? "NULL"
+    : $"'{id.Replace("'", "''")}'";
 
             tableName = GetTableName(tableName, schemaName);
 
             return QueryHelper.Build(
-                "SELECT * FROM ",
-                tableName,
-                " WHERE ",
-                primaryKeyColumn,
-                " = '",
-                id,
-                "'"
+              "SELECT * FROM ",
+              tableName,
+              " WHERE ",
+              primaryKeyColumn,
+              " = ",
+              safeIdPiece
             );
         }
 
@@ -241,7 +242,11 @@ namespace GenericTableAPI.Services
             QueryHelper.ValidateIdentifier(tableName);
             QueryHelper.ValidateIdentifier(setClauses);
             QueryHelper.ValidateIdentifier(primaryKeyColumn);
-            QueryHelper.ValidateIdentifier(id);
+            var safeIdPiece = id is null
+    ? "NULL"
+    : $"'{id.Replace("'", "''")}'";
+
+            tableName = GetTableName(tableName, schemaName);
 
             string sql = QueryHelper.Build(
                 "UPDATE ",
@@ -251,7 +256,7 @@ namespace GenericTableAPI.Services
                 " WHERE ",
                 primaryKeyColumn,
                 " = '",
-                id,
+                safeIdPiece,
                 "'"
             );
 
@@ -323,7 +328,9 @@ namespace GenericTableAPI.Services
 
             QueryHelper.ValidateIdentifier(tableName);
             QueryHelper.ValidateIdentifier(primaryKeyColumn);
-            QueryHelper.ValidateIdentifier(id);
+            var safeIdPiece = id is null
+    ? "NULL"
+    : $"'{id.Replace("'", "''")}'";
 
             string sql = QueryHelper.Build(
                 "DELETE FROM ",
@@ -331,7 +338,7 @@ namespace GenericTableAPI.Services
                 " WHERE ",
                 primaryKeyColumn,
                 " = '",
-                id,
+                safeIdPiece,
                 "'"
             );
 
