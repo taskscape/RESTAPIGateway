@@ -328,18 +328,16 @@ namespace GenericTableAPI.Services
 
             QueryHelper.ValidateIdentifier(tableName);
             QueryHelper.ValidateIdentifier(primaryKeyColumn);
-            var safeIdPiece = id is null
-    ? "NULL"
-    : $"'{id.Replace("'", "''")}'";
+            var safeId = id.Replace("'", "''");
+            var quotedId = $"'{safeId}'";
 
             string sql = QueryHelper.Build(
                 "DELETE FROM ",
-                tableName,
+                 tableName,
                 " WHERE ",
-                primaryKeyColumn,
-                " = '",
-                safeIdPiece,
-                "'"
+                 primaryKeyColumn,
+                " = ",
+                 quotedId
             );
 
             return sql;
