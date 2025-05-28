@@ -1,4 +1,5 @@
-﻿using GenericTableAPI.Utilities;
+﻿using GenericTableAPI.Helpers;
+using GenericTableAPI.Utilities;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
@@ -168,9 +169,14 @@ public class DynamicSwaggerFilter : IDocumentFilter
 
     private OpenApiOperation PostOperation(string table)
     {
+        QueryHelper.ValidateIdentifier(table);
+
         return new OpenApiOperation
         {
-            Summary = $"Insert a new record into {table}",
+            Summary = QueryHelper.Build(
+                "Insert a new record into ",
+                table
+            ),
             Security = new List<OpenApiSecurityRequirement>
                         {
                             new OpenApiSecurityRequirement
@@ -211,9 +217,15 @@ public class DynamicSwaggerFilter : IDocumentFilter
 
     private OpenApiOperation PatchOperation(string table)
     {
+        QueryHelper.ValidateIdentifier(table);
+
         return new OpenApiOperation
         {
-            Summary = $"Update a record from {table} by ID",
+            Summary = QueryHelper.Build(
+                "Update a record from ",
+                table,
+                " by ID"
+            ),
             Security = new List<OpenApiSecurityRequirement>
                         {
                             new OpenApiSecurityRequirement
@@ -260,9 +272,15 @@ public class DynamicSwaggerFilter : IDocumentFilter
 
     private OpenApiOperation PutOperation(string table)
     {
+        QueryHelper.ValidateIdentifier(table);
+
         return new OpenApiOperation
         {
-            Summary = $"Update a record from {table} by ID",
+            Summary = QueryHelper.Build(
+                "Update a record from ",
+                table,
+                " by ID"
+            ),
             Security = new List<OpenApiSecurityRequirement>
                         {
                             new OpenApiSecurityRequirement
@@ -309,9 +327,15 @@ public class DynamicSwaggerFilter : IDocumentFilter
 
     private OpenApiOperation DeleteOperation(string table)
     {
+        QueryHelper.ValidateIdentifier(table);
+
         return new OpenApiOperation
         {
-            Summary = $"Delete a record from {table} by ID",
+            Summary = QueryHelper.Build(
+                "Delete a record from ",
+                table,
+                " by ID"
+            ),
             Security = new List<OpenApiSecurityRequirement>
                         {
                             new OpenApiSecurityRequirement
