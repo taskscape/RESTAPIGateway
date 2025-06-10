@@ -101,7 +101,7 @@ namespace GenericTableAPI.Utilities
             if (!configuration.GetSection("Database").Exists()) return false;
             IConfigurationSection tableSection = configuration.GetSection("Database:Procedures:" + procedureName);
             return HasProcedurePermission(configuration.GetSection("Database:Procedures:*"), user) ||
-                HasProcedurePermission(configuration.GetSection("Database:Procedures:" + procedureName), user)
+                HasProcedurePermission(configuration.GetSection("Database:Procedures:" + procedureName), user);
         }
     }
 }
