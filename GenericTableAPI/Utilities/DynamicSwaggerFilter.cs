@@ -47,7 +47,7 @@ public class DynamicSwaggerFilter : IDocumentFilter
                 var Operations = new Dictionary<OperationType, OpenApiOperation>();
                 var OperationsId = new Dictionary<OperationType, OpenApiOperation>();
 
-                //Check if given table exist in tablesettings.json and if given table has "*" permission
+                //Check if given table exist in tablesettings.json and if given user has permission
                 if (TableValidationUtility.ValidTablePermission(_configuration, table, "select", user))
                 {
                     Operations.Add(OperationType.Get, GetAllOperation(table));

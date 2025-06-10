@@ -15,7 +15,7 @@ REST API Gateway is a service that sits in front of a database and provides a RE
 The services requires:
 
 - Internet Information Services, version 7.0 or later
-- Microsoft .NET Framework, version 6.0 or later
+- .NET Hosting Bundle, version 8.0 or later [Download link](https://builds.dotnet.microsoft.com/dotnet/Sdk/8.0.410/dotnet-sdk-8.0.410-win-x64.exe)
 
 ## Installation
 
