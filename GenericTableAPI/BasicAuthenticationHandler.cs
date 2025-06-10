@@ -5,8 +5,6 @@ using System.Text.Encodings.Web;
 using GenericTableAPI.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace GenericTableAPI
 {
@@ -54,7 +52,7 @@ namespace GenericTableAPI
 
                 if (_users == null) return Task.FromResult(AuthenticateResult.Fail("Invalid authorisation."));
 
-                List<string>? roles = _users.FirstOrDefault(x => x.Username == username)?.GetRoles();
+                List<string>? roles = _users.FirstOrDefault(x => x.Username.Equals(username, StringComparison.OrdinalIgnoreCase))?.GetRoles();
                 List<Claim> claims = [new(ClaimTypes.Name, username)];
                 foreach (var role in roles)
                     if (!string.IsNullOrEmpty(role))
@@ -75,7 +73,7 @@ namespace GenericTableAPI
 
         private bool ValidateCredentials(string username, string password)
         {
-            return _users != null && _users.Any(user => user.Username == username && user.Password == password);
+            return _users != null && _users.Any(user => user.Username.Equals(username, StringComparison.OrdinalIgnoreCase) && user.Password == password);
         }
     }
 }

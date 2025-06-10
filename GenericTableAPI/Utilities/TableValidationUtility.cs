@@ -27,7 +27,7 @@ namespace GenericTableAPI.Utilities
                 if (roles?.Length > 0)
                     return rolePermissions
                         .Select(x => x.StartsWith("rolename:") || x.StartsWith("username:") ? x : $"rolename:{x}")
-                        .Intersect(roles)
+                        .Intersect(roles, StringComparer.OrdinalIgnoreCase)
                         .Any();
             }
 
