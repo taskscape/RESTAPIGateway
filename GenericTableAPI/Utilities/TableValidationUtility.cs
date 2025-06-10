@@ -1,22 +1,18 @@
-﻿using System.Security.Claims;
+﻿using System.Data;
+using System.Security.Claims;
 using System.Security.Principal;
 
 namespace GenericTableAPI.Utilities
 {
     public static class TableValidationUtility
     {
-        public static bool ValidTablePermission(IConfiguration configuration, string tableName, string permission, ClaimsPrincipal? User = null)
+        private static bool HasTablePermission(IConfigurationSection tableSection, string permission, ClaimsPrincipal? User = null)
         {
-            if (!configuration.GetSection("Database").Exists()) return false;
-            IConfigurationSection tableSection = configuration.GetSection("Database:Tables:" + tableName);
             if (!tableSection.Exists())
-            {
-                tableSection = configuration.GetSection("Database:Tables:*");//Check default permission
-                if (!tableSection.Exists())
-                    return false;
-            }
+                return false;
+
             List<string>? configPermissions = tableSection.Get<List<string>>();
-            if(configPermissions.Contains(permission))
+            if (configPermissions.Contains(permission))
                 return true;
 
             IConfigurationSection roleSection = tableSection.GetSection(permission);
@@ -28,7 +24,7 @@ namespace GenericTableAPI.Utilities
             if (User != null)
             {
                 string[]? roles = GetUserRoles(User);
-                if(roles?.Length > 0)
+                if (roles?.Length > 0)
                     return rolePermissions
                         .Select(x => x.StartsWith("rolename:") || x.StartsWith("username:") ? x : $"rolename:{x}")
                         .Intersect(roles)
@@ -36,6 +32,13 @@ namespace GenericTableAPI.Utilities
             }
 
             return false;
+        }
+
+        public static bool ValidTablePermission(IConfiguration configuration, string tableName, string permission, ClaimsPrincipal? User = null)
+        {
+            if (!configuration.GetSection("Database").Exists()) return false;
+            return HasTablePermission(configuration.GetSection("Database:Tables:*"), permission, User) ||
+                HasTablePermission(configuration.GetSection("Database:Tables:" + tableName), permission, User);
         }
 
         public static string[]? GetUserRoles(ClaimsPrincipal User)
@@ -71,16 +74,11 @@ namespace GenericTableAPI.Utilities
             return userClaims.ToArray();
         }
 
-        public static bool ValidProcedurePermission(IConfiguration configuration, string procedureName, ClaimsPrincipal user)
+        private static bool HasProcedurePermission(IConfigurationSection tableSection, ClaimsPrincipal user)
         {
-            if (!configuration.GetSection("Database").Exists()) return false;
-            IConfigurationSection tableSection = configuration.GetSection("Database:Procedures:" + procedureName);
             if (!tableSection.Exists())
-            {
-                tableSection = configuration.GetSection("Database:Procedures:*");//Check default permission
-                if (!tableSection.Exists())
-                    return false;
-            }
+                return false;
+
             List<string>? rolePermissions = tableSection.Get<List<string>>();
 
             if (rolePermissions?.FirstOrDefault() == "*") return true;
@@ -96,6 +94,14 @@ namespace GenericTableAPI.Utilities
             }
 
             return false;
+        }
+
+        public static bool ValidProcedurePermission(IConfiguration configuration, string procedureName, ClaimsPrincipal user)
+        {
+            if (!configuration.GetSection("Database").Exists()) return false;
+            IConfigurationSection tableSection = configuration.GetSection("Database:Procedures:" + procedureName);
+            return HasProcedurePermission(configuration.GetSection("Database:Procedures:*"), user) ||
+                HasProcedurePermission(configuration.GetSection("Database:Procedures:" + procedureName), user)
         }
     }
 }

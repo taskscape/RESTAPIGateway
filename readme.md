@@ -569,7 +569,7 @@ The configuration file is structured under the `Database` key, containing `Table
 Each table entry supports defining actions: `select`, `insert`, `update`, and `delete`, along with access specifications for each action.
 
 #### **Default Permissions for Tables**
-The **Default Permissions** can be specified using `*` (asterisk) instead of a table name. This will define global permissions that apply to all tables that are **not** explicitly specified in the `Tables` section. Permissions are specified for the actions `select`, `insert`, `update`, and `delete`.
+The **Default Permissions** can be specified using `*` (asterisk) instead of a table name. This will define global permissions that apply to all tables. Permissions are specified for the actions `select`, `insert`, `update`, and `delete`.
 
 **Example:**
 
@@ -583,7 +583,7 @@ The **Default Permissions** can be specified using `*` (asterisk) instead of a t
         "update": [], // Default: No update access.
         "delete": [] // Default: No delete access.
       }
-      // Every explicitly specified table will NOT use the default permissions
+      // Every explicitly specified table will use both the default and specified permissions
     }
   }
 }
@@ -693,15 +693,15 @@ In this example for `Table1`:
 The `Procedures` section defines access permissions for stored procedures. Just like the `Tables` section, it allows specifying default permissions and individual overrides for specific procedures.
 
 #### **Default Permissions for Procedures**
-Using `*` (asterisk) instead of a procedure name defines global permissions that apply to all procedures **not explicitly listed** in the `Procedures` section.
+Using `*` (asterisk) instead of a procedure name defines global permissions that apply to all procedures.
 
 #### **Example:**
 ```json
 {
   "Database": {
     "Procedures": {
-      "*": ["Admin"], // Default: Only Admins can execute unspecified procedures.
-      "MyProcedureName": ["rolename:Admin", "username:user1"], // Admin role and user1 have access.
+      "*": ["Admin"], // Default: Only Admins can execute every procedure.
+      "MyProcedureName": ["username:user1"], // Admin (From Default [*] permission) and user1 have access.
       "PublicProcedure": ["*"] // Everyone has access.
     }
   }
@@ -709,7 +709,7 @@ Using `*` (asterisk) instead of a procedure name defines global permissions that
 ```
 
 ### **Key Notes**
-- Every explicitly specified table or procedure **will NOT inherit default permissions**.
+- Every explicitly specified table or procedure **will inherit default permissions**.
 - The `Tables` section supports four actions: `select`, `insert`, `update`, and `delete`.
 - The `Procedures` section only requires listing allowed users or roles, as procedures typically have execute permissions.
 - Role-based (`rolename:RoleName`) and user-based (`username:UserName`) access control is supported for both tables and procedures.

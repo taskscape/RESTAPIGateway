@@ -19,7 +19,7 @@ public class DynamicSwaggerFilter : IDocumentFilter
     public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
     {
         var user = _httpContextAccessor.HttpContext?.User;
-        if (user == null)
+        if (user == null || user.Identity == null || !user.Identity.IsAuthenticated)
         {
             return; // Do not generate Swagger docs if the user is not authenticated
         }
