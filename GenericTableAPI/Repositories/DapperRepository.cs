@@ -206,6 +206,32 @@ public partial class DapperRepository(string? connectionString, string? schemaNa
 
         logger.Information("Repository.UpdateAsync: Primary key column name: {0} used for table: {1}", columnName, tableName);
 
+        var dbType = GetDatabaseType(connectionString);
+        var logValues = values
+            .Where(kv => kv.Value != null
+                      && (!(kv.Value is string s) || !string.IsNullOrEmpty(s)))
+            .ToList();
+        string logQuery = "";
+
+        switch (dbType)
+        {
+            case DatabaseType.SqlServer:
+                // [brackets] around names, @prefix removed in the literal
+                logQuery =
+                    $"UPDATE [{tableName}]\n" +
+                    $"   SET {string.Join(", ", logValues.Select(kv => $"[{kv.Key}] = '{kv.Value}'"))}\n" +
+                    $" WHERE [{columnName}] = '{primaryKey}';";
+                break;
+
+            case DatabaseType.Oracle:
+                // "quotes" around names, literal values in single-quotes
+                logQuery =
+                    $"UPDATE \"{tableName}\"\n" +
+                    $"   SET {string.Join(", ", logValues.Select(kv => $"\"{kv.Key}\" = '{kv.Value}'"))}\n" +
+                    $" WHERE \"{columnName}\" = '{primaryKey}';";
+                break;
+        }
+
         using DatabaseHandler connectionHandler = new(connectionString);
         connectionHandler.Open();
         if (connectionString != null)
@@ -214,13 +240,13 @@ public partial class DapperRepository(string? connectionString, string? schemaNa
 
             try
             {
-                logger.Information("Repository.UpdateAsync: executing: " + query);
+                logger.Information("Repository.UpdateAsync: executing: " + logQuery);
                 await connectionHandler.ExecuteScalarAsync(query);
                 return true;
             }
             catch (Exception exception)
             {
-                logger.Error(exception, "Repository.UpdateAsync: An error occurred while executing: {0}", query);
+                logger.Error(exception, "Repository.UpdateAsync: An error occurred while executing: {0}", logQuery);
                 throw;
             }
             finally
@@ -274,6 +300,8 @@ public partial class DapperRepository(string? connectionString, string? schemaNa
         using DatabaseHandler connectionHandler = new(connectionString);
         connectionHandler.Open();
         string query = SyntaxService.UpdateQuery(tableName, schemaName, primaryKey, values, columnName, setClauses);
+
+        var dbType = GetDatabaseType(connectionString);
 
         try
         {
