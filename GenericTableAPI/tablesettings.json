@@ -1,13 +1,13 @@
 {
   "Database": {
     "Procedures": {
-        "*": [ "Admin" ], //"*" HERE MEANS THE DEFAULT PERMISSION. THOSE PERMISSIONS WILL BE USED FOR PROCEDURES THAT ARE NOT SPECIFIED BELOW (example: 'MyProcedureName' procedure will override the "*")
-        "MyProcedureName": [ "rolename:Admin", "username:user1" ], //Given Roles has the permissions
-        "PublicProcedure": [ "*" ] //Everyone has the permison
+      "*": [ "Admin" ], //"*" HERE MEANS EVERY TABLE. THOSE PERMISSIONS WILL BE USED ALONG WITH PERMISSIONS SPECIFIED BELOW
+      "MyProcedureName": [ "rolename:Admin", "username:user1" ], //Given Roles has the permissions
+      "PublicProcedure": [ "*" ] //Everyone has the permison
     },
     "Tables": {
-      "*": { //"*" HERE MEANS THE DEFAULT PERMISSION. THOSE PERMISSIONS WILL BE USED FOR TABLES THAT ARE NOT SPECIFIED BELOW (example: 'testnotfound' table will override the select: "*")
-        "select": [ "*" ], //EVERYONE HAS THE PERMISSION TO SELECT TO EVERY TABLE (EVERY TABLE SPECIFIED BELOW OVERRIDES THIS PERMISSION COMPLETELY)
+      "*": { //"*" HERE MEANS EVERY TABLE. THOSE PERMISSIONS WILL BE USED ALONG WITH PERMISSIONS SPECIFIED BELOW
+        "select": [ "*" ],
         "insert": [ "rolename:Role2" ],
         "update": []
       },

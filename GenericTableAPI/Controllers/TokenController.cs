@@ -26,7 +26,7 @@ namespace GenericTableAPI.Controllers
 
             if (ValidateCredentials(userData.UserName, userData.Password))
             {
-                return Ok(CreateToken(_users.Where(x => x.Username == userData.UserName).FirstOrDefault()));
+                return Ok(CreateToken(_users.Where(x => x.Username.Equals(userData.UserName, StringComparison.OrdinalIgnoreCase)).FirstOrDefault()));
             }
 
             return BadRequest("Invalid credentials");
@@ -34,7 +34,7 @@ namespace GenericTableAPI.Controllers
 
         private bool ValidateCredentials(string userName, string password)
         {
-            return _users.Any(user => user.Username == userName && user.Password == password);
+            return _users.Any(user => user.Username.Equals(userName, StringComparison.OrdinalIgnoreCase) && user.Password == password);
         }
         private string CreateToken(AuthUser user)
         {
