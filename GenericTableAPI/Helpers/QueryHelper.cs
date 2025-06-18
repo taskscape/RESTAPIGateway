@@ -5,13 +5,9 @@ namespace GenericTableAPI.Helpers
 {
     public static class QueryHelper
     {
-        // 1) The same "whitelist" regex you'd already sketched
         private static readonly Regex IdentifierRegex
-            = new(@"^[A-Za-z_][A-Za-z0-9_]*$", RegexOptions.Compiled);
+            = new(@"^([A-Za-z_][A-Za-z0-9_]*)(\.[A-Za-z_][A-Za-z0-9_]*)*$", RegexOptions.Compiled);
 
-        /// <summary>
-        /// Throws if the given name is null/empty or doesn't match [A-Za-z_][A-Za-z0-9_]*
-        /// </summary>
         public static void ValidateIdentifier(string? name)
         {
             if (string.IsNullOrEmpty(name))
