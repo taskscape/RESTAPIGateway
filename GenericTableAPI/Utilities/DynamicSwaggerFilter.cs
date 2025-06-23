@@ -48,21 +48,21 @@ public class DynamicSwaggerFilter : IDocumentFilter
                 var OperationsId = new Dictionary<OperationType, OpenApiOperation>();
 
                 //Check if given table exist in tablesettings.json and if given user has permission
-                if (TableValidationUtility.ValidTablePermission(_configuration, table, "select", user))
+                if (TableValidationUtility.CheckTablePermission(_configuration, table, "select", user))
                 {
                     Operations.Add(OperationType.Get, GetAllOperation(table));
                     OperationsId.Add(OperationType.Get, GetByIdOperation(table));
                 }
-                if (TableValidationUtility.ValidTablePermission(_configuration, table, "update", user))
+                if (TableValidationUtility.CheckTablePermission(_configuration, table, "update", user))
                 {
                     OperationsId.Add(OperationType.Put, PutOperation(table));
                     OperationsId.Add(OperationType.Patch, PatchOperation(table));
                 }
-                if (TableValidationUtility.ValidTablePermission(_configuration, table, "insert", user))
+                if (TableValidationUtility.CheckTablePermission(_configuration, table, "insert", user))
                 {
                     Operations.Add(OperationType.Post, PostOperation(table));
                 }
-                if (TableValidationUtility.ValidTablePermission(_configuration, table, "delete", user))
+                if (TableValidationUtility.CheckTablePermission(_configuration, table, "delete", user))
                 {
                     OperationsId.Add(OperationType.Delete, DeleteOperation(table));
                 }

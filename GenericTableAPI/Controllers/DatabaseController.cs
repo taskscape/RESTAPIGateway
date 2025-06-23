@@ -36,7 +36,7 @@ namespace GenericTableAPI.Controllers
             dynamic? responseObj = null;
             _logger.LogInformation("{RequestInfo}", requestInfo);
         
-            if (!TableValidationUtility.ValidTablePermission(_configuration, tableName, "select", User))
+            if (!TableValidationUtility.CheckTablePermission(_configuration, tableName, "select", User))
             {
                 _logger.LogWarning("User {UserName} attempted to access table {TableName} with GET-all and without permission. Timestamp: {TimeStamp}", User.Identity?.Name ?? "unknown", tableName, timestamp);
                 return Forbid();
@@ -46,10 +46,10 @@ namespace GenericTableAPI.Controllers
             {
                 _logger.LogInformation("Getting all entities from {TableName} from cache. Timestamp: {TimeStamp}", tableName, timestamp);
                 if (cacheResponse == null)
-                    return responseObj = NotFound();
+                    return _ = NotFound();
                 if(cacheResponse is IEnumerable<dynamic> enumerable && !enumerable.Any())
-                    return responseObj = Ok();
-                return responseObj = Ok(cacheResponse);
+                    return _ = Ok();
+                return _ = Ok(cacheResponse);
             }
         
             try
@@ -95,7 +95,7 @@ namespace GenericTableAPI.Controllers
             dynamic? responseObj = null;
             _logger.LogInformation("{RequestInfo}", requestInfo);
         
-            if (!TableValidationUtility.ValidTablePermission(_configuration, tableName, "select", User))
+            if (!TableValidationUtility.CheckTablePermission(_configuration, tableName, "select", User))
             {
                 _logger.LogWarning("User {UserName} attempted to access table {TableName} with GET-ID command and without permission. Timestamp: {TimeStamp}", User.Identity?.Name ?? "unknown", tableName, timestamp);
                 return Forbid();
@@ -149,7 +149,7 @@ namespace GenericTableAPI.Controllers
             dynamic? responseObj = null;
             _logger.LogInformation("{RequestInfo}", requestInfo);
         
-            if (!TableValidationUtility.ValidTablePermission(_configuration, tableName, "insert", User))
+            if (!TableValidationUtility.CheckTablePermission(_configuration, tableName, "insert", User))
             {
                 _logger.LogWarning("User {UserName} attempted to access table {TableName} with POST command and without permission. Timestamp: {TimeStamp}", User.Identity?.Name ?? "unknown", tableName, timestamp);
                 return Forbid();
@@ -202,7 +202,7 @@ namespace GenericTableAPI.Controllers
             dynamic? responseObj = null;
             _logger.LogInformation("{RequestInfo}", requestInfo);
         
-            if (!TableValidationUtility.ValidTablePermission(_configuration, tableName, "update", User))
+            if (!TableValidationUtility.CheckTablePermission(_configuration, tableName, "update", User))
             {
                 _logger.LogWarning("User {UserName} attempted to access table {TableName} with PATCH command and without permission. Timestamp: {TimeStamp}", User.Identity?.Name ?? "unknown", tableName, timestamp);
                 return Forbid();
@@ -246,7 +246,7 @@ namespace GenericTableAPI.Controllers
             dynamic? responseObj = null;
             _logger.LogInformation("{RequestInfo}", requestInfo);
         
-            if (!TableValidationUtility.ValidTablePermission(_configuration, tableName, "update", User))
+            if (!TableValidationUtility.CheckTablePermission(_configuration, tableName, "update", User))
             {
                 _logger.LogWarning("User {UserName} attempted to access table {TableName} with PUT command and without permission. Timestamp: {TimeStamp}", User.Identity?.Name ?? "unknown", tableName, timestamp);
                 return Forbid();
@@ -290,7 +290,7 @@ namespace GenericTableAPI.Controllers
             dynamic? responseObj = null;
             _logger.LogInformation("{RequestInfo}", requestInfo);
         
-            if (!TableValidationUtility.ValidTablePermission(_configuration, tableName, "delete", User))
+            if (!TableValidationUtility.CheckTablePermission(_configuration, tableName, "delete", User))
             {
                 _logger.LogWarning("User {UserName} attempted to access table {TableName} with DELETE command and without permission. Timestamp: {TimeStamp}", User.Identity?.Name ?? "unknown", tableName, timestamp);
                 return Forbid();
@@ -344,7 +344,7 @@ namespace GenericTableAPI.Controllers
             dynamic? responseObj = null;
             _logger.LogInformation("{RequestInfo}", requestInfo);
 
-            if (!TableValidationUtility.ValidProcedurePermission(_configuration, procedureName, User))
+            if (!TableValidationUtility.CheckProcedurePermission(_configuration, procedureName, User))
             {
                 _logger.LogWarning("User {UserName} attempted to access procedure {procedureName} without permission. Timestamp: {TimeStamp}", User.Identity?.Name ?? "unknown", procedureName, timestamp);
                 return Forbid();
