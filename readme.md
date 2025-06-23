@@ -717,6 +717,44 @@ Using `*` (asterisk) instead of a procedure name defines global permissions that
 
 This structure ensures fine-grained control over database access while providing sensible defaults.
 
+Here is a more professional and polished version of your **Status Codes** section, ready to be integrated into your README:
+
+---
+
+## **HTTP Status Codes**
+
+The following table outlines the standard HTTP status codes returned by the REST API Gateway for various scenarios:
+
+| **Scenario**                                        | **HTTP Code**               |
+| --------------------------------------------------- | --------------------------- |
+| Successful GET request (data found or empty result) | `200 OK`                    |
+| Resource created successfully (POST)                | `201 Created`               |
+| Successful update or delete operation               | `200 OK`                    |
+| Stored procedure executed with no return data       | `204 No Content`            |
+| Missing or invalid authentication credentials       | `401 Unauthorized`          |
+| Authenticated but lacking required permissions      | `403 Forbidden`             |
+| Resource not found (table, row, or procedure)       | `404 Not Found`             |
+| Unhandled server error or exception                 | `500 Internal Server Error` |
+
+
+#### Explanation of Status Codes
+
+* **2xx – Success**
+
+  * `200 OK`: The request was successful. Applies to GET, PUT, PATCH, and DELETE operations—even when the result set is empty.
+  * `201 Created`: The resource was successfully created. Returned by POST endpoints.
+  * `204 No Content`: The request was successful, but no content is returned (typically from stored procedures).
+
+* **4xx – Client Errors**
+
+  * `401 Unauthorized`: The request lacks valid authentication credentials. Applies when no token or invalid token is provided.
+  * `403 Forbidden`: Authentication was successful, but the user does not have permission to access the resource or operation.
+  * `404 Not Found`: The requested resource (such as a table, row, or procedure) does not exist.
+
+* **5xx – Server Errors**
+
+  * `500 Internal Server Error`: An unexpected error occurred on the server while processing the request.
+
 
 ## Maintenance
 
