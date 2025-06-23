@@ -13,9 +13,20 @@ public partial class DapperRepository(string? connectionString, string? schemaNa
 {
     private static object? SanitizeValue(object? value)
     {
-        string? sanitizedValue = value?.ToString()?.Replace("'", "''");
+        if (value == null) return null;
 
-        return sanitizedValue;
+        string raw = value.ToString() ?? "";
+
+        // Regex to detect SQL injection attempts
+        string pattern = @"('.*--)|(;)|(/\*)|(\*/)|('{2,})|(\b(SELECT|INSERT|DELETE|UPDATE|DROP|EXEC|UNION|OR|AND)\b)";
+        if (Regex.IsMatch(raw, pattern, RegexOptions.IgnoreCase))
+        {
+            throw new ArgumentException($"SanitizeValue: Possible SQL injection attempt detected in value: {raw}");
+        }
+
+        // Escape single quotes
+        string sanitizedValue = raw.Replace("'", "''");
+        return $"'{sanitizedValue}'";
     }
 
     /// <summary>
@@ -181,7 +192,7 @@ public partial class DapperRepository(string? connectionString, string? schemaNa
 
         foreach (KeyValuePair<string, object?> pair in values)
         {
-            if (!Regex.IsMatch(pair.Key, @"^[\w\d]+$"))
+            if (!Regex.IsMatch(pair.Key, @"^[A-Za-z_][A-Za-z0-9_]*$"))
             {
                 throw new ArgumentException("Repository.UpdateAsync: Invalid column name: " + columnName);
             }
