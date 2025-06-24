@@ -163,6 +163,10 @@ namespace GenericTableAPI
 
                     return Task.CompletedTask;
                 });
+                if (context.User.Identity?.AuthenticationType == "NTLM")
+                {
+                    context.Response.Headers["Connection"] = "close";
+                }
 
                 await next();
             });

@@ -26,7 +26,7 @@ public partial class DapperRepository(string? connectionString, string? schemaNa
 
         // Escape single quotes
         string sanitizedValue = raw.Replace("'", "''");
-        return $"'{sanitizedValue}'";
+        return $"{sanitizedValue}";
     }
 
     /// <summary>
