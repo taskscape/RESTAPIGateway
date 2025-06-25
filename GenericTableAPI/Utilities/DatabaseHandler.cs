@@ -39,11 +39,21 @@ public class DatabaseHandler : IDisposable
         return command.ExecuteReaderAsync();
     }
 
+    public Task<DbDataReader> ExecuteReaderAsync(string query, object? parameters)
+    {
+        return _connection.ExecuteReaderAsync(query, parameters);
+    }
+
     public Task<object?> ExecuteScalarAsync(string query)
     {
         DbCommand command = _connection.CreateCommand();
         command.CommandText = query;
         return command.ExecuteScalarAsync();
+    }
+
+    public Task<object?> ExecuteScalarAsync(string query, object? parameters)
+    {
+        return _connection.ExecuteScalarAsync(query, parameters);
     }
 
     public Task<object?> ExecuteInsertAsync(string query)
@@ -52,6 +62,14 @@ public class DatabaseHandler : IDisposable
             return OracleExecuteInsertAsync(query);
         else
             return ExecuteScalarAsync(query);
+    }
+
+    public Task<object?> ExecuteInsertAsync(string query, object? parameters)
+    {
+        if (_connection is OracleConnection)
+            return OracleExecuteInsertAsync(query, parameters);
+        else
+            return ExecuteScalarAsync(query, parameters);
     }
 
     public IEnumerable<string> GetTableNames()
@@ -90,6 +108,15 @@ public class DatabaseHandler : IDisposable
         {
             await command.ExecuteScalarAsync();
             return returnId.Value;
+        });
+    }
+
+    private Task<object?> OracleExecuteInsertAsync(string query, object? parameters)
+    {
+        return Task.Run(async () =>
+        {
+            var result = await _connection.QuerySingleAsync<int>(query, parameters);
+            return result;
         });
     }
 

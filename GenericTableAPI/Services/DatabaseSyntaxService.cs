@@ -52,7 +52,7 @@ namespace GenericTableAPI.Services
                 throw new ArgumentException(InvalidWhereClauseMessage);
             }
         }
-        
+
         /// <summary>
         /// Validates the ORDER BY clause.
         /// </summary>
@@ -150,6 +150,28 @@ namespace GenericTableAPI.Services
             return query;
         }
 
+        /// <summary>
+        /// Constructs a parameterized SQL SELECT query to retrieve a record by its primary key.
+        /// </summary>
+        /// <param name="tableName">The name of the table.</param>
+        /// <param name="schemaName">The name of the schema (optional).</param>
+        /// <param name="primaryKeyColumn">The name of the primary key column.</param>
+        /// <param name="connectionString">The connection string.</param>
+        /// <returns>A tuple containing the SQL query and parameters object.</returns>
+        public static (string Query, object Parameters) GetByIdQueryParameterized(string tableName, string? schemaName, string? primaryKeyColumn, string? connectionString = null)
+        {
+            ValidateTableName(tableName);
+            QueryHelper.ValidateIdentifier(primaryKeyColumn);
+
+            tableName = GetTableName(tableName, schemaName);
+            DatabaseType dbType = GetDatabaseType(connectionString);
+
+            string paramName = dbType == DatabaseType.Oracle ? ":Id" : "@Id";
+            string query = $"SELECT * FROM {tableName} WHERE {primaryKeyColumn} = {paramName}";
+            var parameters = new { Id = DBNull.Value };
+
+            return (query, parameters);
+        }
 
         /// <summary>
         /// Constructs a SQL SELECT query to retrieve a record by its primary key.
@@ -181,6 +203,53 @@ namespace GenericTableAPI.Services
               " = ",
               safeIdPiece
             );
+        }
+
+        /// <summary>
+        /// Constructs a parameterized SQL INSERT query to add a record to a table.
+        /// </summary>
+        /// <param name="tableName">The name of the table.</param>
+        /// <param name="schemaName">The name of the schema (optional).</param>
+        /// <param name="values">A dictionary containing column names and their corresponding values.</param>
+        /// <param name="primaryKeyColumn">The name of the primary key column.</param>
+        /// <param name="connectionString">The connection string.</param>
+        /// <returns>A tuple containing the SQL query and parameters object.</returns>
+        public static (string Query, object Parameters) AddQueryParameterized(string tableName, string? schemaName, IDictionary<string, object?> values, string? primaryKeyColumn = null, string? connectionString = null)
+        {
+            ValidateTableName(tableName);
+            DatabaseType databaseType = GetDatabaseType(connectionString);
+
+            tableName = GetTableName(tableName, schemaName);
+            string columns = string.Join(", ", values.Keys);
+
+            var parameters = new Dictionary<string, object?>();
+            var parameterNames = new List<string>();
+
+            foreach (var kvp in values)
+            {
+                string paramName = databaseType == DatabaseType.Oracle ? $":{kvp.Key}" : $"@{kvp.Key}";
+                parameterNames.Add(paramName);
+                parameters[kvp.Key] = kvp.Value ?? DBNull.Value;
+            }
+
+            string valuesClause = string.Join(", ", parameterNames);
+            string query;
+
+            switch (databaseType)
+            {
+                case DatabaseType.SqlServer:
+                    query = $"INSERT INTO {tableName} ({columns}) OUTPUT Inserted.{primaryKeyColumn} VALUES ({valuesClause})";
+                    break;
+
+                case DatabaseType.Oracle:
+                    query = $"INSERT INTO {tableName} ({columns}) VALUES ({valuesClause}) RETURNING {primaryKeyColumn} INTO :ret";
+                    break;
+                case DatabaseType.Unknown:
+                default:
+                    throw new NotSupportedException("Unknown database type.");
+            }
+
+            return (query, parameters);
         }
 
         /// <summary>
@@ -217,6 +286,70 @@ namespace GenericTableAPI.Services
                     throw new NotSupportedException("Unknown database type.");
             }
             return sql;
+        }
+
+        /// <summary>
+        /// Constructs a parameterized SQL UPDATE query to update a record in a table.
+        /// </summary>
+        /// <param name="tableName">The name of the table.</param>
+        /// <param name="schemaName">The name of the schema (optional).</param>
+        /// <param name="values">A dictionary containing column names and their corresponding values to update.</param>
+        /// <param name="primaryKeyColumn">The name of the primary key column.</param>
+        /// <param name="connectionString">The connection string.</param>
+        /// <returns>A tuple containing the SQL query and parameters object.</returns>
+        public static (string Query, object Parameters) UpdateQueryParameterized(string tableName, string? schemaName, IDictionary<string, object?> values, string? primaryKeyColumn = null, string? connectionString = null)
+        {
+            ValidateTableName(tableName);
+            tableName = GetTableName(tableName, schemaName);
+            DatabaseType databaseType = GetDatabaseType(connectionString);
+
+            var parameters = new Dictionary<string, object?>();
+            var setClauses = new List<string>();
+
+            foreach (var kvp in values)
+            {
+                string paramName = databaseType == DatabaseType.Oracle ? $":{kvp.Key}" : $"@{kvp.Key}";
+                setClauses.Add($"{kvp.Key} = {paramName}");
+                parameters[kvp.Key] = kvp.Value ?? DBNull.Value;
+            }
+
+            string setClause = string.Join(", ", setClauses);
+            string idParamName = databaseType == DatabaseType.Oracle ? ":Id" : "@Id";
+            string query = $"UPDATE {tableName} SET {setClause} WHERE {primaryKeyColumn} = {idParamName}";
+
+            return (query, parameters);
+        }
+
+        /// <summary>
+        /// Constructs a parameterized SQL UPDATE query to patch a record in a table.
+        /// </summary>
+        /// <param name="tableName">The name of the table.</param>
+        /// <param name="schemaName">The name of the schema (optional).</param>
+        /// <param name="values">A dictionary containing column names and their corresponding values to update.</param>
+        /// <param name="primaryKeyColumn">The name of the primary key column.</param>
+        /// <param name="connectionString">The connection string.</param>
+        /// <returns>A tuple containing the SQL query and parameters object.</returns>
+        public static (string Query, object Parameters) PatchQueryParameterized(string tableName, string? schemaName, IDictionary<string, object?> values, string? primaryKeyColumn = null, string? connectionString = null)
+        {
+            ValidateTableName(tableName);
+            tableName = GetTableName(tableName, schemaName);
+            DatabaseType databaseType = GetDatabaseType(connectionString);
+
+            var parameters = new Dictionary<string, object?>();
+            var setClauses = new List<string>();
+
+            foreach (var kvp in values)
+            {
+                string paramName = databaseType == DatabaseType.Oracle ? $":{kvp.Key}" : $"@{kvp.Key}";
+                setClauses.Add($"{kvp.Key} = {paramName}");
+                parameters[kvp.Key] = kvp.Value ?? DBNull.Value;
+            }
+
+            string setClause = string.Join(", ", setClauses);
+            string idParamName = databaseType == DatabaseType.Oracle ? ":Id" : "@Id";
+            string query = $"UPDATE {tableName} SET {setClause} WHERE {primaryKeyColumn} = {idParamName}";
+
+            return (query, parameters);
         }
 
         /// <summary>
@@ -264,6 +397,27 @@ namespace GenericTableAPI.Services
         }
 
         /// <summary>
+        /// Constructs a parameterized SQL DELETE query to delete a record from a table.
+        /// </summary>
+        /// <param name="tableName">The name of the table.</param>
+        /// <param name="schemaName">The name of the schema (optional).</param>
+        /// <param name="primaryKeyColumn">The name of the primary key column.</param>
+        /// <param name="connectionString">The connection string.</param>
+        /// <returns>A tuple containing the SQL query and parameters object.</returns>
+        public static (string Query, object Parameters) DeleteQueryParameterized(string tableName, string? schemaName, string? primaryKeyColumn = null, string? connectionString = null)
+        {
+            ValidateTableName(tableName);
+            tableName = GetTableName(tableName, schemaName);
+            DatabaseType databaseType = GetDatabaseType(connectionString);
+
+            string paramName = databaseType == DatabaseType.Oracle ? ":Id" : "@Id";
+            string query = $"DELETE FROM {tableName} WHERE {primaryKeyColumn} = {paramName}";
+            var parameters = new { Id = DBNull.Value };
+
+            return (query, parameters);
+        }
+
+        /// <summary>
         /// Constructs a SQL MERGE query to replace a record in a table.
         /// </summary>
         /// <param name="tableName">The name of the table.</param>
@@ -281,10 +435,10 @@ namespace GenericTableAPI.Services
             {
                 throw new ArgumentException(InvalidTableNameMessage);
             }
-            
+
             DatabaseType databaseType = GetDatabaseType(connectionString: connectionString);
             tableName = GetTableName(tableName, schemaName);
-            
+
             string? keys = primaryKeyColumn;
             if (values?.Count > 0)
             {
@@ -342,7 +496,7 @@ namespace GenericTableAPI.Services
 
             return sql;
         }
-        
+
         /// <summary>
         /// Executes a stored procedure with the specified parameters and returns the SQL command to execute.
         /// </summary>
@@ -354,7 +508,7 @@ namespace GenericTableAPI.Services
         public static string ExecuteQuery(string procedureName, IEnumerable<StoredProcedureParameter?>? values, string? connectionString = null)
         {
             DatabaseType databaseType = GetDatabaseType(connectionString);
-            
+
             StringBuilder parameters = new();
             if(values is not null)
             {
@@ -406,7 +560,7 @@ namespace GenericTableAPI.Services
 
             return sql;
         }
-        
+
         /// <summary>
         /// Constructs a SQL SELECT query to retrieve column names from a table.
         /// </summary>
@@ -418,7 +572,7 @@ namespace GenericTableAPI.Services
         {
             ValidateTableName(tableName);
             DatabaseType databaseType = GetDatabaseType(connectionString);
-            
+
             tableName = GetTableName(tableName, schemaName);
             string sql;
             switch (databaseType)
@@ -436,7 +590,7 @@ namespace GenericTableAPI.Services
 
             return sql;
         }
-        
+
         [GeneratedRegex(@"^\w+$", RegexOptions.Compiled)]
         private static partial Regex TableNameRegexInit();
         [GeneratedRegex(@"^\w+\s*(=|>=|<=|>|<)\s*.*$", RegexOptions.Compiled)]
