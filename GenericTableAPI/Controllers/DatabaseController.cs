@@ -144,7 +144,11 @@ namespace GenericTableAPI.Controllers
         public async Task<ActionResult> Add(string tableName, [FromBody] IDictionary<string, object?> values, string? primaryKeyColumnName)
         {
             DateTimeOffset timestamp = DateTimeOffset.UtcNow;
-            Dictionary<string, string?> valuesDict = values.ToDictionary(pair => pair.Key, pair => pair.Value?.ToString());
+            
+            // Convert JsonElement values to proper .NET types for Dapper
+            var convertedValues = JsonElementConverter.ConvertJsonElements(values);
+            
+            Dictionary<string, string?> valuesDict = convertedValues.ToDictionary(pair => pair.Key, pair => pair.Value?.ToString());
             string requestInfo = $"POST request to \"{HttpContext.Request.Path}{HttpContext.Request.QueryString}\" from \"{HttpContext.Connection.RemoteIpAddress}\" by user \"{User.Identity?.Name ?? "unknown"}\" with values: {JsonConvert.SerializeObject(valuesDict)}. Timestamp: {timestamp}";
             dynamic? responseObj = null;
             _logger.LogInformation("{RequestInfo}", requestInfo);
@@ -160,7 +164,7 @@ namespace GenericTableAPI.Controllers
             try
             {
                 _logger.LogInformation("Adding a new entity to {TableName}: {Values}. Timestamp: {TimeStamp}", tableName, JsonConvert.SerializeObject(valuesDict), timestamp);
-                object? id = await _service.AddAsync(tableName, values, primaryKeyColumnName).ConfigureAwait(false);
+                object? id = await _service.AddAsync(tableName, convertedValues, primaryKeyColumnName).ConfigureAwait(false);
                 if (id == null)
                 {
                     _logger.LogInformation("Failed to establish new entity for table: {TableName}. Timestamp: {TimeStamp}", tableName, timestamp);
@@ -197,7 +201,11 @@ namespace GenericTableAPI.Controllers
         public async Task<ActionResult> Patch(string tableName, [FromRoute] string id, [FromBody] IDictionary<string, object?> values, string? primaryKeyColumnName)
         {
             DateTimeOffset timestamp = DateTimeOffset.UtcNow;
-            Dictionary<string, string?> valuesDict = values.ToDictionary(pair => pair.Key, pair => pair.Value?.ToString());
+            
+            // Convert JsonElement values to proper .NET types for Dapper
+            var convertedValues = JsonElementConverter.ConvertJsonElements(values);
+            
+            Dictionary<string, string?> valuesDict = convertedValues.ToDictionary(pair => pair.Key, pair => pair.Value?.ToString());
             string requestInfo = $"PATCH request to \"{HttpContext.Request.Path}{HttpContext.Request.QueryString}\" from \"{HttpContext.Connection.RemoteIpAddress}\" by user \"{User.Identity?.Name ?? "unknown"}\". Timestamp: {timestamp}";
             dynamic? responseObj = null;
             _logger.LogInformation("{RequestInfo}", requestInfo);
@@ -213,7 +221,7 @@ namespace GenericTableAPI.Controllers
             try
             {
                 _logger.LogInformation("Updating entity with identifier={ID} in {TableName}: {Values}. Timestamp: {TimeStamp}", id, tableName, JsonConvert.SerializeObject(valuesDict), timestamp);
-                await _service.PatchAsync(tableName, id, values, primaryKeyColumnName).ConfigureAwait(false);
+                await _service.PatchAsync(tableName, id, convertedValues, primaryKeyColumnName).ConfigureAwait(false);
                 dynamic? updatedItem = await _service.GetByIdAsync(tableName, id, primaryKeyColumnName).ConfigureAwait(false);
                 if (updatedItem == null)
                 {
@@ -241,7 +249,11 @@ namespace GenericTableAPI.Controllers
         public async Task<ActionResult> Update(string tableName, [FromRoute] string id, [FromBody] IDictionary<string, object?> values, string? primaryKeyColumnName)
         {
             DateTimeOffset timestamp = DateTimeOffset.UtcNow;
-            Dictionary<string, string?> valuesDict = values.ToDictionary(pair => pair.Key, pair => pair.Value?.ToString());
+            
+            // Convert JsonElement values to proper .NET types for Dapper
+            var convertedValues = JsonElementConverter.ConvertJsonElements(values);
+            
+            Dictionary<string, string?> valuesDict = convertedValues.ToDictionary(pair => pair.Key, pair => pair.Value?.ToString());
             string requestInfo = $"PUT request to \"{HttpContext.Request.Path}{HttpContext.Request.QueryString}\" from \"{HttpContext.Connection.RemoteIpAddress}\" by user \"{User.Identity?.Name ?? "unknown"}\". Timestamp: {timestamp}";
             dynamic? responseObj = null;
             _logger.LogInformation("{RequestInfo}", requestInfo);
@@ -258,7 +270,7 @@ namespace GenericTableAPI.Controllers
             {
                 _logger.LogInformation("Updating entity with identifier={Id} in {TableName}: {Values}. Timestamp: {TimeStamp}", id, tableName, JsonConvert.SerializeObject(valuesDict), timestamp);
                 List<object>? columns =  await _service.GetColumnsAsync(tableName).ConfigureAwait(false);
-                await _service.UpdateAsync(tableName, id, values, columns, primaryKeyColumnName).ConfigureAwait(false);
+                await _service.UpdateAsync(tableName, id, convertedValues, columns, primaryKeyColumnName).ConfigureAwait(false);
                 dynamic? updatedItem = await _service.GetByIdAsync(tableName, id, primaryKeyColumnName).ConfigureAwait(false);
                 if (updatedItem == null)
                 {
