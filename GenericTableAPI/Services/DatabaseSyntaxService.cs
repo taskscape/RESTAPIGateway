@@ -174,38 +174,6 @@ namespace GenericTableAPI.Services
         }
 
         /// <summary>
-        /// Constructs a SQL SELECT query to retrieve a record by its primary key.
-        /// </summary>
-        /// <param name="tableName">The name of the table.</param>
-        /// <param name="schemaName">The name of the schema (optional).</param>
-        /// <param name="id">The value of the primary key.</param>
-        /// <param name="primaryKeyColumn">The name of the primary key column.</param>
-        /// <returns>The SQL SELECT query.</returns>
-        public static string GetByIdQuery(string tableName, string? schemaName, [FromRoute] string id, string? primaryKeyColumn = null)
-        {
-            ValidateTableName(tableName);
-            if (string.IsNullOrEmpty(id) || !TableNameRegex.IsMatch(id))
-                throw new ArgumentException(InvalidTableNameMessage);
-
-            QueryHelper.ValidateIdentifier(tableName);
-            QueryHelper.ValidateIdentifier(primaryKeyColumn);
-            var safeIdPiece = id is null
-    ? "NULL"
-    : $"'{id.Replace("'", "''")}'";
-
-            tableName = GetTableName(tableName, schemaName);
-
-            return QueryHelper.Build(
-              "SELECT * FROM ",
-              tableName,
-              " WHERE ",
-              primaryKeyColumn,
-              " = ",
-              safeIdPiece
-            );
-        }
-
-        /// <summary>
         /// Constructs a parameterized SQL INSERT query to add a record to a table.
         /// </summary>
         /// <param name="tableName">The name of the table.</param>
@@ -250,42 +218,6 @@ namespace GenericTableAPI.Services
             }
 
             return (query, parameters);
-        }
-
-        /// <summary>
-        /// Constructs a SQL INSERT query to add a record to a table.
-        /// </summary>
-        /// <param name="tableName">The name of the table.</param>
-        /// <param name="schemaName">The name of the schema (optional).</param>
-        /// <param name="values">A dictionary containing column names and their corresponding values.</param>
-        /// <param name="columns">A comma-separated list of column names.</param>
-        /// <param name="strValues">A comma-separated list of string representations of values.</param>
-        /// <param name="primaryKeyColumn">The name of the primary key column.</param>
-        /// <param name="connectionString">The connection string.</param>
-        /// <returns>The SQL INSERT query.</returns>
-        public static string AddQuery(string tableName, string? schemaName, IDictionary<string, object?> values, string? columns = null, string? strValues = null, string? primaryKeyColumn = null, string? connectionString = null)
-        {
-            ValidateTableName(tableName);
-
-            DatabaseType databaseType = GetDatabaseType(connectionString);
-
-            string sql;
-            tableName = GetTableName(tableName, schemaName);
-
-            switch (databaseType)
-            {
-                case DatabaseType.SqlServer:
-                    sql = $"INSERT INTO {tableName} ({columns}) OUTPUT Inserted.{primaryKeyColumn} VALUES ({strValues})";
-                    break;
-
-                case DatabaseType.Oracle:
-                    sql = $"INSERT INTO {tableName} ({columns}) VALUES ({strValues}) RETURNING ID INTO :ret";
-                    break;
-                case DatabaseType.Unknown:
-                default:
-                    throw new NotSupportedException("Unknown database type.");
-            }
-            return sql;
         }
 
         /// <summary>
@@ -353,50 +285,6 @@ namespace GenericTableAPI.Services
         }
 
         /// <summary>
-        /// Constructs a SQL UPDATE query to update a record in a table.
-        /// </summary>
-        /// <param name="tableName">The name of the table.</param>
-        /// <param name="schemaName">The name of the schema (optional).</param>
-        /// <param name="id">The value of the primary key.</param>
-        /// <param name="values">A dictionary containing column names and their corresponding values to update.</param>
-        /// <param name="primaryKeyColumn">The name of the primary key column.</param>
-        /// <param name="setClauses">A comma-separated list of column name = value pairs for the SET clause.</param>
-        /// <returns>The SQL UPDATE query.</returns>
-        public static string UpdateQuery(string tableName, string? schemaName, string id, IDictionary<string, object> values, string? primaryKeyColumn = null, string? setClauses = null)
-        {
-            ValidateTableName(tableName);
-            if (string.IsNullOrEmpty(id) || !TableNameRegex.IsMatch(id))
-            {
-                throw new ArgumentException(InvalidTableNameMessage);
-            }
-
-            tableName = GetTableName(tableName, schemaName);
-
-            QueryHelper.ValidateIdentifier(tableName);
-            QueryHelper.ValidateIdentifier(setClauses);
-            QueryHelper.ValidateIdentifier(primaryKeyColumn);
-            var safeIdPiece = id is null
-    ? "NULL"
-    : $"'{id.Replace("'", "''")}'";
-
-            tableName = GetTableName(tableName, schemaName);
-
-            string sql = QueryHelper.Build(
-                "UPDATE ",
-                tableName,
-                " SET ",
-                setClauses,
-                " WHERE ",
-                primaryKeyColumn,
-                " = '",
-                safeIdPiece,
-                "'"
-            );
-
-            return sql;
-        }
-
-        /// <summary>
         /// Constructs a parameterized SQL DELETE query to delete a record from a table.
         /// </summary>
         /// <param name="tableName">The name of the table.</param>
@@ -417,85 +305,6 @@ namespace GenericTableAPI.Services
             return (query, parameters);
         }
 
-        /// <summary>
-        /// Constructs a SQL MERGE query to replace a record in a table.
-        /// </summary>
-        /// <param name="tableName">The name of the table.</param>
-        /// <param name="schemaName">The name of the schema (optional).</param>
-        /// <param name="id">The value of the primary key.</param>
-        /// <param name="values">A dictionary containing column names and their corresponding values to update.</param>
-        /// <param name="connectionString"></param>
-        /// <param name="primaryKeyColumn">The name of the primary key column.</param>
-        /// <param name="setClauses">A comma-separated list of column name = value pairs for the SET clause.</param>
-        /// <returns>The SQL MERGE query.</returns>
-        public static string MergeQuery(string tableName, string? schemaName, string id, IDictionary<string, object?> values, string connectionString, string? primaryKeyColumn = null, string? setClauses = null)
-        {
-            ValidateTableName(tableName);
-            if (string.IsNullOrEmpty(id) || !TableNameRegex.IsMatch(id))
-            {
-                throw new ArgumentException(InvalidTableNameMessage);
-            }
-
-            DatabaseType databaseType = GetDatabaseType(connectionString: connectionString);
-            tableName = GetTableName(tableName, schemaName);
-
-            string? keys = primaryKeyColumn;
-            if (values?.Count > 0)
-            {
-                keys = $"{primaryKeyColumn}, {string.Join(", ", values.Keys)}";
-            }
-            string sql;
-            switch (databaseType)
-            {
-                case DatabaseType.SqlServer:
-                    sql = $"MERGE INTO {tableName} AS target USING (SELECT {keys} FROM {tableName} WHERE {primaryKeyColumn} = {id}) AS source ON (target.id = source.id) WHEN MATCHED THEN UPDATE SET {setClauses};";
-                    break;
-
-                case DatabaseType.Oracle:
-                    sql = $"MERGE INTO {tableName} target USING (SELECT {keys} FROM {tableName} WHERE {primaryKeyColumn} = {id}) source ON (target.id = source.id) WHEN MATCHED THEN UPDATE SET {setClauses}";
-                    break;
-                case DatabaseType.Unknown:
-                default:
-                    throw new NotSupportedException("Unknown database type.");
-            }
-
-            return sql;
-        }
-
-        /// <summary>
-        /// Constructs a SQL DELETE query to delete a record from a table.
-        /// </summary>
-        /// <param name="tableName">The name of the table.</param>
-        /// <param name="schemaName">The name of the schema (optional).</param>
-        /// <param name="id">The value of the primary key.</param>
-        /// <param name="primaryKeyColumn">The name of the primary key column.</param>
-        /// <returns>The SQL DELETE query.</returns>
-        public static string DeleteQuery(string tableName, string? schemaName, string id, string? primaryKeyColumn = null)
-        {
-            ValidateTableName(tableName);
-            if (string.IsNullOrEmpty(id) || !TableNameRegex.IsMatch(id))
-            {
-                throw new ArgumentException(InvalidTableNameMessage);
-            }
-
-            tableName = GetTableName(tableName, schemaName);
-
-            QueryHelper.ValidateIdentifier(tableName);
-            QueryHelper.ValidateIdentifier(primaryKeyColumn);
-            var safeId = id.Replace("'", "''");
-            var quotedId = $"'{safeId}'";
-
-            string sql = QueryHelper.Build(
-                "DELETE FROM ",
-                 tableName,
-                " WHERE ",
-                 primaryKeyColumn,
-                " = ",
-                 quotedId
-            );
-
-            return sql;
-        }
 
         /// <summary>
         /// Executes a stored procedure with the specified parameters and returns the SQL command to execute.

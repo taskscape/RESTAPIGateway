@@ -1,7 +1,6 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using GenericTableAPI.Services;
-using GenericTableAPI.Utilities;
-using static GenericTableAPI.Utilities.DatabaseUtilities;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
 
 namespace GenericTableAPI.Tests
 {

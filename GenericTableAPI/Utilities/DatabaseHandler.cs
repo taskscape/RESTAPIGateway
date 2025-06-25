@@ -111,13 +111,10 @@ public class DatabaseHandler : IDisposable
         });
     }
 
-    private Task<object?> OracleExecuteInsertAsync(string query, object? parameters)
+    private async Task<object?> OracleExecuteInsertAsync(string query, object? parameters)
     {
-        return Task.Run(async () =>
-        {
-            var result = await _connection.QuerySingleAsync<int>(query, parameters);
-            return result;
-        });
+        int result = await _connection.QuerySingleAsync<int>(query, parameters);
+        return (object)result;
     }
 
     public void Dispose()
