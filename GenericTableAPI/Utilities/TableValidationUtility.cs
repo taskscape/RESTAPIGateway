@@ -19,7 +19,13 @@ namespace GenericTableAPI.Utilities
             if (!roleSection.Exists()) return false;
 
             List<string>? rolePermissions = roleSection.Get<List<string>>();
-            if (rolePermissions?.FirstOrDefault() == "*") return true;
+            if (rolePermissions?.FirstOrDefault() == "*")
+            {
+                // Only allow if user is authenticated
+                if (User != null && User.Identity != null && User.Identity.IsAuthenticated)
+                    return true;
+                return false;
+            }
 
             if (User != null)
             {
@@ -81,7 +87,13 @@ namespace GenericTableAPI.Utilities
 
             List<string>? rolePermissions = tableSection.Get<List<string>>();
 
-            if (rolePermissions?.FirstOrDefault() == "*") return true;
+            if (rolePermissions?.FirstOrDefault() == "*")
+            {
+                // Only allow if user is authenticated
+                if (user != null && user.Identity != null && user.Identity.IsAuthenticated)
+                    return true;
+                return false;
+            }
 
             if (user != null)
             {

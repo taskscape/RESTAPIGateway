@@ -103,15 +103,15 @@ namespace GenericTableAPI.Controllers
 
             if (_cache.TryGetCache($"{tableName}-GetById-{id}-{primaryKeyColumnName}", out object? cacheResponse))
             {
-                _logger.LogInformation("Getting entity with from table: {TableName} using identifier: {ID} from cache. Timestamp: {TimeStamp}", tableName, id, timestamp);
+                _logger.LogInformation("Getting entity with from table: {TableName} using identifier: {Id} from cache. Timestamp: {TimeStamp}", tableName, id, timestamp);
                 if (cacheResponse == null)
-                    return responseObj = NotFound();
+                    return _ = NotFound();
                 if (cacheResponse is IEnumerable<dynamic> enumerable && !enumerable.Any())
-                    return responseObj = Ok();
-                return responseObj = Ok(cacheResponse);
+                    return _ = Ok();
+                return _ = Ok(cacheResponse);
             }
 
-            _logger.LogInformation("Getting entity with from table: {TableName} using identifier: {ID}. Timestamp: {TimeStamp}", tableName, id, timestamp);
+            _logger.LogInformation("Getting entity with from table: {TableName} using identifier: {Id}. Timestamp: {TimeStamp}", tableName, id, timestamp);
         
             try
             {
@@ -120,7 +120,7 @@ namespace GenericTableAPI.Controllers
 
                 if (entity == null)
                 {
-                    _logger.LogInformation("No entity found with identifier={ID} in {TableName}. Request: {requestInfo}", id, tableName, requestInfo);
+                    _logger.LogInformation("No entity found with identifier: {Id} in {TableName}. Request: {requestInfo}", id, tableName, requestInfo);
                     return responseObj = NotFound();
                 }
         
@@ -144,7 +144,11 @@ namespace GenericTableAPI.Controllers
         public async Task<ActionResult> Add(string tableName, [FromBody] IDictionary<string, object?> values, string? primaryKeyColumnName)
         {
             DateTimeOffset timestamp = DateTimeOffset.UtcNow;
-            Dictionary<string, string?> valuesDict = values.ToDictionary(pair => pair.Key, pair => pair.Value?.ToString());
+            
+            // Convert JsonElement values to proper .NET types for Dapper
+            var convertedValues = JsonElementConverter.ConvertJsonElements(values);
+            
+            Dictionary<string, string?> valuesDict = convertedValues.ToDictionary(pair => pair.Key, pair => pair.Value?.ToString());
             string requestInfo = $"POST request to \"{HttpContext.Request.Path}{HttpContext.Request.QueryString}\" from \"{HttpContext.Connection.RemoteIpAddress}\" by user \"{User.Identity?.Name ?? "unknown"}\" with values: {JsonConvert.SerializeObject(valuesDict)}. Timestamp: {timestamp}";
             dynamic? responseObj = null;
             _logger.LogInformation("{RequestInfo}", requestInfo);
@@ -160,7 +164,7 @@ namespace GenericTableAPI.Controllers
             try
             {
                 _logger.LogInformation("Adding a new entity to {TableName}: {Values}. Timestamp: {TimeStamp}", tableName, JsonConvert.SerializeObject(valuesDict), timestamp);
-                object? id = await _service.AddAsync(tableName, values, primaryKeyColumnName).ConfigureAwait(false);
+                object? id = await _service.AddAsync(tableName, convertedValues, primaryKeyColumnName).ConfigureAwait(false);
                 if (id == null)
                 {
                     _logger.LogInformation("Failed to establish new entity for table: {TableName}. Timestamp: {TimeStamp}", tableName, timestamp);
@@ -175,7 +179,7 @@ namespace GenericTableAPI.Controllers
                 }
                 else
                 {
-                    _logger.LogInformation("Added a new entity for table: {TableName} with identifier: {ID}. Timestamp: {TimeStamp}", tableName, id, timestamp);
+                    _logger.LogInformation("Added a new entity for table: {TableName} with identifier: {Id}. Timestamp: {TimeStamp}", tableName, id, timestamp);
                     return responseObj = CreatedAtRoute(nameof(GetById), new { tableName, id, primaryKeyColumnName }, newItem);
                 }
         
@@ -197,7 +201,11 @@ namespace GenericTableAPI.Controllers
         public async Task<ActionResult> Patch(string tableName, [FromRoute] string id, [FromBody] IDictionary<string, object?> values, string? primaryKeyColumnName)
         {
             DateTimeOffset timestamp = DateTimeOffset.UtcNow;
-            Dictionary<string, string?> valuesDict = values.ToDictionary(pair => pair.Key, pair => pair.Value?.ToString());
+            
+            // Convert JsonElement values to proper .NET types for Dapper
+            var convertedValues = JsonElementConverter.ConvertJsonElements(values);
+            
+            Dictionary<string, string?> valuesDict = convertedValues.ToDictionary(pair => pair.Key, pair => pair.Value?.ToString());
             string requestInfo = $"PATCH request to \"{HttpContext.Request.Path}{HttpContext.Request.QueryString}\" from \"{HttpContext.Connection.RemoteIpAddress}\" by user \"{User.Identity?.Name ?? "unknown"}\". Timestamp: {timestamp}";
             dynamic? responseObj = null;
             _logger.LogInformation("{RequestInfo}", requestInfo);
@@ -208,20 +216,20 @@ namespace GenericTableAPI.Controllers
                 return Forbid();
             }
         
-            _logger.LogInformation("Updating entity in a table: {TableName} with identifier: {ID} using values: {Values}. Timestamp: {TimeStamp}", tableName, id, JsonConvert.SerializeObject(valuesDict), timestamp);
+            _logger.LogInformation("Updating entity in a table: {TableName} with identifier: {Id} using values: {Values}. Timestamp: {TimeStamp}", tableName, id, JsonConvert.SerializeObject(valuesDict), timestamp);
         
             try
             {
                 _logger.LogInformation("Updating entity with identifier={ID} in {TableName}: {Values}. Timestamp: {TimeStamp}", id, tableName, JsonConvert.SerializeObject(valuesDict), timestamp);
-                await _service.PatchAsync(tableName, id, values, primaryKeyColumnName).ConfigureAwait(false);
+                await _service.PatchAsync(tableName, id, convertedValues, primaryKeyColumnName).ConfigureAwait(false);
                 dynamic? updatedItem = await _service.GetByIdAsync(tableName, id, primaryKeyColumnName).ConfigureAwait(false);
                 if (updatedItem == null)
                 {
-                    _logger.LogInformation("No entity found with identifier={ID} in {TableName}. Request: {Request}. Timestamp: {TimeStamp}", id, tableName, requestInfo, timestamp);
+                    _logger.LogInformation("No entity found with identifier={Id} in {TableName}. Request: {Request}. Timestamp: {TimeStamp}", id, tableName, requestInfo, timestamp);
                     return responseObj = NotFound();
                 }
         
-                _logger.LogInformation("Updated entity with identifier={ID} in {TableName}. Timestamp: {TimeStamp}", id, tableName, timestamp);
+                _logger.LogInformation("Updated entity with identifier={Id} in {TableName}. Timestamp: {TimeStamp}", id, tableName, timestamp);
                 return responseObj = Ok(updatedItem);
             }
             catch (Exception exception)
@@ -241,7 +249,11 @@ namespace GenericTableAPI.Controllers
         public async Task<ActionResult> Update(string tableName, [FromRoute] string id, [FromBody] IDictionary<string, object?> values, string? primaryKeyColumnName)
         {
             DateTimeOffset timestamp = DateTimeOffset.UtcNow;
-            Dictionary<string, string?> valuesDict = values.ToDictionary(pair => pair.Key, pair => pair.Value?.ToString());
+            
+            // Convert JsonElement values to proper .NET types for Dapper
+            var convertedValues = JsonElementConverter.ConvertJsonElements(values);
+            
+            Dictionary<string, string?> valuesDict = convertedValues.ToDictionary(pair => pair.Key, pair => pair.Value?.ToString());
             string requestInfo = $"PUT request to \"{HttpContext.Request.Path}{HttpContext.Request.QueryString}\" from \"{HttpContext.Connection.RemoteIpAddress}\" by user \"{User.Identity?.Name ?? "unknown"}\". Timestamp: {timestamp}";
             dynamic? responseObj = null;
             _logger.LogInformation("{RequestInfo}", requestInfo);
@@ -252,21 +264,21 @@ namespace GenericTableAPI.Controllers
                 return Forbid();
             }
         
-            _logger.LogInformation("Updating entity in a table: {TableName} with identifier: {ID} using values: {Values}. Timestamp: {TimeStamp}", tableName, id, JsonConvert.SerializeObject(valuesDict), timestamp);
+            _logger.LogInformation("Updating entity in a table: {TableName} with identifier: {Id} using values: {Values}. Timestamp: {TimeStamp}", tableName, id, JsonConvert.SerializeObject(valuesDict), timestamp);
         
             try
             {
-                _logger.LogInformation("Updating entity with identifier={ID} in {TableName}: {Values}. Timestamp: {TimeStamp}", id, tableName, JsonConvert.SerializeObject(valuesDict), timestamp);
+                _logger.LogInformation("Updating entity with identifier={Id} in {TableName}: {Values}. Timestamp: {TimeStamp}", id, tableName, JsonConvert.SerializeObject(valuesDict), timestamp);
                 List<object>? columns =  await _service.GetColumnsAsync(tableName).ConfigureAwait(false);
-                await _service.UpdateAsync(tableName, id, values, columns, primaryKeyColumnName).ConfigureAwait(false);
+                await _service.UpdateAsync(tableName, id, convertedValues, columns, primaryKeyColumnName).ConfigureAwait(false);
                 dynamic? updatedItem = await _service.GetByIdAsync(tableName, id, primaryKeyColumnName).ConfigureAwait(false);
                 if (updatedItem == null)
                 {
-                    _logger.LogInformation("No entity found with identifier={ID} in {TableName}. Request: {Request}. Timestamp: {TimeStamp}", id, tableName, requestInfo, timestamp);
+                    _logger.LogInformation("No entity found with identifier={Id} in {TableName}. Request: {Request}. Timestamp: {TimeStamp}", id, tableName, requestInfo, timestamp);
                     return responseObj = NotFound();
                 }
         
-                _logger.LogInformation("Updated entity with identifier={ID} in {TableName}. Timestamp: {TimeStamp}", id, tableName, timestamp);
+                _logger.LogInformation("Updated entity with identifier={Id} in {TableName}. Timestamp: {TimeStamp}", id, tableName, timestamp);
                 return responseObj = Ok(updatedItem);
             }
             catch (Exception exception)
@@ -296,14 +308,14 @@ namespace GenericTableAPI.Controllers
                 return Forbid();
             }
         
-            _logger.LogInformation("Deleting entity from {TableName} using identifier={ID}. Timestamp: {TimeStamp}", tableName, id, timestamp);
+            _logger.LogInformation("Deleting entity from {TableName} using identifier={Id}. Timestamp: {TimeStamp}", tableName, id, timestamp);
         
             try
             {
                 dynamic? deletedItem = await _service.GetByIdAsync(tableName, id, primaryKeyColumnName).ConfigureAwait(false);
                 if (deletedItem == null)
                 {
-                    _logger.LogInformation("No entity found with identifier={ID} in {TableName}. Request: {Request}. Timestamp: {TimeStamp}", id, tableName, requestInfo, timestamp);
+                    _logger.LogInformation("No entity found with identifier={Id} in {TableName}. Request: {Request}. Timestamp: {TimeStamp}", id, tableName, requestInfo, timestamp);
                     return responseObj = NotFound();
                 }
 
@@ -311,11 +323,11 @@ namespace GenericTableAPI.Controllers
                 deletedItem = await _service.GetByIdAsync(tableName, id, primaryKeyColumnName).ConfigureAwait(false);
                 if (deletedItem != null)
                 {
-                    _logger.LogInformation("Failed to delete entity with identifier={ID} from {TableName}. Timestamp: {TimeStamp}", id, tableName, timestamp);
+                    _logger.LogInformation("Failed to delete entity with identifier={Id} from {TableName}. Timestamp: {TimeStamp}", id, tableName, timestamp);
                     return responseObj = StatusCode(StatusCodes.Status500InternalServerError);
                 }
                 
-                _logger.LogInformation("Deleted entity with id {id} from {TableName}. Timestamp: {TimeStamp}", id, tableName, timestamp);
+                _logger.LogInformation("Deleted entity with id {Id} from {TableName}. Timestamp: {TimeStamp}", id, tableName, timestamp);
                 return responseObj = Ok();
             }
             catch (Exception exception)
@@ -346,7 +358,7 @@ namespace GenericTableAPI.Controllers
 
             if (!TableValidationUtility.ValidProcedurePermission(_configuration, procedureName, User))
             {
-                _logger.LogWarning("User {UserName} attempted to access procedure {procedureName} without permission. Timestamp: {TimeStamp}", User.Identity?.Name ?? "unknown", procedureName, timestamp);
+                _logger.LogWarning("User: {userName} attempted to access procedure: {procedureName} without permission. Timestamp: {timeStamp}", User.Identity?.Name ?? "unknown", procedureName, timestamp);
                 return Forbid();
             }
 

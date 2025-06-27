@@ -39,11 +39,21 @@ public class DatabaseHandler : IDisposable
         return command.ExecuteReaderAsync();
     }
 
+    public Task<DbDataReader> ExecuteReaderAsync(string query, object? parameters)
+    {
+        return _connection.ExecuteReaderAsync(query, parameters);
+    }
+
     public Task<object?> ExecuteScalarAsync(string query)
     {
         DbCommand command = _connection.CreateCommand();
         command.CommandText = query;
         return command.ExecuteScalarAsync();
+    }
+
+    public Task<object?> ExecuteScalarAsync(string query, object? parameters)
+    {
+        return _connection.ExecuteScalarAsync(query, parameters);
     }
 
     public Task<object?> ExecuteInsertAsync(string query)
@@ -52,6 +62,14 @@ public class DatabaseHandler : IDisposable
             return OracleExecuteInsertAsync(query);
         else
             return ExecuteScalarAsync(query);
+    }
+
+    public Task<object?> ExecuteInsertAsync(string query, object? parameters)
+    {
+        if (_connection is OracleConnection)
+            return OracleExecuteInsertAsync(query, parameters);
+        else
+            return ExecuteScalarAsync(query, parameters);
     }
 
     public IEnumerable<string> GetTableNames()
@@ -91,6 +109,39 @@ public class DatabaseHandler : IDisposable
             await command.ExecuteScalarAsync();
             return returnId.Value;
         });
+    }
+
+    private async Task<object?> OracleExecuteInsertAsync(string query, object? parameters)
+    {
+        using var command = _connection.CreateCommand();
+        command.CommandText = query;
+        
+        // Set up the RETURNING INTO output parameter
+        var returnParam = new OracleParameter("ret", OracleDbType.Int32)
+        {
+            Direction = ParameterDirection.Output
+        };
+        command.Parameters.Add(returnParam);
+        
+        // Add the input parameters using Dapper's parameter handling
+        if (parameters != null)
+        {
+            var dynamicParams = new DynamicParameters(parameters);
+            // Add the output parameter to Dapper's parameter collection
+            dynamicParams.Add("ret", dbType: DbType.Int32, direction: ParameterDirection.Output);
+            
+            // Execute using Dapper to handle both input and output parameters
+            await _connection.ExecuteAsync(query, dynamicParams);
+            
+            // Return the output parameter value
+            return dynamicParams.Get<int>("ret");
+        }
+        else
+        {
+            // No input parameters, just execute with output parameter
+            await command.ExecuteNonQueryAsync();
+            return returnParam.Value;
+        }
     }
 
     public void Dispose()
