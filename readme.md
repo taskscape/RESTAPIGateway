@@ -1165,7 +1165,6 @@ Authorization Tab:
   Password: [Windows Password]
   Domain: [Optional Domain]
 ```
-Note: Configure IIS for Windows Authentication for this to work properly.
 
 ## Testing Tips
 
