@@ -756,6 +756,437 @@ The following table outlines the standard HTTP status codes returned by the REST
   * `500 Internal Server Error`: An unexpected error occurred on the server while processing the request.
 
 
+# Testing
+
+This section provides practical examples for testing the REST API Gateway using Postman or any HTTP client. The examples use a simple SQL Server database schema and demonstrate all CRUD operations with different authorization scenarios.
+
+## Test Database Schema
+
+Create a simple test database with the following structure:
+
+```sql
+-- Create test database
+CREATE DATABASE TestDB;
+GO
+
+USE TestDB;
+GO
+
+-- Create Users table
+CREATE TABLE Users (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    FirstName NVARCHAR(50) NOT NULL,
+    LastName NVARCHAR(50) NOT NULL,
+    Email NVARCHAR(100) UNIQUE NOT NULL,
+    Age INT,
+    CreatedDate DATETIME2 DEFAULT GETDATE(),
+    IsActive BIT DEFAULT 1
+);
+
+-- Create Products table
+CREATE TABLE Products (
+    ProductId INT IDENTITY(1,1) PRIMARY KEY,
+    ProductName NVARCHAR(100) NOT NULL,
+    Price DECIMAL(10,2) NOT NULL,
+    CategoryId INT,
+    Description NVARCHAR(500),
+    InStock BIT DEFAULT 1
+);
+
+-- Insert sample data
+INSERT INTO Users (FirstName, LastName, Email, Age) VALUES
+('John', 'Doe', 'john.doe@example.com', 30),
+('Jane', 'Smith', 'jane.smith@example.com', 25),
+('Bob', 'Johnson', 'bob.johnson@example.com', 35);
+
+INSERT INTO Products (ProductName, Price, CategoryId, Description) VALUES
+('Laptop', 999.99, 1, 'High-performance laptop'),
+('Mouse', 29.99, 2, 'Wireless optical mouse'),
+('Keyboard', 79.99, 2, 'Mechanical gaming keyboard');
+
+-- Create a simple stored procedure
+CREATE PROCEDURE GetUsersByAge
+    @MinAge INT = 0,
+    @MaxAge INT = 100
+AS
+BEGIN
+    SELECT * FROM Users 
+    WHERE Age BETWEEN @MinAge AND @MaxAge
+    ORDER BY Age;
+END
+GO
+```
+
+## Authorization Configuration Examples
+
+### Example 1: Role-Based Authorization
+```json
+{
+  "Database": {
+    "Tables": {
+      "*": {
+        "select": ["*"],
+        "insert": ["Admin", "Editor"],
+        "update": ["Admin", "Editor"],
+        "delete": ["Admin"]
+      },
+      "Users": {
+        "select": ["*"],
+        "insert": ["Admin", "UserManager"],
+        "update": ["Admin", "UserManager"],
+        "delete": ["Admin"]
+      },
+      "Products": {
+        "select": ["*"],
+        "insert": ["Admin", "ProductManager"],
+        "update": ["Admin", "ProductManager"],
+        "delete": ["Admin"]
+      }
+    },
+    "Procedures": {
+      "*": ["Admin"],
+      "GetUsersByAge": ["Admin", "UserManager", "Viewer"]
+    }
+  }
+}
+```
+
+### Example 2: User-Specific Authorization
+```json
+{
+  "Database": {
+    "Tables": {
+      "Users": {
+        "select": ["username:admin", "username:manager"],
+        "insert": ["username:admin"],
+        "update": ["username:admin", "username:manager"],
+        "delete": ["username:admin"]
+      },
+      "Products": {
+        "select": ["*"],
+        "insert": ["username:admin", "username:productmanager"],
+        "update": ["username:admin", "username:productmanager"],
+        "delete": ["username:admin"]
+      }
+    }
+  }
+}
+```
+
+### Example 3: Mixed Authorization (Roles + Users)
+```json
+{
+  "Database": {
+    "Tables": {
+      "*": {
+        "select": ["*"],
+        "insert": ["Admin"],
+        "update": ["Admin"],
+        "delete": ["Admin"]
+      },
+      "Users": {
+        "select": ["*"],
+        "insert": ["rolename:Admin", "username:hr_manager"],
+        "update": ["rolename:Admin", "username:hr_manager", "username:user_editor"],
+        "delete": ["rolename:Admin"]
+      }
+    },
+    "Procedures": {
+      "*": ["rolename:Admin"],
+      "GetUsersByAge": ["rolename:Admin", "rolename:Viewer", "username:analyst"]
+    }
+  }
+}
+```
+
+## API Testing Examples
+
+**Base URL**: `http://localhost:5000/api` (adjust port as needed)
+
+**Authentication**: All examples can use Basic Auth, JWT Bearer token, or Windows Authentication based on your configuration.
+
+### 1. GET Request - Retrieve All Records
+
+**Endpoint**: `GET /api/tables/Users`
+
+**Postman Configuration**:
+```
+Method: GET
+URL: http://localhost:5000/api/tables/Users
+Headers: 
+  Authorization: Basic dXNlcjE6cGFzc3dk (base64 encoded user1:passwd)
+  Content-Type: application/json
+```
+
+**Query Parameters** (optional):
+- `where`: SQL WHERE clause condition
+- `orderBy`: Column name for sorting
+- `limit`: Number of records to return
+- `offset`: Number of records to skip
+
+**Example with parameters**:
+```
+GET /api/tables/Users?where=Age > 25&orderBy=LastName&limit=10&offset=0
+```
+
+**Expected Response** (200 OK):
+```json
+[
+  {
+    "id": 1,
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john.doe@example.com",
+    "age": 30,
+    "createdDate": "2024-01-15T10:30:00",
+    "isActive": true
+  },
+  {
+    "id": 2,
+    "firstName": "Jane",
+    "lastName": "Smith",
+    "email": "jane.smith@example.com",
+    "age": 25,
+    "createdDate": "2024-01-16T11:45:00",
+    "isActive": true
+  }
+]
+```
+
+### 2. POST Request - Create New Record
+
+**Endpoint**: `POST /api/tables/Users`
+
+**Postman Configuration**:
+```
+Method: POST
+URL: http://localhost:5000/api/tables/Users
+Headers:
+  Authorization: Basic dXNlcjE6cGFzc3dk
+  Content-Type: application/json
+```
+
+**Request Body**:
+```json
+{
+  "firstName": "Alice",
+  "lastName": "Wilson",
+  "email": "alice.wilson@example.com",
+  "age": 28,
+  "isActive": true
+}
+```
+
+**Expected Response** (201 Created):
+```json
+{
+  "id": 4,
+  "firstName": "Alice",
+  "lastName": "Wilson",
+  "email": "alice.wilson@example.com",
+  "age": 28,
+  "createdDate": "2024-01-17T14:20:00",
+  "isActive": true
+}
+```
+
+### 3. PATCH Request - Partial Update
+
+**Endpoint**: `PATCH /api/tables/Users/1`
+
+**Postman Configuration**:
+```
+Method: PATCH
+URL: http://localhost:5000/api/tables/Users/1
+Headers:
+  Authorization: Basic dXNlcjE6cGFzc3dk
+  Content-Type: application/json
+```
+
+**Request Body** (only fields to update):
+```json
+{
+  "age": 31,
+  "email": "john.doe.updated@example.com"
+}
+```
+
+**Expected Response** (200 OK):
+```json
+{
+  "id": 1,
+  "firstName": "John",
+  "lastName": "Doe",
+  "email": "john.doe.updated@example.com",
+  "age": 31,
+  "createdDate": "2024-01-15T10:30:00",
+  "isActive": true
+}
+```
+
+### 4. PUT Request - Complete Update
+
+**Endpoint**: `PUT /api/tables/Users/1`
+
+**Postman Configuration**:
+```
+Method: PUT
+URL: http://localhost:5000/api/tables/Users/1
+Headers:
+  Authorization: Basic dXNlcjE6cGFzc3dk
+  Content-Type: application/json
+```
+
+**Request Body** (all fields - unspecified fields will be set to NULL/default):
+```json
+{
+  "firstName": "Jonathan",
+  "lastName": "Doe",
+  "email": "jonathan.doe@example.com",
+  "age": 32,
+  "isActive": true
+}
+```
+
+**Expected Response** (200 OK):
+```json
+{
+  "id": 1,
+  "firstName": "Jonathan",
+  "lastName": "Doe",
+  "email": "jonathan.doe@example.com",
+  "age": 32,
+  "createdDate": "2024-01-15T10:30:00",
+  "isActive": true
+}
+```
+
+### 5. DELETE Request - Remove Record
+
+**Endpoint**: `DELETE /api/tables/Users/3`
+
+**Postman Configuration**:
+```
+Method: DELETE
+URL: http://localhost:5000/api/tables/Users/3
+Headers:
+  Authorization: Basic dXNlcjE6cGFzc3dk
+  Content-Type: application/json
+```
+
+**Expected Response** (200 OK):
+```
+(Empty response body)
+```
+
+### 6. POST Request - Execute Stored Procedure
+
+**Endpoint**: `POST /api/procedures/GetUsersByAge`
+
+**Postman Configuration**:
+```
+Method: POST
+URL: http://localhost:5000/api/procedures/GetUsersByAge
+Headers:
+  Authorization: Basic dXNlcjE6cGFzc3dk
+  Content-Type: application/json
+```
+
+**Request Body**:
+```json
+[
+  {
+    "name": "MinAge",
+    "value": "25",
+    "type": "int"
+  },
+  {
+    "name": "MaxAge",
+    "value": "35",
+    "type": "int"
+  }
+]
+```
+
+**Expected Response** (200 OK):
+```json
+[
+  {
+    "id": 2,
+    "firstName": "Jane",
+    "lastName": "Smith",
+    "email": "jane.smith@example.com",
+    "age": 25,
+    "createdDate": "2024-01-16T11:45:00",
+    "isActive": true
+  },
+  {
+    "id": 1,
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john.doe@example.com",
+    "age": 30,
+    "createdDate": "2024-01-15T10:30:00",
+    "isActive": true
+  }
+]
+```
+
+## Authentication Examples
+
+### Basic Authentication
+```
+Headers:
+  Authorization: Basic dXNlcjE6cGFzc3dk
+```
+Where `dXNlcjE6cGFzc3dk` is base64 encoded `user1:passwd`
+
+### JWT Bearer Authentication
+1. First, get a token from `/api/token` endpoint:
+```json
+POST /api/token
+{
+  "username": "admin",
+  "password": "passwd"
+}
+```
+
+2. Use the token in subsequent requests:
+```
+Headers:
+  Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+### Windows Authentication
+```
+Authorization Tab:
+  Type: NTLM Authentication
+  Username: [Windows Username]
+  Password: [Windows Password]
+  Domain: [Optional Domain]
+```
+
+## Testing Tips
+
+1. **Use Environment Variables** in Postman for base URL and authentication credentials
+2. **Check Authorization** - Ensure your user has the required permissions in `tablesettings.json` and in `appsettings.json`
+3. **Validate SQL** - Ensure your tables exist and have the correct schema
+4. **Check Logs** - Review application logs for detailed error information
+5. **Test Edge Cases** - Try invalid IDs, missing fields, and unauthorized operations
+6. **Performance Testing** - Use rate limiting tests to verify throttling behavior
+
+## Postman Collection
+
+Import the provided Postman collections from the `/Postman` folder:
+- `RestAPIServer.collection.json` - Basic CRUD operations
+- `StoredProcedures.postman_collection.json` - Stored procedure examples
+
+Configure environment variables:
+- `baseUrl`: Your API base URL (e.g., `http://localhost:5000`)
+- `username`: Your test username
+- `password`: Your test password
+
+
 ## Maintenance
 
 The service produces rolling logs in the \logs folder, recording every external and internal operation(s).
