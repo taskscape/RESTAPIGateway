@@ -10,6 +10,7 @@ using Serilog;
 using Microsoft.AspNetCore.Server.IISIntegration;
 using Microsoft.AspNetCore.Authorization;
 using GenericTableAPI.Extensions;
+using GenericTableAPI.Models;
 
 namespace GenericTableAPI
 {
@@ -49,7 +50,7 @@ namespace GenericTableAPI
             builder.Services.AddScoped<DatabaseService>();
             builder.Services.AddHttpClient();
             builder.Services.AddHttpContextAccessor();
-
+            builder.Services.Configure<RetryPolicyOptions>(builder.Configuration.GetSection("RetryPolicy"));
             builder.Services.AddScoped<CompositeService>();
 
             builder.Services.AddSwaggerGen(options =>

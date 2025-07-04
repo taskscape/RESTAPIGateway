@@ -376,6 +376,19 @@ This section allows you to configure how long cached data should remain in memor
 
 The configured duration determines how long objects stored in memory will persist before being removed automatically. If set to 0 or a negative value, caching is disabled.
 
+### Retry Policy
+
+This section allows you to configure the retry policy in case of database failures.
+
+```json
+    "RetryPolicy": {
+        "RetryCount": 3,
+        "WaitTimeMilliseconds": 200
+},
+```
+- `RetryCount` - Number of retries.
+- `WaitTimeMilliseconds` - Time between retries in milliseconds.
+
 ### Rate Limiting
 
 This section allows you to configure rate limiting.
